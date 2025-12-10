@@ -2,6 +2,7 @@ import React, { useState, useEffect } from "react";
 import { Link, useLocation } from "react-router-dom";
 import { createPageUrl } from "@/utils";
 import { User } from "@/entities/User";
+import { base44 } from "@/api/base44Client";
 import { 
   ShoppingBag, 
   ShoppingCart, 
@@ -9,6 +10,7 @@ import {
   Settings, 
   Truck,
   Home,
+  Bell,
   Menu,
   X,
   LogOut
@@ -23,6 +25,7 @@ export default function Layout({ children, currentPageName }) {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [cartCount, setCartCount] = useState(0);
   const [isDeliveryPartner, setIsDeliveryPartner] = useState(false);
+  const [userHasRole, setUserHasRole] = useState(false);
 
   useEffect(() => {
     checkUser();
@@ -33,6 +36,11 @@ export default function Layout({ children, currentPageName }) {
     try {
       const currentUser = await User.me();
       setUser(currentUser);
+      
+      // Check if user has any assigned role
+      if (currentUser.assigned_role_id) {
+        setUserHasRole(true);
+      }
     } catch (error) {
       // User not logged in
     }
@@ -72,7 +80,7 @@ export default function Layout({ children, currentPageName }) {
       title: "Admin Panel",
       url: createPageUrl("Admin"),
       icon: Settings,
-      showCondition: () => user?.role === "admin"
+      showCondition: () => user?.role === "admin" || userHasRole
     },
     {
       title: "Delivery Portal",
