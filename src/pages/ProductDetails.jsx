@@ -4,7 +4,6 @@ import { Category } from "@/entities/Category";
 import { CartItem } from "@/entities/CartItem";
 import { User } from "@/entities/User";
 import { Notification } from "@/entities/Notification";
-import { base44 } from "@/api/base44Client";
 import { ArrowLeft, ShoppingCart, Plus, Minus, Star } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -20,21 +19,11 @@ export default function ProductDetails() {
   const [isLoading, setIsLoading] = useState(true);
   const [user, setUser] = useState(null);
   const [cartQuantity, setCartQuantity] = useState(0);
-  const [reviews, setReviews] = useState([]);
-  const [averageRating, setAverageRating] = useState(0);
-  const [userReview, setUserReview] = useState({ rating: 5, comment: "" });
-  const [isSubmittingReview, setIsSubmittingReview] = useState(false);
 
   useEffect(() => {
     checkUser();
     loadProduct();
   }, []);
-
-  useEffect(() => {
-    if (product) {
-      loadReviews();
-    }
-  }, [product]);
 
   const checkUser = async () => {
     try {
@@ -149,62 +138,6 @@ export default function ProductDetails() {
     }
   };
 
-  const loadReviews = async () => {
-    try {
-      const productReviews = await base44.entities.Review.filter({ product_id: product.id }, '-created_date');
-      setReviews(productReviews);
-      
-      if (productReviews.length > 0) {
-        const avg = productReviews.reduce((sum, r) => sum + r.rating, 0) / productReviews.length;
-        setAverageRating(avg);
-      }
-    } catch (error) {
-      console.error("Error loading reviews:", error);
-    }
-  };
-
-  const submitReview = async () => {
-    if (!user) {
-      await User.login();
-      return;
-    }
-
-    if (!userReview.comment.trim()) {
-      await Notification.create({
-        user_id: user.id,
-        title: "Review Required",
-        message: "Please write a comment for your review",
-        type: "warning"
-      });
-      return;
-    }
-
-    setIsSubmittingReview(true);
-    try {
-      await base44.entities.Review.create({
-        product_id: product.id,
-        user_id: user.id,
-        user_name: user.full_name || "Anonymous",
-        rating: userReview.rating,
-        comment: userReview.comment,
-        is_verified_purchase: true
-      });
-
-      await Notification.create({
-        user_id: user.id,
-        title: "Review Submitted",
-        message: "Thank you for your feedback!",
-        type: "success"
-      });
-
-      setUserReview({ rating: 5, comment: "" });
-      loadReviews();
-    } catch (error) {
-      console.error("Error submitting review:", error);
-    }
-    setIsSubmittingReview(false);
-  };
-
   if (isLoading) {
     return (
       <div className="max-w-4xl mx-auto space-y-6">
@@ -275,13 +208,11 @@ export default function ProductDetails() {
                 {Array(5).fill(0).map((_, i) => (
                   <Star
                     key={i}
-                    className={`w-5 h-5 ${i < Math.round(averageRating) ? 'text-yellow-400 fill-current' : 'text-gray-300'}`}
+                    className={`w-4 h-4 ${i < 4 ? 'text-yellow-400 fill-current' : 'text-gray-300'}`}
                   />
                 ))}
               </div>
-              <span className="text-sm text-gray-600">
-                {averageRating > 0 ? `${averageRating.toFixed(1)} (${reviews.length} reviews)` : 'No reviews yet'}
-              </span>
+              <span className="text-sm text-gray-600">(24 reviews)</span>
             </div>
           </div>
 
@@ -369,91 +300,6 @@ export default function ProductDetails() {
           </div>
         </div>
       </div>
-
-      {/* Reviews Section */}
-      <Card>
-        <CardContent className="p-6 space-y-6">
-          <h2 className="text-2xl font-bold text-gray-900">Customer Reviews</h2>
-
-          {/* Write Review */}
-          {user && (
-            <div className="border-b pb-6">
-              <h3 className="text-lg font-semibold mb-4">Write a Review</h3>
-              <div className="space-y-4">
-                <div>
-                  <label className="text-sm font-medium mb-2 block">Your Rating</label>
-                  <div className="flex gap-2">
-                    {Array(5).fill(0).map((_, i) => (
-                      <button
-                        key={i}
-                        onClick={() => setUserReview({ ...userReview, rating: i + 1 })}
-                        className="focus:outline-none"
-                      >
-                        <Star
-                          className={`w-8 h-8 cursor-pointer transition-colors ${
-                            i < userReview.rating ? 'text-yellow-400 fill-current' : 'text-gray-300'
-                          }`}
-                        />
-                      </button>
-                    ))}
-                  </div>
-                </div>
-                <div>
-                  <label className="text-sm font-medium mb-2 block">Your Review</label>
-                  <textarea
-                    value={userReview.comment}
-                    onChange={(e) => setUserReview({ ...userReview, comment: e.target.value })}
-                    placeholder="Share your experience with this product..."
-                    className="w-full p-3 border rounded-lg resize-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
-                    rows="4"
-                  />
-                </div>
-                <Button
-                  onClick={submitReview}
-                  disabled={isSubmittingReview}
-                  className="bg-emerald-600 hover:bg-emerald-700"
-                >
-                  {isSubmittingReview ? "Submitting..." : "Submit Review"}
-                </Button>
-              </div>
-            </div>
-          )}
-
-          {/* Reviews List */}
-          <div className="space-y-4">
-            {reviews.length === 0 ? (
-              <p className="text-gray-500 text-center py-8">No reviews yet. Be the first to review this product!</p>
-            ) : (
-              reviews.map((review) => (
-                <div key={review.id} className="border-b pb-4 last:border-b-0">
-                  <div className="flex items-start justify-between mb-2">
-                    <div>
-                      <p className="font-semibold text-gray-900">{review.user_name}</p>
-                      <div className="flex items-center gap-2 mt-1">
-                        <div className="flex">
-                          {Array(5).fill(0).map((_, i) => (
-                            <Star
-                              key={i}
-                              className={`w-4 h-4 ${i < review.rating ? 'text-yellow-400 fill-current' : 'text-gray-300'}`}
-                            />
-                          ))}
-                        </div>
-                        {review.is_verified_purchase && (
-                          <Badge variant="outline" className="text-xs">Verified Purchase</Badge>
-                        )}
-                      </div>
-                    </div>
-                    <span className="text-sm text-gray-500">
-                      {new Date(review.created_date).toLocaleDateString()}
-                    </span>
-                  </div>
-                  <p className="text-gray-700 leading-relaxed">{review.comment}</p>
-                </div>
-              ))
-            )}
-          </div>
-        </CardContent>
-      </Card>
     </div>
   );
 }

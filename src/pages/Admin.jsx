@@ -25,6 +25,10 @@ export default function Admin() {
   const checkAdminAccess = useCallback(async () => {
     try {
       const currentUser = await User.me();
+      if (currentUser.role !== 'admin' && !currentUser.assigned_role_id) {
+        navigate(createPageUrl('Shop'));
+        return;
+      }
       setUser(currentUser);
       
       // Load user permissions
@@ -33,17 +37,9 @@ export default function Admin() {
         setUserPermissions(['all']);
       } else if (currentUser.assigned_role_id) {
         const roles = await base44.entities.Role.filter({ id: currentUser.assigned_role_id });
-        if (roles.length > 0 && roles[0].permissions && roles[0].permissions.length > 0) {
+        if (roles.length > 0) {
           setUserPermissions(roles[0].permissions || []);
-        } else {
-          // No valid permissions, redirect
-          navigate(createPageUrl('Shop'));
-          return;
         }
-      } else {
-        // No admin role and no assigned role
-        navigate(createPageUrl('Shop'));
-        return;
       }
     } catch (error) {
       navigate(createPageUrl('Shop'));
@@ -71,13 +67,13 @@ export default function Admin() {
 
   // Define tabs with their required permissions
   const adminTabs = [
-    { value: "summary", label: "Summary", permission: "view_summary", component: <DailyOrderSummary />, showStats: true },
-    { value: "products", label: "Products", permission: "manage_products", component: <ProductManagement />, showStats: false },
-    { value: "categories", label: "Categories", permission: "manage_categories", component: <CategoryManagement />, showStats: false },
-    { value: "delivery", label: "Delivery", permission: "manage_delivery", component: <DeliveryPersonManagement />, showStats: false },
-    { value: "orders", label: "Orders", permission: "manage_orders", component: <OrderManagement />, showStats: false },
-    { value: "settings", label: "Settings", permission: "manage_settings", component: <SettingsManagement />, showStats: false },
-    { value: "roles", label: "Roles", permission: "manage_roles", component: <RoleManagement />, showStats: false }
+    { value: "summary", label: "Summary", permission: "view_summary", component: <DailyOrderSummary /> },
+    { value: "products", label: "Products", permission: "manage_products", component: <ProductManagement /> },
+    { value: "categories", label: "Categories", permission: "manage_categories", component: <CategoryManagement /> },
+    { value: "delivery", label: "Delivery", permission: "manage_delivery", component: <DeliveryPersonManagement /> },
+    { value: "orders", label: "Orders", permission: "manage_orders", component: <OrderManagement /> },
+    { value: "settings", label: "Settings", permission: "manage_settings", component: <SettingsManagement /> },
+    { value: "roles", label: "Roles", permission: "manage_roles", component: <RoleManagement /> }
   ];
 
   // Filter tabs based on permissions
@@ -95,7 +91,7 @@ export default function Admin() {
         </div>
       </div>
 
-      {allowedTabs.some(tab => tab.showStats) && <AdminStats />}
+      <AdminStats />
 
       {allowedTabs.length === 0 ? (
         <Card>
