@@ -6,21 +6,36 @@ import { Badge } from "@/components/ui/badge";
 import { Sparkles } from "lucide-react";
 import { motion } from "framer-motion";
 
-export default function RecommendedProducts({ onAddToCart }) {
+export default function RecommendedProducts({ onAddToCart, cartItems }) {
   const [recommendedProducts, setRecommendedProducts] = useState([]);
 
   useEffect(() => {
     loadRecommendedProducts();
-  }, []);
+  }, [cartItems]);
 
   const loadRecommendedProducts = async () => {
     try {
+      // Get categories from current cart items
+      const cartProductIds = cartItems.map(item => item.product_id);
+      const cartProducts = await Promise.all(
+        cartProductIds.map(id => base44.entities.Product.filter({ id }).then(results => results[0]))
+      );
+      const cartCategoryIds = [...new Set(cartProducts.map(p => p?.category_id).filter(Boolean))];
+
+      // Get all products from same categories with higher profit
       const allProducts = await base44.entities.Product.filter(
         { is_available: true },
         '-profit_margin'
       );
-      // Get top 4 products with highest profit margin
-      setRecommendedProducts(allProducts.filter(p => p.profit_margin > 0).slice(0, 4));
+      
+      // Filter products from same categories, exclude items already in cart, and get top 4
+      const filtered = allProducts.filter(p => 
+        cartCategoryIds.includes(p.category_id) &&
+        p.profit_margin > 0 &&
+        !cartProductIds.includes(p.id)
+      ).slice(0, 4);
+      
+      setRecommendedProducts(filtered);
     } catch (error) {
       console.error("Error loading recommended products:", error);
     }

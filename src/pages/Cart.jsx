@@ -134,18 +134,19 @@ export default function Cart() {
     if (!settings) return 0;
     const subtotal = calculateSubtotal();
     const threshold = isFirstOrder ? settings.first_order_threshold : settings.free_delivery_above;
-    
+
     if (subtotal >= threshold) return 0;
-    
-    // Calculate product-specific delivery charges
+
+    // Calculate product-specific delivery charges (sum of all products' charges)
     let totalDeliveryCharge = 0;
     cartItems.forEach(item => {
       const product = products[item.product_id];
-      if (product && product.delivery_charge > 0) {
+      if (product && product.delivery_charge) {
         totalDeliveryCharge += product.delivery_charge;
       }
     });
-    
+
+    // If no product-specific charges, use default shipping charge
     return totalDeliveryCharge > 0 ? totalDeliveryCharge : (settings.shipping_charge || 0);
   };
 
@@ -417,7 +418,7 @@ export default function Cart() {
           </AnimatePresence>
 
           {/* Recommended Products */}
-          <RecommendedProducts onAddToCart={addToCart} />
+          <RecommendedProducts onAddToCart={addToCart} cartItems={cartItems} />
         </div>
 
         {/* Order Summary */}

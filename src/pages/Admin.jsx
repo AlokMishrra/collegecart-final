@@ -1,5 +1,7 @@
 import React, { useState, useEffect, useCallback } from "react";
 import { User } from "@/entities/User";
+import { Package, Users, Truck, BarChart3 } from "lucide-react";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/utils";
@@ -21,7 +23,7 @@ export default function Admin() {
   const checkAdminAccess = useCallback(async () => {
     try {
       const currentUser = await User.me();
-      if (currentUser.role !== 'admin') {
+      if (currentUser.role !== 'admin' && !currentUser.assigned_role_id) {
         navigate(createPageUrl('Shop'));
         return;
       }
