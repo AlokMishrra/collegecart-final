@@ -26,6 +26,7 @@ export default function Layout({ children, currentPageName }) {
   const [cartCount, setCartCount] = useState(0);
   const [isDeliveryPartner, setIsDeliveryPartner] = useState(false);
   const [userHasRole, setUserHasRole] = useState(false);
+  const [userRole, setUserRole] = useState(null);
 
   useEffect(() => {
     checkUser();
@@ -40,6 +41,11 @@ export default function Layout({ children, currentPageName }) {
       // Check if user has any assigned role
       if (currentUser.assigned_role_id) {
         setUserHasRole(true);
+        // Load the role details to check permissions
+        const roles = await base44.entities.Role.filter({ id: currentUser.assigned_role_id });
+        if (roles.length > 0) {
+          setUserRole(roles[0]);
+        }
       }
     } catch (error) {
       // User not logged in
@@ -86,7 +92,7 @@ export default function Layout({ children, currentPageName }) {
       title: "Delivery Portal",
       url: createPageUrl("Delivery"),
       icon: Truck,
-      showCondition: () => isDeliveryPartner || user?.role === "admin"
+      showCondition: () => isDeliveryPartner || user?.role === "admin" || (userRole && userRole.name.toLowerCase().includes("delivery"))
     }
   ];
 
