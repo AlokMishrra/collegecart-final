@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useCallback } from "react";
 import { User } from "@/entities/User";
+import { base44 } from "@/api/base44Client";
 import { Package, Users, Truck, BarChart3 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -19,6 +20,7 @@ export default function Admin() {
   const navigate = useNavigate();
   const [user, setUser] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [userPermissions, setUserPermissions] = useState([]);
 
   const checkAdminAccess = useCallback(async () => {
     try {
@@ -28,6 +30,17 @@ export default function Admin() {
         return;
       }
       setUser(currentUser);
+      
+      // Load user permissions
+      if (currentUser.role === 'admin') {
+        // Admin has all permissions
+        setUserPermissions(['all']);
+      } else if (currentUser.assigned_role_id) {
+        const roles = await base44.entities.Role.filter({ id: currentUser.assigned_role_id });
+        if (roles.length > 0) {
+          setUserPermissions(roles[0].permissions || []);
+        }
+      }
     } catch (error) {
       navigate(createPageUrl('Shop'));
     }
@@ -48,6 +61,27 @@ export default function Admin() {
 
   if (!user) return null;
 
+  const hasPermission = (permission) => {
+    return userPermissions.includes('all') || userPermissions.includes(permission);
+  };
+
+  // Define tabs with their required permissions
+  const adminTabs = [
+    { value: "summary", label: "Summary", permission: "view_summary", component: <DailyOrderSummary /> },
+    { value: "products", label: "Products", permission: "manage_products", component: <ProductManagement /> },
+    { value: "categories", label: "Categories", permission: "manage_categories", component: <CategoryManagement /> },
+    { value: "delivery", label: "Delivery", permission: "manage_delivery", component: <DeliveryPersonManagement /> },
+    { value: "orders", label: "Orders", permission: "manage_orders", component: <OrderManagement /> },
+    { value: "settings", label: "Settings", permission: "manage_settings", component: <SettingsManagement /> },
+    { value: "roles", label: "Roles", permission: "manage_roles", component: <RoleManagement /> }
+  ];
+
+  // Filter tabs based on permissions
+  const allowedTabs = adminTabs.filter(tab => hasPermission(tab.permission));
+
+  // Set default tab to first allowed tab
+  const defaultTab = allowedTabs.length > 0 ? allowedTabs[0].value : "summary";
+
   return (
     <div className="max-w-7xl mx-auto space-y-6">
       <div className="flex items-center justify-between">
@@ -59,45 +93,29 @@ export default function Admin() {
 
       <AdminStats />
 
-      <Tabs defaultValue="summary" className="space-y-6">
-        <TabsList className="grid w-full grid-cols-7 overflow-x-auto">
-          <TabsTrigger value="summary">Summary</TabsTrigger>
-          <TabsTrigger value="products">Products</TabsTrigger>
-          <TabsTrigger value="categories">Categories</TabsTrigger>
-          <TabsTrigger value="delivery">Delivery</TabsTrigger>
-          <TabsTrigger value="orders">Orders</TabsTrigger>
-          <TabsTrigger value="settings">Settings</TabsTrigger>
-          <TabsTrigger value="roles">Roles</TabsTrigger>
-        </TabsList>
+      {allowedTabs.length === 0 ? (
+        <Card>
+          <CardContent className="p-12 text-center">
+            <p className="text-gray-600">You don't have permission to access any admin features.</p>
+          </CardContent>
+        </Card>
+      ) : (
+        <Tabs defaultValue={defaultTab} className="space-y-6">
+          <TabsList className={`grid w-full grid-cols-${allowedTabs.length} overflow-x-auto`}>
+            {allowedTabs.map(tab => (
+              <TabsTrigger key={tab.value} value={tab.value}>
+                {tab.label}
+              </TabsTrigger>
+            ))}
+          </TabsList>
 
-        <TabsContent value="summary">
-          <DailyOrderSummary />
-        </TabsContent>
-
-        <TabsContent value="products">
-          <ProductManagement />
-        </TabsContent>
-
-        <TabsContent value="categories">
-          <CategoryManagement />
-        </TabsContent>
-
-        <TabsContent value="delivery">
-          <DeliveryPersonManagement />
-        </TabsContent>
-
-        <TabsContent value="orders">
-          <OrderManagement />
-        </TabsContent>
-
-        <TabsContent value="settings">
-          <SettingsManagement />
-        </TabsContent>
-
-        <TabsContent value="roles">
-          <RoleManagement />
-        </TabsContent>
-      </Tabs>
+          {allowedTabs.map(tab => (
+            <TabsContent key={tab.value} value={tab.value}>
+              {tab.component}
+            </TabsContent>
+          ))}
+        </Tabs>
+      )}
     </div>
   );
 }
