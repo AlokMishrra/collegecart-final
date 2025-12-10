@@ -25,10 +25,6 @@ export default function Admin() {
   const checkAdminAccess = useCallback(async () => {
     try {
       const currentUser = await User.me();
-      if (currentUser.role !== 'admin' && !currentUser.assigned_role_id) {
-        navigate(createPageUrl('Shop'));
-        return;
-      }
       setUser(currentUser);
       
       // Load user permissions
@@ -37,9 +33,17 @@ export default function Admin() {
         setUserPermissions(['all']);
       } else if (currentUser.assigned_role_id) {
         const roles = await base44.entities.Role.filter({ id: currentUser.assigned_role_id });
-        if (roles.length > 0) {
+        if (roles.length > 0 && roles[0].permissions && roles[0].permissions.length > 0) {
           setUserPermissions(roles[0].permissions || []);
+        } else {
+          // No valid permissions, redirect
+          navigate(createPageUrl('Shop'));
+          return;
         }
+      } else {
+        // No admin role and no assigned role
+        navigate(createPageUrl('Shop'));
+        return;
       }
     } catch (error) {
       navigate(createPageUrl('Shop'));
