@@ -1,13 +1,34 @@
-import React from "react";
+import React, { useState, useEffect } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { ShoppingCart, Plus, Minus } from "lucide-react";
+import { ShoppingCart, Plus, Minus, Star } from "lucide-react";
 import { motion } from "framer-motion";
 import { Link } from "react-router-dom";
 import { createPageUrl } from "@/utils";
+import { base44 } from "@/api/base44Client";
 
 export default function ProductCard({ product, cartQuantity, onAddToCart }) {
+  const [averageRating, setAverageRating] = useState(0);
+  const [reviewCount, setReviewCount] = useState(0);
+
+  useEffect(() => {
+    loadRating();
+  }, [product.id]);
+
+  const loadRating = async () => {
+    try {
+      const reviews = await base44.entities.Review.filter({ product_id: product.id });
+      setReviewCount(reviews.length);
+      if (reviews.length > 0) {
+        const avg = reviews.reduce((sum, r) => sum + r.rating, 0) / reviews.length;
+        setAverageRating(avg);
+      }
+    } catch (error) {
+      console.error("Error loading rating:", error);
+    }
+  };
+
   const discountPercentage = product.original_price && product.original_price > product.price
     ? Math.round(((product.original_price - product.price) / product.original_price) * 100)
     : 0;
@@ -38,11 +59,9 @@ export default function ProductCard({ product, cartQuantity, onAddToCart }) {
                 Only {product.stock_quantity} left
               </Badge>
             )}
-            {product.delivery_time && (
-              <Badge variant="outline" className="absolute bottom-2 left-2 bg-white/90 backdrop-blur-sm">
-                ⏱️ {product.delivery_time}
-              </Badge>
-            )}
+            <Badge variant="outline" className="absolute bottom-2 left-2 bg-white/90 backdrop-blur-sm">
+              ⏱️ {product.delivery_time || "40 mins"}
+            </Badge>
           </div>
         </Link>
         
@@ -67,7 +86,14 @@ export default function ProductCard({ product, cartQuantity, onAddToCart }) {
               )}
               <span className="text-xs text-gray-500">/{product.unit}</span>
             </div>
-
+            
+            {reviewCount > 0 && (
+              <div className="flex items-center gap-1 mb-2">
+                <Star className="w-3 h-3 text-yellow-400 fill-yellow-400" />
+                <span className="text-xs font-medium">{averageRating.toFixed(1)}</span>
+                <span className="text-xs text-gray-500">({reviewCount})</span>
+              </div>
+            )}
           </div>
           
           <div className="space-y-2">

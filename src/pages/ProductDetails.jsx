@@ -4,7 +4,9 @@ import { Category } from "@/entities/Category";
 import { CartItem } from "@/entities/CartItem";
 import { User } from "@/entities/User";
 import { Notification } from "@/entities/Notification";
+import { base44 } from "@/api/base44Client";
 import { ArrowLeft, ShoppingCart, Plus, Minus, Star } from "lucide-react";
+import ReviewSection from "../components/product/ReviewSection";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -19,6 +21,8 @@ export default function ProductDetails() {
   const [isLoading, setIsLoading] = useState(true);
   const [user, setUser] = useState(null);
   const [cartQuantity, setCartQuantity] = useState(0);
+  const [averageRating, setAverageRating] = useState(0);
+  const [reviewCount, setReviewCount] = useState(0);
 
   useEffect(() => {
     checkUser();
@@ -70,6 +74,14 @@ export default function ProductDetails() {
         if (cartItems.length > 0) {
           setCartQuantity(cartItems[0].quantity);
         }
+      }
+
+      // Load reviews
+      const reviews = await base44.entities.Review.filter({ product_id: prod.id });
+      setReviewCount(reviews.length);
+      if (reviews.length > 0) {
+        const avg = reviews.reduce((sum, r) => sum + r.rating, 0) / reviews.length;
+        setAverageRating(avg);
       }
     } catch (error) {
       console.error("Error loading product:", error);
@@ -208,11 +220,13 @@ export default function ProductDetails() {
                 {Array(5).fill(0).map((_, i) => (
                   <Star
                     key={i}
-                    className={`w-4 h-4 ${i < 4 ? 'text-yellow-400 fill-current' : 'text-gray-300'}`}
+                    className={`w-4 h-4 ${i < Math.round(averageRating) ? 'text-yellow-400 fill-current' : 'text-gray-300'}`}
                   />
                 ))}
               </div>
-              <span className="text-sm text-gray-600">(24 reviews)</span>
+              <span className="text-sm text-gray-600">
+                {averageRating > 0 ? averageRating.toFixed(1) : "No ratings"} ({reviewCount} reviews)
+              </span>
             </div>
           </div>
 
@@ -290,7 +304,7 @@ export default function ProductDetails() {
             <div className="text-center p-4 bg-emerald-50 rounded-lg">
               <div className="text-2xl mb-2">🚚</div>
               <p className="font-medium">Fast Delivery</p>
-              <p className="text-sm text-gray-600">In 10-30 minutes</p>
+              <p className="text-sm text-gray-600">{product.delivery_time || "40 mins"}</p>
             </div>
             <div className="text-center p-4 bg-emerald-50 rounded-lg">
               <div className="text-2xl mb-2">🌱</div>
@@ -300,6 +314,9 @@ export default function ProductDetails() {
           </div>
         </div>
       </div>
+
+      {/* Reviews Section */}
+      <ReviewSection productId={product.id} user={user} />
     </div>
   );
 }
