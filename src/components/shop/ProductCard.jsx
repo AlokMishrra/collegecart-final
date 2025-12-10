@@ -71,10 +71,15 @@ export default function ProductCard({ product, cartQuantity, onAddToCart }) {
           </div>
           
           <div className="space-y-2">
-            <div className="flex flex-wrap gap-1">
+            <div className="flex flex-wrap gap-2 items-center">
               <Badge className="bg-emerald-100 text-emerald-800 text-xs">
                 {product.stock_quantity} in stock
               </Badge>
+              {product.delivery_charge === 0 && (
+                <Badge className="bg-green-100 text-green-800 text-xs">
+                  Free Delivery
+                </Badge>
+              )}
             </div>
             {product.stock_quantity === 0 ? (
               <Button disabled className="w-full">
