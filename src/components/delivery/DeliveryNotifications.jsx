@@ -1,7 +1,7 @@
 import React, { useEffect, useRef, useState } from "react";
 import { base44 } from "@/api/base44Client";
 import { motion, AnimatePresence } from "framer-motion";
-import { Package, X } from "lucide-react";
+import { Bell, Package, X } from "lucide-react";
 import { Card } from "@/components/ui/card";
 
 export default function DeliveryNotifications({ deliveryPersonEmail }) {
@@ -43,8 +43,8 @@ export default function DeliveryNotifications({ deliveryPersonEmail }) {
     // Check immediately
     checkForNewOrders();
 
-    // Then check every 5 seconds
-    const interval = setInterval(checkForNewOrders, 5000);
+    // Then check every 3 seconds for faster updates
+    const interval = setInterval(checkForNewOrders, 3000);
 
     return () => clearInterval(interval);
   }, [deliveryPersonEmail, lastOrderCount]);
