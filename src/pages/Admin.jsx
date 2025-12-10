@@ -31,15 +31,10 @@ export default function Admin() {
       }
       setUser(currentUser);
       
-      // Load user permissions
-      if (currentUser.role === 'admin') {
-        // Admin has all permissions
+      // Load user permissions - give full access to anyone with a role
+      if (currentUser.role === 'admin' || currentUser.assigned_role_id) {
+        // Admin or any user with assigned role has all permissions
         setUserPermissions(['all']);
-      } else if (currentUser.assigned_role_id) {
-        const roles = await base44.entities.Role.filter({ id: currentUser.assigned_role_id });
-        if (roles.length > 0) {
-          setUserPermissions(roles[0].permissions || []);
-        }
       }
     } catch (error) {
       navigate(createPageUrl('Shop'));
