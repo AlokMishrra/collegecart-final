@@ -12,8 +12,9 @@ export default function DeliveryNotifications({ deliveryPersonEmail }) {
   useEffect(() => {
     if (!deliveryPersonEmail) return;
 
-    // Initialize audio
-    audioRef.current = new Audio("data:audio/wav;base64,UklGRnoGAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQoGAACBhYqFbF1fdJivrJBhNjVgodDbq2EcBj+a2/LDciUFLIHO8tiJNwgZaLvt559NEAxQp+PwtmMcBjiR1/LMeSwFJHfH8N2QQAoUXrTp66hVFApGn+DyvmwhBTGH0fPTgjMGHm7A7+OZRQ0PVqzn77BdGAg+ltryxnYpBSh+y/Hbl0IIElyw6OyrWBMJQJzb8sByJAYogM3z3YwzCBxqvO7mnU0RD1am4/G1ZBsIOpPY88p5LAUngMz03YxACBVasu3qqlkcCz6Y2vPGcygEKIHM9N+RPA0VXrTp7K5aGAo7lNfyz3srBiZ7yPLekUULEVuu6uuuXRcKPJXY88dxJgQoh9Dy3I9AChRds+rqqlwaDD6V1/PGcCcEJ37M9d6PQQ0VXbTo665dGQs7ldfy0H0sCA==");
+    // Initialize audio with notification bell sound
+    audioRef.current = new Audio("https://assets.mixkit.co/active_storage/sfx/2869/2869-preview.mp3");
+    audioRef.current.volume = 1.0; // Maximum volume
 
     const checkForNewOrders = async () => {
       try {
@@ -28,9 +29,25 @@ export default function DeliveryNotifications({ deliveryPersonEmail }) {
           const newOrdersOnly = unassignedOrders.slice(lastOrderCount);
           setNewOrders(prev => [...newOrdersOnly, ...prev].slice(0, 5)); // Keep only last 5
           
-          // Play notification sound
+          // Play notification bell sound (repeat 3 times for attention)
           if (audioRef.current) {
+            audioRef.current.currentTime = 0;
             audioRef.current.play().catch(e => console.log("Audio play failed:", e));
+            
+            // Ring bell multiple times
+            setTimeout(() => {
+              if (audioRef.current) {
+                audioRef.current.currentTime = 0;
+                audioRef.current.play().catch(e => console.log("Audio play failed:", e));
+              }
+            }, 1000);
+            
+            setTimeout(() => {
+              if (audioRef.current) {
+                audioRef.current.currentTime = 0;
+                audioRef.current.play().catch(e => console.log("Audio play failed:", e));
+              }
+            }, 2000);
           }
         }
         
