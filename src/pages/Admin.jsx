@@ -67,13 +67,13 @@ export default function Admin() {
 
   // Define tabs with their required permissions
   const adminTabs = [
-    { value: "summary", label: "Summary", permission: "view_summary", component: <DailyOrderSummary /> },
-    { value: "products", label: "Products", permission: "manage_products", component: <ProductManagement /> },
-    { value: "categories", label: "Categories", permission: "manage_categories", component: <CategoryManagement /> },
-    { value: "delivery", label: "Delivery", permission: "manage_delivery", component: <DeliveryPersonManagement /> },
-    { value: "orders", label: "Orders", permission: "manage_orders", component: <OrderManagement /> },
-    { value: "settings", label: "Settings", permission: "manage_settings", component: <SettingsManagement /> },
-    { value: "roles", label: "Roles", permission: "manage_roles", component: <RoleManagement /> }
+    { value: "summary", label: "Summary", permission: "view_summary", component: <DailyOrderSummary />, showStats: true },
+    { value: "products", label: "Products", permission: "manage_products", component: <ProductManagement />, showStats: false },
+    { value: "categories", label: "Categories", permission: "manage_categories", component: <CategoryManagement />, showStats: false },
+    { value: "delivery", label: "Delivery", permission: "manage_delivery", component: <DeliveryPersonManagement />, showStats: false },
+    { value: "orders", label: "Orders", permission: "manage_orders", component: <OrderManagement />, showStats: false },
+    { value: "settings", label: "Settings", permission: "manage_settings", component: <SettingsManagement />, showStats: false },
+    { value: "roles", label: "Roles", permission: "manage_roles", component: <RoleManagement />, showStats: false }
   ];
 
   // Filter tabs based on permissions
@@ -91,7 +91,7 @@ export default function Admin() {
         </div>
       </div>
 
-      <AdminStats />
+      {allowedTabs.some(tab => tab.showStats) && <AdminStats />}
 
       {allowedTabs.length === 0 ? (
         <Card>
