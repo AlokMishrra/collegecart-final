@@ -245,7 +245,7 @@ export default function Cart() {
         delivery_address: fullAddress,
         phone_number: phoneNumber,
         delivery_notes: deliveryNotes,
-        status: "pending",
+        status: "confirmed",
         payment_method: paymentMethod
       });
 
