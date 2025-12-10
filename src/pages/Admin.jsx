@@ -96,9 +96,9 @@ export default function Admin() {
         </Card>
       ) : (
         <Tabs defaultValue={defaultTab} className="space-y-6">
-          <TabsList className="inline-flex h-10 items-center justify-start rounded-md bg-muted p-1 text-muted-foreground w-full overflow-x-auto">
+          <TabsList className={`grid w-full grid-cols-${allowedTabs.length} overflow-x-auto`}>
             {allowedTabs.map(tab => (
-              <TabsTrigger key={tab.value} value={tab.value} className="whitespace-nowrap">
+              <TabsTrigger key={tab.value} value={tab.value}>
                 {tab.label}
               </TabsTrigger>
             ))}
