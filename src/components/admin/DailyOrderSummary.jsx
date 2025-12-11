@@ -5,11 +5,13 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { ShoppingCart, Package, Truck, DollarSign, Clock } from "lucide-react";
+import { ShoppingCart, Package, Truck, DollarSign, TrendingUp, Clock, Calendar } from "lucide-react";
 import { motion } from "framer-motion";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 export default function DailyOrderSummary() {
   const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split('T')[0]);
+  const [viewMode, setViewMode] = useState('daily'); // 'daily' or 'weekly'
   const [summary, setSummary] = useState({
     totalOrders: 0,
     totalRevenue: 0,
@@ -17,17 +19,93 @@ export default function DailyOrderSummary() {
     topDeliveryPersons: [],
     hourlyBreakdown: []
   });
+  const [weeklySummary, setWeeklySummary] = useState({
+    totalOrders: 0,
+    totalRevenue: 0,
+    ordersByStatus: {},
+    topDeliveryPersons: [],
+    dailyBreakdown: []
+  });
+
+  const loadWeeklySummary = useCallback(async () => {
+    try {
+      const endOfWeek = new Date(selectedDate);
+      endOfWeek.setHours(23, 59, 59, 999);
+      const startOfWeek = new Date(endOfWeek);
+      startOfWeek.setDate(startOfWeek.getDate() - 6);
+      startOfWeek.setHours(0, 0, 0, 0);
+
+      const allOrders = await Order.list('-created_date');
+      const weekOrders = allOrders.filter(order => {
+        const orderDate = new Date(order.created_date);
+        return orderDate >= startOfWeek && orderDate <= endOfWeek;
+      });
+
+      const totalRevenue = weekOrders.reduce((sum, order) => sum + order.total_amount, 0);
+
+      const ordersByStatus = weekOrders.reduce((acc, order) => {
+        acc[order.status] = (acc[order.status] || 0) + 1;
+        return acc;
+      }, {});
+
+      const deliveryPersons = await DeliveryPerson.list();
+      const deliveredOrders = weekOrders.filter(order => order.status === 'delivered');
+      
+      const deliveryStats = deliveryPersons.map(person => {
+        const personOrders = deliveredOrders.filter(order => order.delivery_person_id === person.id);
+        const earnings = personOrders.reduce((sum, order) => sum + (order.total_amount * 0.10), 0);
+        return {
+          name: person.name,
+          deliveries: personOrders.length,
+          earnings: earnings
+        };
+      }).filter(stat => stat.deliveries > 0)
+        .sort((a, b) => b.deliveries - a.deliveries)
+        .slice(0, 5);
+
+      // Daily breakdown for the week
+      const dailyBreakdown = Array.from({ length: 7 }, (_, i) => {
+        const day = new Date(startOfWeek);
+        day.setDate(day.getDate() + i);
+        const dayEnd = new Date(day);
+        dayEnd.setHours(23, 59, 59, 999);
+        
+        const dayOrders = weekOrders.filter(order => {
+          const orderDate = new Date(order.created_date);
+          return orderDate >= day && orderDate <= dayEnd;
+        });
+        
+        return {
+          date: day.toLocaleDateString('en-IN', { weekday: 'short', day: 'numeric', month: 'short' }),
+          orders: dayOrders.length,
+          revenue: dayOrders.reduce((sum, order) => sum + order.total_amount, 0)
+        };
+      });
+
+      setWeeklySummary({
+        totalOrders: weekOrders.length,
+        totalRevenue,
+        ordersByStatus,
+        topDeliveryPersons: deliveryStats,
+        dailyBreakdown
+      });
+    } catch (error) {
+      console.error("Error loading weekly summary:", error);
+    }
+  }, [selectedDate]);
 
   const loadDailySummary = useCallback(async () => {
     try {
       const startOfDay = new Date(selectedDate);
-      const endOfDay = new Date(startOfDay.getTime() + 24 * 60 * 60 * 1000);
+      startOfDay.setHours(0, 0, 0, 0);
+      const endOfDay = new Date(selectedDate);
+      endOfDay.setHours(23, 59, 59, 999);
 
       // Get all orders for the selected date
       const allOrders = await Order.list('-created_date');
       const dayOrders = allOrders.filter(order => {
         const orderDate = new Date(order.created_date);
-        return orderDate >= startOfDay && orderDate < endOfDay;
+        return orderDate >= startOfDay && orderDate <= endOfDay;
       });
 
       // Calculate total revenue
@@ -81,8 +159,12 @@ export default function DailyOrderSummary() {
   }, [selectedDate]);
 
   useEffect(() => {
-    loadDailySummary();
-  }, [loadDailySummary]);
+    if (viewMode === 'daily') {
+      loadDailySummary();
+    } else {
+      loadWeeklySummary();
+    }
+  }, [loadDailySummary, loadWeeklySummary, viewMode]);
 
   const getStatusColor = (status) => {
     const colorMap = {
@@ -99,59 +181,69 @@ export default function DailyOrderSummary() {
   const summaryCards = [
     {
       title: "Total Orders",
-      value: summary.totalOrders,
+      value: currentSummary.totalOrders,
       icon: ShoppingCart,
       color: "text-blue-600"
     },
     {
       title: "Total Revenue",
-      value: `₹${summary.totalRevenue.toFixed(2)}`,
+      value: `₹${currentSummary.totalRevenue.toFixed(2)}`,
       icon: DollarSign,
       color: "text-emerald-600"
     },
     {
       title: "Delivered",
-      value: summary.ordersByStatus.delivered || 0,
+      value: currentSummary.ordersByStatus.delivered || 0,
       icon: Package,
       color: "text-green-600"
     },
     {
       title: "In Progress",
-      value: (summary.ordersByStatus.confirmed || 0) + 
-             (summary.ordersByStatus.preparing || 0) + 
-             (summary.ordersByStatus.out_for_delivery || 0),
+      value: (currentSummary.ordersByStatus.confirmed || 0) + 
+             (currentSummary.ordersByStatus.preparing || 0) + 
+             (currentSummary.ordersByStatus.out_for_delivery || 0),
       icon: Clock,
       color: "text-orange-600"
     }
   ];
 
+  const currentSummary = viewMode === 'daily' ? summary : weeklySummary;
+
   return (
     <div className="space-y-6">
-      <div className="flex justify-between items-center">
-        <h2 className="text-2xl font-bold text-gray-900">Daily Order Summary</h2>
-        <Select value={selectedDate} onValueChange={setSelectedDate}>
-          <SelectTrigger className="w-48">
-            <SelectValue />
-          </SelectTrigger>
-          <SelectContent>
-            {Array.from({ length: 7 }, (_, i) => {
-              const date = new Date();
-              date.setDate(date.getDate() - i);
-              const dateString = date.toISOString().split('T')[0];
-              const displayDate = date.toLocaleDateString('en-IN', {
-                weekday: 'long',
-                year: 'numeric',
-                month: 'short',
-                day: 'numeric'
-              });
-              return (
-                <SelectItem key={dateString} value={dateString}>
-                  {i === 0 ? 'Today' : i === 1 ? 'Yesterday' : displayDate}
-                </SelectItem>
-              );
-            })}
-          </SelectContent>
-        </Select>
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+        <h2 className="text-2xl font-bold text-gray-900">Order Summary</h2>
+        <div className="flex gap-3">
+          <Tabs value={viewMode} onValueChange={setViewMode}>
+            <TabsList>
+              <TabsTrigger value="daily">Daily</TabsTrigger>
+              <TabsTrigger value="weekly">Weekly</TabsTrigger>
+            </TabsList>
+          </Tabs>
+          <Select value={selectedDate} onValueChange={setSelectedDate}>
+            <SelectTrigger className="w-48">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              {Array.from({ length: 7 }, (_, i) => {
+                const date = new Date();
+                date.setDate(date.getDate() - i);
+                const dateString = date.toISOString().split('T')[0];
+                const displayDate = date.toLocaleDateString('en-IN', {
+                  weekday: 'long',
+                  year: 'numeric',
+                  month: 'short',
+                  day: 'numeric'
+                });
+                return (
+                  <SelectItem key={dateString} value={dateString}>
+                    {i === 0 ? 'Today' : i === 1 ? 'Yesterday' : displayDate}
+                  </SelectItem>
+                );
+              })}
+            </SelectContent>
+          </Select>
+        </div>
       </div>
 
       {/* Summary Cards */}
@@ -188,7 +280,7 @@ export default function DailyOrderSummary() {
           </CardHeader>
           <CardContent>
             <div className="space-y-3">
-              {Object.entries(summary.ordersByStatus).map(([status, count]) => (
+              {Object.entries(currentSummary.ordersByStatus).map(([status, count]) => (
                 <div key={status} className="flex items-center justify-between">
                   <Badge className={getStatusColor(status)}>
                     {status.replace(/_/g, ' ').toUpperCase()}
@@ -207,7 +299,7 @@ export default function DailyOrderSummary() {
           </CardHeader>
           <CardContent>
             <div className="space-y-4">
-              {summary.topDeliveryPersons.map((person, index) => (
+              {currentSummary.topDeliveryPersons.map((person, index) => (
                 <div key={index} className="flex items-center justify-between">
                   <div className="flex items-center gap-3">
                     <div className="w-8 h-8 bg-emerald-100 rounded-full flex items-center justify-center">
@@ -217,20 +309,20 @@ export default function DailyOrderSummary() {
                   </div>
                   <div className="text-right">
                     <p className="font-semibold">{person.deliveries} deliveries</p>
-                    <p className="text-sm text-gray-600">₹{person.earnings} earned</p>
+                    <p className="text-sm text-gray-600">₹{person.earnings.toFixed(2)} earned</p>
                   </div>
                 </div>
               ))}
-              {summary.topDeliveryPersons.length === 0 && (
-                <p className="text-gray-500 text-center py-4">No deliveries completed today</p>
+              {currentSummary.topDeliveryPersons.length === 0 && (
+                <p className="text-gray-500 text-center py-4">No deliveries completed {viewMode === 'daily' ? 'today' : 'this week'}</p>
               )}
             </div>
           </CardContent>
         </Card>
       </div>
 
-      {/* Hourly Breakdown */}
-      {summary.hourlyBreakdown.length > 0 && (
+      {/* Hourly/Daily Breakdown */}
+      {viewMode === 'daily' && summary.hourlyBreakdown.length > 0 && (
         <Card>
           <CardHeader>
             <CardTitle>Hourly Order Distribution</CardTitle>
@@ -250,6 +342,34 @@ export default function DailyOrderSummary() {
                     <TableCell>{hourData.hour}</TableCell>
                     <TableCell>{hourData.orders}</TableCell>
                     <TableCell>₹{hourData.revenue.toFixed(2)}</TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </CardContent>
+        </Card>
+      )}
+
+      {viewMode === 'weekly' && weeklySummary.dailyBreakdown.length > 0 && (
+        <Card>
+          <CardHeader>
+            <CardTitle>Daily Breakdown (Last 7 Days)</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Date</TableHead>
+                  <TableHead>Orders</TableHead>
+                  <TableHead>Revenue</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {weeklySummary.dailyBreakdown.map((dayData, index) => (
+                  <TableRow key={index}>
+                    <TableCell className="font-medium">{dayData.date}</TableCell>
+                    <TableCell>{dayData.orders}</TableCell>
+                    <TableCell>₹{dayData.revenue.toFixed(2)}</TableCell>
                   </TableRow>
                 ))}
               </TableBody>
