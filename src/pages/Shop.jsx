@@ -4,16 +4,22 @@ import { Category } from "@/entities/Category";
 import { CartItem } from "@/entities/CartItem";
 import { User } from "@/entities/User";
 import { Notification } from "@/entities/Notification";
-import { Search } from "lucide-react";
+import { Search, Filter, ShoppingCart, Plus, Minus } from "lucide-react";
 import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
-import { AnimatePresence } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
+import { Link } from "react-router-dom";
+import { createPageUrl } from "@/utils";
 
 import QuickAddToCart from "../components/shop/QuickAddToCart";
   import EnhancedShopHero from "../components/shop/EnhancedShopHero";
   import CategorySection from "../components/shop/CategorySection";
   import CategoryFilter from "../components/shop/CategoryFilter";
   import ProductCard from "../components/shop/ProductCard";
+  import HostelSelector from "../components/shop/HostelSelector";
 
 export default function Shop() {
   const [products, setProducts] = useState([]);
@@ -24,6 +30,7 @@ export default function Shop() {
   const [cartItems, setCartItems] = useState([]);
   const [categorizedProducts, setCategorizedProducts] = useState({});
   const [selectedCategory, setSelectedCategory] = useState(null);
+  const [showHostelSelector, setShowHostelSelector] = useState(false);
 
   useEffect(() => {
     checkUser();
@@ -43,20 +50,43 @@ export default function Shop() {
     try {
       const currentUser = await User.me();
       setUser(currentUser);
+      
+      // Check if user has selected hostel
+      if (!currentUser.selected_hostel) {
+        setShowHostelSelector(true);
+      }
+      
       loadCartItems(currentUser.id);
     } catch (error) {
       // User not logged in
     }
   };
 
+  const handleHostelSelected = (hostel) => {
+    setShowHostelSelector(false);
+    setUser(prev => ({ ...prev, selected_hostel: hostel }));
+    loadData();
+  };
+
   const loadData = async () => {
     setIsLoading(true);
     try {
-      const [productsData, categoriesData] = await Promise.all([
+      const [productsData, categoriesData, currentUser] = await Promise.all([
         Product.filter({ is_available: true }, '-created_date'),
-        Category.filter({ is_active: true }, 'display_order')
+        Category.filter({ is_active: true }, 'display_order'),
+        User.me().catch(() => null)
       ]);
-      setProducts(productsData);
+      
+      // Filter products based on user's selected hostel
+      let filteredProducts = productsData;
+      if (currentUser?.selected_hostel && currentUser.selected_hostel !== 'Other') {
+        filteredProducts = productsData.filter(product => {
+          const hostelStock = product.hostel_stock?.[currentUser.selected_hostel] || 0;
+          return hostelStock > 0;
+        });
+      }
+      
+      setProducts(filteredProducts);
       setCategories(categoriesData);
     } catch (error) {
       console.error("Error loading data:", error);
@@ -126,6 +156,9 @@ export default function Shop() {
 
   return (
     <div className="max-w-7xl mx-auto space-y-6">
+      {/* Hostel Selector Modal */}
+      {showHostelSelector && <HostelSelector onHostelSelected={handleHostelSelected} />}
+      
       {/* Enhanced Header */}
       <EnhancedShopHero />
 

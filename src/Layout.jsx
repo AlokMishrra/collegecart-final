@@ -13,7 +13,8 @@ import {
   Bell,
   Menu,
   X,
-  LogOut
+  LogOut,
+  Building2
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -216,6 +217,12 @@ export default function Layout({ children, currentPageName }) {
                       {user.full_name || 'User'}
                     </p>
                     <p className="text-sm text-gray-500 truncate">{user.email}</p>
+                    {user.selected_hostel && (
+                      <div className="flex items-center gap-1 mt-1">
+                        <Building2 className="w-3 h-3 text-emerald-600" />
+                        <p className="text-xs text-emerald-600 font-medium">{user.selected_hostel}</p>
+                      </div>
+                    )}
                   </div>
                 </div>
                 <Button
