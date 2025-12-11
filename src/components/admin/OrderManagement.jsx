@@ -15,10 +15,48 @@ export default function OrderManagement() {
   const [deliveryPersons, setDeliveryPersons] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isRefreshing, setIsRefreshing] = useState(false);
+  const [lastOrderCount, setLastOrderCount] = useState(0);
 
   useEffect(() => {
     loadData();
+    
+    // Poll for new orders every 5 seconds
+    const interval = setInterval(() => {
+      checkForNewOrders();
+    }, 5000);
+
+    return () => clearInterval(interval);
   }, []);
+
+  const playNotificationSound = async (times = 3) => {
+    for (let i = 0; i < times; i++) {
+      try {
+        const audio = new Audio('https://assets.mixkit.co/active_storage/sfx/2869/2869-preview.mp3');
+        await audio.play();
+        // Wait for sound to finish before playing again
+        await new Promise(resolve => setTimeout(resolve, 1000));
+      } catch (error) {
+        console.log("Could not play notification sound");
+      }
+    }
+  };
+
+  const checkForNewOrders = async () => {
+    try {
+      const ordersData = await Order.list('-created_date');
+      const pendingOrders = ordersData.filter(o => o.status === 'pending' || o.status === 'confirmed');
+      
+      if (lastOrderCount > 0 && pendingOrders.length > lastOrderCount) {
+        // New order detected, play sound 3 times
+        playNotificationSound(3);
+      }
+      
+      setLastOrderCount(pendingOrders.length);
+      setOrders(ordersData);
+    } catch (error) {
+      console.error("Error checking for new orders:", error);
+    }
+  };
 
   const loadData = async (showRefreshing = false) => {
     if (showRefreshing) {
@@ -33,6 +71,10 @@ export default function OrderManagement() {
       ]);
       setOrders(ordersData);
       setDeliveryPersons(deliveryData);
+      
+      // Initialize last order count
+      const pendingOrders = ordersData.filter(o => o.status === 'pending' || o.status === 'confirmed');
+      setLastOrderCount(pendingOrders.length);
     } catch (error) {
       console.error("Error loading data:", error);
       // Optional: Add a general admin notification for loading errors if needed

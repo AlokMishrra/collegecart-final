@@ -16,6 +16,12 @@ export default function ProductForm({ product, categories, onSave, onCancel }) {
     category_id: product?.category_id || "",
     image_url: product?.image_url || "",
     stock_quantity: product?.stock_quantity || 0,
+    hostel_stock: product?.hostel_stock || {
+      Mithali: 0,
+      Gavaskar: 0,
+      Virat: 0,
+      Tendulkar: 0
+    },
     unit: product?.unit || "piece",
     is_available: product?.is_available ?? true,
     delivery_charge: product?.delivery_charge || 0,
@@ -30,10 +36,26 @@ export default function ProductForm({ product, categories, onSave, onCancel }) {
       price: parseFloat(formData.price),
       original_price: formData.original_price ? parseFloat(formData.original_price) : null,
       stock_quantity: parseInt(formData.stock_quantity),
+      hostel_stock: {
+        Mithali: parseInt(formData.hostel_stock.Mithali) || 0,
+        Gavaskar: parseInt(formData.hostel_stock.Gavaskar) || 0,
+        Virat: parseInt(formData.hostel_stock.Virat) || 0,
+        Tendulkar: parseInt(formData.hostel_stock.Tendulkar) || 0
+      },
       delivery_charge: parseFloat(formData.delivery_charge) || 0,
       profit_margin: parseFloat(formData.profit_margin) || 0,
       delivery_time: formData.delivery_time
     });
+  };
+
+  const handleHostelStockChange = (hostel, value) => {
+    setFormData(prev => ({
+      ...prev,
+      hostel_stock: {
+        ...prev.hostel_stock,
+        [hostel]: value
+      }
+    }));
   };
 
   const handleInputChange = (field, value) => {
@@ -96,7 +118,7 @@ export default function ProductForm({ product, categories, onSave, onCancel }) {
 
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <Label htmlFor="stock">Stock Quantity</Label>
+              <Label htmlFor="stock">Total Stock Quantity</Label>
               <Input
                 id="stock"
                 type="number"
@@ -121,6 +143,48 @@ export default function ProductForm({ product, categories, onSave, onCancel }) {
                   <SelectItem value="box">Box</SelectItem>
                 </SelectContent>
               </Select>
+            </div>
+          </div>
+
+          <div>
+            <Label className="mb-3 block">Hostel-wise Stock</Label>
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <Label htmlFor="mithali" className="text-sm">Mithali Hostel</Label>
+                <Input
+                  id="mithali"
+                  type="number"
+                  value={formData.hostel_stock.Mithali}
+                  onChange={(e) => handleHostelStockChange("Mithali", e.target.value)}
+                />
+              </div>
+              <div>
+                <Label htmlFor="gavaskar" className="text-sm">Gavaskar Hostel</Label>
+                <Input
+                  id="gavaskar"
+                  type="number"
+                  value={formData.hostel_stock.Gavaskar}
+                  onChange={(e) => handleHostelStockChange("Gavaskar", e.target.value)}
+                />
+              </div>
+              <div>
+                <Label htmlFor="virat" className="text-sm">Virat Hostel</Label>
+                <Input
+                  id="virat"
+                  type="number"
+                  value={formData.hostel_stock.Virat}
+                  onChange={(e) => handleHostelStockChange("Virat", e.target.value)}
+                />
+              </div>
+              <div>
+                <Label htmlFor="tendulkar" className="text-sm">Tendulkar Hostel</Label>
+                <Input
+                  id="tendulkar"
+                  type="number"
+                  value={formData.hostel_stock.Tendulkar}
+                  onChange={(e) => handleHostelStockChange("Tendulkar", e.target.value)}
+                />
+              </div>
             </div>
           </div>
 
