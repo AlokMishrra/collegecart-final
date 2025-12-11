@@ -62,31 +62,37 @@ export default function Layout({ children, currentPageName }) {
     setUser(null);
   };
 
+  // Check if user is a delivery person
+  const isDeliveryRole = userRole && (
+    userRole.name.toLowerCase().includes("delivery") ||
+    userRole.permissions?.includes("view_delivery_portal")
+  );
+
   const navigationItems = [
     {
       title: "Shop",
       url: createPageUrl("Shop"),
       icon: Home,
-      showCondition: () => true
+      showCondition: () => !isDeliveryRole
     },
     {
       title: "Cart",
       url: createPageUrl("Cart"),
       icon: ShoppingCart,
       badge: cartCount > 0 ? cartCount : null,
-      showCondition: () => true
+      showCondition: () => !isDeliveryRole
     },
     {
       title: "My Orders",
       url: createPageUrl("Orders"),
       icon: Package,
-      showCondition: () => true
+      showCondition: () => !isDeliveryRole
     },
     {
       title: "Admin Panel",
       url: createPageUrl("Admin"),
       icon: Settings,
-      showCondition: () => user?.role === "admin" || userHasRole
+      showCondition: () => !isDeliveryRole && (user?.role === "admin" || userHasRole)
     },
     {
       title: "Delivery Portal",
@@ -98,10 +104,6 @@ export default function Layout({ children, currentPageName }) {
           "manangirigoswaim011@gmail.com", 
           "info@apnafreelancer.in"
         ];
-        const isDeliveryRole = userRole && (
-          userRole.name.toLowerCase().includes("delivery") ||
-          userRole.permissions?.includes("view_delivery_portal")
-        );
         return allowedEmails.includes(user?.email) || isDeliveryRole;
       }
     }
