@@ -29,8 +29,11 @@ export default function Layout({ children, currentPageName }) {
   const [userRole, setUserRole] = useState(null);
 
   useEffect(() => {
-    checkUser();
-    checkDeliveryPartner();
+    const init = async () => {
+      await checkUser();
+      await checkDeliveryPartner();
+    };
+    init();
   }, []);
 
   const checkUser = async () => {
@@ -47,14 +50,34 @@ export default function Layout({ children, currentPageName }) {
           setUserRole(roles[0]);
         }
       }
+      
+      // After setting user, check delivery partner status
+      const deliveryPersons = await base44.entities.DeliveryPerson.filter({ email: currentUser.email });
+      if (deliveryPersons.length > 0) {
+        setIsDeliveryPartner(true);
+      }
     } catch (error) {
       // User not logged in
     }
   };
 
-  const checkDeliveryPartner = () => {
-    const savedDeliveryPerson = localStorage.getItem('deliveryPerson');
-    setIsDeliveryPartner(!!savedDeliveryPerson);
+  const checkDeliveryPartner = async () => {
+    try {
+      // Check localStorage first
+      const savedDeliveryPerson = localStorage.getItem('deliveryPerson');
+      if (savedDeliveryPerson) {
+        setIsDeliveryPartner(true);
+        return;
+      }
+      
+      // If user is logged in, check if they exist in DeliveryPerson entity
+      if (user) {
+        const deliveryPersons = await base44.entities.DeliveryPerson.filter({ email: user.email });
+        setIsDeliveryPartner(deliveryPersons.length > 0);
+      }
+    } catch (error) {
+      console.error("Error checking delivery partner:", error);
+    }
   };
 
   const handleLogout = async () => {
