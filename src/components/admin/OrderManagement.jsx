@@ -3,7 +3,7 @@ import { Order } from "@/entities/Order";
 import { DeliveryPerson } from "@/entities/DeliveryPerson";
 import { Notification } from "@/entities/Notification";
 import { User } from "@/entities/User";
-import { Package, Clock, Truck, CheckCircle, XCircle, User as UserIcon, Trash2 } from "lucide-react";
+import { Package, Clock, Truck, CheckCircle, XCircle, User as UserIcon, Trash2, RefreshCw } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -14,13 +14,18 @@ export default function OrderManagement() {
   const [orders, setOrders] = useState([]);
   const [deliveryPersons, setDeliveryPersons] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [isRefreshing, setIsRefreshing] = useState(false);
 
   useEffect(() => {
     loadData();
   }, []);
 
-  const loadData = async () => {
-    setIsLoading(true);
+  const loadData = async (showRefreshing = false) => {
+    if (showRefreshing) {
+      setIsRefreshing(true);
+    } else {
+      setIsLoading(true);
+    }
     try {
       const [ordersData, deliveryData] = await Promise.all([
         Order.list('-created_date'),
@@ -32,7 +37,11 @@ export default function OrderManagement() {
       console.error("Error loading data:", error);
       // Optional: Add a general admin notification for loading errors if needed
     }
-    setIsLoading(false);
+    if (showRefreshing) {
+      setIsRefreshing(false);
+    } else {
+      setIsLoading(false);
+    }
   };
 
   const updateOrderStatus = async (orderId, newStatus, deliveryPersonId = null) => {
@@ -209,9 +218,19 @@ export default function OrderManagement() {
 
   return (
     <div className="space-y-6">
-      <div>
-        <h2 className="text-2xl font-bold text-gray-900">Order Management</h2>
-        <p className="text-gray-600">Track and manage customer orders</p>
+      <div className="flex justify-between items-center">
+        <div>
+          <h2 className="text-2xl font-bold text-gray-900">Order Management</h2>
+          <p className="text-gray-600">Track and manage customer orders</p>
+        </div>
+        <Button
+          onClick={() => loadData(true)}
+          disabled={isRefreshing}
+          className="bg-emerald-600 hover:bg-emerald-700"
+        >
+          <RefreshCw className={`w-4 h-4 mr-2 ${isRefreshing ? 'animate-spin' : ''}`} />
+          {isRefreshing ? 'Refreshing...' : 'Refresh'}
+        </Button>
       </div>
 
       <Card>
