@@ -178,6 +178,8 @@ export default function DailyOrderSummary() {
     return colorMap[status] || "bg-gray-100 text-gray-800";
   };
 
+  const currentSummary = viewMode === 'daily' ? summary : weeklySummary;
+
   const summaryCards = [
     {
       title: "Total Orders",
@@ -206,8 +208,6 @@ export default function DailyOrderSummary() {
       color: "text-orange-600"
     }
   ];
-
-  const currentSummary = viewMode === 'daily' ? summary : weeklySummary;
 
   return (
     <div className="space-y-6">
