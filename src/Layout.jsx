@@ -98,7 +98,11 @@ export default function Layout({ children, currentPageName }) {
           "manangirigoswaim011@gmail.com", 
           "info@apnafreelancer.in"
         ];
-        return allowedEmails.includes(user?.email);
+        const isDeliveryRole = userRole && (
+          userRole.name.toLowerCase().includes("delivery") ||
+          userRole.permissions?.includes("view_delivery_portal")
+        );
+        return allowedEmails.includes(user?.email) || isDeliveryRole;
       }
     }
   ];
