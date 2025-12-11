@@ -262,6 +262,32 @@ export default function Cart() {
         )
       );
 
+      // Send email notification to store owner about new order
+      try {
+        await base44.integrations.Core.SendEmail({
+          from_name: "CollegeCart",
+          to: "info@apnafreelancer.in",
+          subject: `🛒 New Order Alert #${orderNumber}`,
+          body: `
+            <h2>New Order Received!</h2>
+            <p><strong>Order Number:</strong> ${orderNumber}</p>
+            <p><strong>Customer:</strong> ${customerName}</p>
+            <p><strong>Phone:</strong> ${phoneNumber}</p>
+            <p><strong>Address:</strong> ${fullAddress}</p>
+            <p><strong>Total Amount:</strong> ₹${calculateTotal().toFixed(2)}</p>
+            <p><strong>Payment Method:</strong> ${paymentMethod.toUpperCase()}</p>
+            <p><strong>Items:</strong></p>
+            <ul>
+              ${orderItems.map(item => `<li>${item.product_name} x ${item.quantity} - ₹${(item.price * item.quantity).toFixed(2)}</li>`).join('')}
+            </ul>
+            <p>Please check the admin panel to confirm this order.</p>
+            <p><strong>Note:</strong> Please call 7248316506 immediately to notify about this order.</p>
+          `
+        });
+      } catch (emailError) {
+        console.error("Error sending email notification:", emailError);
+      }
+
       // Clear cart
       await Promise.all(cartItems.map(item => CartItem.delete(item.id)));
 
