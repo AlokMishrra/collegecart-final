@@ -262,14 +262,20 @@ export default function Cart() {
         )
       );
 
-      // Send email notification to store owner about new order
+      // Send URGENT email notification to store owner about new order
       try {
         await base44.integrations.Core.SendEmail({
-          from_name: "CollegeCart",
+          from_name: "CollegeCart - URGENT ORDER",
           to: "info@apnafreelancer.in",
-          subject: `🛒 New Order Alert #${orderNumber}`,
+          subject: `🚨 URGENT: New Order #${orderNumber} - CALL 7248316506 NOW!`,
           body: `
-            <h2>New Order Received!</h2>
+            <div style="background-color: #fee; border: 3px solid #f00; padding: 20px; border-radius: 10px;">
+              <h1 style="color: #f00;">🚨 NEW ORDER RECEIVED!</h1>
+              <h2 style="color: #f00;">IMMEDIATE ACTION REQUIRED</h2>
+              <p style="font-size: 18px; font-weight: bold;">📞 CALL: 7248316506 NOW TO NOTIFY!</p>
+            </div>
+            <br/>
+            <h2>Order Details:</h2>
             <p><strong>Order Number:</strong> ${orderNumber}</p>
             <p><strong>Customer:</strong> ${customerName}</p>
             <p><strong>Phone:</strong> ${phoneNumber}</p>
@@ -280,12 +286,31 @@ export default function Cart() {
             <ul>
               ${orderItems.map(item => `<li>${item.product_name} x ${item.quantity} - ₹${(item.price * item.quantity).toFixed(2)}</li>`).join('')}
             </ul>
-            <p>Please check the admin panel to confirm this order.</p>
-            <p><strong>Note:</strong> Please call 7248316506 immediately to notify about this order.</p>
+            <br/>
+            <div style="background-color: #ffc; border: 2px solid #fa0; padding: 15px;">
+              <p style="font-size: 16px; font-weight: bold;">⚠️ ACTION ITEMS:</p>
+              <ol>
+                <li>Call 7248316506 immediately</li>
+                <li>Confirm order in admin panel</li>
+                <li>Assign delivery person</li>
+              </ol>
+            </div>
           `
         });
       } catch (emailError) {
         console.error("Error sending email notification:", emailError);
+      }
+
+      // Try to open phone dialer automatically (works on mobile devices)
+      try {
+        const callLink = document.createElement('a');
+        callLink.href = 'tel:7248316506';
+        callLink.style.display = 'none';
+        document.body.appendChild(callLink);
+        callLink.click();
+        document.body.removeChild(callLink);
+      } catch (dialerError) {
+        console.log("Could not auto-open dialer");
       }
 
       // Clear cart
