@@ -6,12 +6,12 @@ import { Badge } from "@/components/ui/badge";
 import { Sparkles } from "lucide-react";
 import { motion } from "framer-motion";
 
-export default function RecommendedProducts({ onAddToCart, cartItems }) {
+export default function RecommendedProducts({ onAddToCart, cartItems, amountNeededForFreeDelivery }) {
   const [recommendedProducts, setRecommendedProducts] = useState([]);
 
   useEffect(() => {
     loadRecommendedProducts();
-  }, [cartItems]);
+  }, [cartItems, amountNeededForFreeDelivery]);
 
   const loadRecommendedProducts = async () => {
     try {
@@ -22,18 +22,45 @@ export default function RecommendedProducts({ onAddToCart, cartItems }) {
       );
       const cartCategoryIds = [...new Set(cartProducts.map(p => p?.category_id).filter(Boolean))];
 
-      // Get all products from same categories with higher profit
+      // Get all products
       const allProducts = await base44.entities.Product.filter(
         { is_available: true },
         '-profit_margin'
       );
       
-      // Filter products from same categories, exclude items already in cart, and get top 4
-      const filtered = allProducts.filter(p => 
-        cartCategoryIds.includes(p.category_id) &&
-        p.profit_margin > 0 &&
-        !cartProductIds.includes(p.id)
-      ).slice(0, 4);
+      let filtered;
+      
+      // If user needs specific amount for free delivery, recommend products at or near that price
+      if (amountNeededForFreeDelivery && amountNeededForFreeDelivery > 0) {
+        // Get products within ±5 of the needed amount, prioritizing exact matches
+        filtered = allProducts.filter(p => 
+          !cartProductIds.includes(p.id) &&
+          Math.abs(p.price - amountNeededForFreeDelivery) <= 5
+        ).sort((a, b) => {
+          const diffA = Math.abs(a.price - amountNeededForFreeDelivery);
+          const diffB = Math.abs(b.price - amountNeededForFreeDelivery);
+          return diffA - diffB;
+        }).slice(0, 4);
+        
+        // If not enough products found in that range, add more from same categories
+        if (filtered.length < 4) {
+          const additional = allProducts.filter(p => 
+            cartCategoryIds.includes(p.category_id) &&
+            p.profit_margin > 0 &&
+            !cartProductIds.includes(p.id) &&
+            !filtered.find(f => f.id === p.id)
+          ).slice(0, 4 - filtered.length);
+          
+          filtered = [...filtered, ...additional];
+        }
+      } else {
+        // Show all recommended products with higher profit from same categories
+        filtered = allProducts.filter(p => 
+          cartCategoryIds.includes(p.category_id) &&
+          p.profit_margin > 0 &&
+          !cartProductIds.includes(p.id)
+        ).slice(0, 4);
+      }
       
       setRecommendedProducts(filtered);
     } catch (error) {
@@ -48,8 +75,12 @@ export default function RecommendedProducts({ onAddToCart, cartItems }) {
       <CardHeader>
         <CardTitle className="flex items-center gap-2 text-emerald-800">
           <Sparkles className="w-5 h-5" />
-          Recommended for You
-          <Badge className="ml-auto bg-emerald-600">Best Deals</Badge>
+          {amountNeededForFreeDelivery > 0 
+            ? `Add ₹${amountNeededForFreeDelivery.toFixed(0)} more for FREE Delivery!`
+            : 'Recommended for You'}
+          <Badge className="ml-auto bg-emerald-600">
+            {amountNeededForFreeDelivery > 0 ? 'Perfect Match' : 'Best Deals'}
+          </Badge>
         </CardTitle>
       </CardHeader>
       <CardContent>

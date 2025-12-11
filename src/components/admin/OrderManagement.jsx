@@ -251,7 +251,18 @@ export default function OrderManagement() {
                         </p>
                       </div>
                     </TableCell>
-                    <TableCell>{order.items?.length || 0} items</TableCell>
+                    <TableCell>
+                      <div>
+                        <p className="font-medium mb-1">{order.items?.length || 0} items</p>
+                        <div className="text-xs text-gray-600 space-y-0.5">
+                          {order.items?.map((item, idx) => (
+                            <div key={idx}>
+                              • {item.product_name} x{item.quantity}
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    </TableCell>
                     <TableCell>₹{order.total_amount.toFixed(2)}</TableCell>
                     <TableCell>
                       <Badge className={getStatusColor(order.status)}>

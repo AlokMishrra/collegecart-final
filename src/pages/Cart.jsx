@@ -418,7 +418,15 @@ export default function Cart() {
           </AnimatePresence>
 
           {/* Recommended Products */}
-          <RecommendedProducts onAddToCart={addToCart} cartItems={cartItems} />
+          <RecommendedProducts 
+            onAddToCart={addToCart} 
+            cartItems={cartItems}
+            amountNeededForFreeDelivery={
+              settings && calculateShippingCharge() > 0
+                ? (isFirstOrder ? settings.first_order_threshold : settings.free_delivery_above) - calculateSubtotal()
+                : 0
+            }
+          />
         </div>
 
         {/* Order Summary */}
