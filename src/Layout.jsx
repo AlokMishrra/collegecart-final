@@ -92,7 +92,14 @@ export default function Layout({ children, currentPageName }) {
       title: "Delivery Portal",
       url: createPageUrl("Delivery"),
       icon: Truck,
-      showCondition: () => isDeliveryPartner || user?.role === "admin" || (userRole && userRole.name.toLowerCase().includes("delivery"))
+      showCondition: () => {
+        const allowedEmails = [
+          "tanmaygupta1285@gmail.com",
+          "manangirigoswaim011@gmail.com", 
+          "info@apnafreelancer.in"
+        ];
+        return allowedEmails.includes(user?.email);
+      }
     }
   ];
 
