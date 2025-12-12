@@ -2,7 +2,7 @@ import React, { useState, useEffect, useCallback } from "react";
 import { Order } from "@/entities/Order";
 import { User } from "@/entities/User";
 import { Notification } from "@/entities/Notification";
-import { Package, Clock, Truck, CheckCircle, XCircle, Edit } from "lucide-react";
+import { Package, Clock, Truck, CheckCircle, XCircle, Edit, Plus, Search } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -15,6 +15,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { motion } from "framer-motion";
 import { useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/utils";
+import { Product } from "@/entities/Product";
 
 export default function Orders() {
   const navigate = useNavigate();
@@ -27,6 +28,10 @@ export default function Orders() {
     delivery_address: "",
     delivery_notes: ""
   });
+  const [showAddProductDialog, setShowAddProductDialog] = useState(false);
+  const [products, setProducts] = useState([]);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [selectedProducts, setSelectedProducts] = useState([]);
 
   const loadOrders = useCallback(async (userId) => {
     setIsLoading(true);
@@ -81,6 +86,19 @@ export default function Orders() {
     return order.status !== "out_for_delivery" && order.status !== "delivered" && order.status !== "cancelled";
   };
 
+  const canAddProducts = (order) => {
+    return order.status === "preparing";
+  };
+
+  const loadProducts = async () => {
+    try {
+      const allProducts = await Product.filter({ is_available: true });
+      setProducts(allProducts);
+    } catch (error) {
+      console.error("Error loading products:", error);
+    }
+  };
+
   const handleEditClick = (order) => {
     setEditingOrder(order);
     setEditForm({
@@ -88,6 +106,70 @@ export default function Orders() {
       delivery_notes: order.delivery_notes || ""
     });
     setShowEditDialog(true);
+  };
+
+  const handleAddProductClick = (order) => {
+    setEditingOrder(order);
+    setSelectedProducts([]);
+    setSearchQuery("");
+    loadProducts();
+    setShowAddProductDialog(true);
+  };
+
+  const toggleProductSelection = (product) => {
+    setSelectedProducts(prev => {
+      const existing = prev.find(p => p.id === product.id);
+      if (existing) {
+        return prev.filter(p => p.id !== product.id);
+      } else {
+        return [...prev, { ...product, quantity: 1 }];
+      }
+    });
+  };
+
+  const updateProductQuantity = (productId, quantity) => {
+    setSelectedProducts(prev =>
+      prev.map(p => p.id === productId ? { ...p, quantity: Math.max(1, quantity) } : p)
+    );
+  };
+
+  const handleAddProducts = async () => {
+    if (selectedProducts.length === 0) return;
+
+    try {
+      const newItems = selectedProducts.map(p => ({
+        product_id: p.id,
+        product_name: p.name,
+        price: p.price,
+        quantity: p.quantity
+      }));
+
+      const updatedItems = [...editingOrder.items, ...newItems];
+      const newTotal = updatedItems.reduce((sum, item) => sum + (item.price * item.quantity), 0);
+
+      await Order.update(editingOrder.id, {
+        items: updatedItems,
+        total_amount: newTotal
+      });
+
+      await Notification.create({
+        user_id: user.id,
+        title: "Order Updated",
+        message: `Added ${selectedProducts.length} product(s) to order ${editingOrder.order_number}`,
+        type: "success"
+      });
+
+      setShowAddProductDialog(false);
+      loadOrders(user.id);
+    } catch (error) {
+      console.error("Error adding products:", error);
+      await Notification.create({
+        user_id: user.id,
+        title: "Update Failed",
+        message: "Failed to add products. Please try again.",
+        type: "error"
+      });
+    }
   };
 
   const handleSaveEdit = async () => {
@@ -221,17 +303,29 @@ export default function Orders() {
                           <p className="text-gray-600 mt-1">{order.phone_number}</p>
                         </div>
                       </div>
-                      {canEditOrder(order) && (
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          onClick={() => handleEditClick(order)}
-                          className="ml-4"
-                        >
-                          <Edit className="w-4 h-4 mr-1" />
-                          Edit
-                        </Button>
-                      )}
+                      <div className="flex gap-2 ml-4">
+                        {canEditOrder(order) && (
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={() => handleEditClick(order)}
+                          >
+                            <Edit className="w-4 h-4 mr-1" />
+                            Edit
+                          </Button>
+                        )}
+                        {canAddProducts(order) && (
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={() => handleAddProductClick(order)}
+                            className="text-emerald-600 border-emerald-300 hover:bg-emerald-50"
+                          >
+                            <Plus className="w-4 h-4 mr-1" />
+                            Add Items
+                          </Button>
+                        )}
+                      </div>
                     </div>
                     {order.delivery_notes && (
                       <div className="mt-4">
@@ -278,6 +372,95 @@ export default function Orders() {
               </Button>
               <Button onClick={handleSaveEdit} className="bg-emerald-600 hover:bg-emerald-700">
                 Save Changes
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Add Products Dialog */}
+      <Dialog open={showAddProductDialog} onOpenChange={setShowAddProductDialog}>
+        <DialogContent className="max-w-2xl max-h-[80vh] flex flex-col">
+          <DialogHeader>
+            <DialogTitle>Add Products to Order</DialogTitle>
+          </DialogHeader>
+          <div className="flex-1 flex flex-col space-y-4 overflow-hidden">
+            <div className="relative">
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
+              <Input
+                placeholder="Search products..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="pl-10"
+              />
+            </div>
+
+            <div className="flex-1 overflow-y-auto border rounded-lg p-2">
+              <div className="space-y-2">
+                {products
+                  .filter(p => !searchQuery || p.name.toLowerCase().includes(searchQuery.toLowerCase()))
+                  .map(product => {
+                    const isSelected = selectedProducts.find(p => p.id === product.id);
+                    return (
+                      <div
+                        key={product.id}
+                        className={`p-3 border rounded-lg cursor-pointer transition-colors ${
+                          isSelected ? 'bg-emerald-50 border-emerald-300' : 'hover:bg-gray-50'
+                        }`}
+                        onClick={() => toggleProductSelection(product)}
+                      >
+                        <div className="flex items-center justify-between">
+                          <div className="flex-1">
+                            <p className="font-medium">{product.name}</p>
+                            <p className="text-sm text-gray-600">₹{product.price}</p>
+                          </div>
+                          {isSelected && (
+                            <div className="flex items-center gap-2" onClick={(e) => e.stopPropagation()}>
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                onClick={() => updateProductQuantity(product.id, isSelected.quantity - 1)}
+                              >
+                                -
+                              </Button>
+                              <span className="w-8 text-center font-medium">{isSelected.quantity}</span>
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                onClick={() => updateProductQuantity(product.id, isSelected.quantity + 1)}
+                              >
+                                +
+                              </Button>
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    );
+                  })}
+              </div>
+            </div>
+
+            {selectedProducts.length > 0 && (
+              <div className="border-t pt-3">
+                <p className="text-sm text-gray-600 mb-2">
+                  Selected: {selectedProducts.length} product(s)
+                </p>
+                <p className="font-semibold">
+                  Additional Cost: ₹{selectedProducts.reduce((sum, p) => sum + (p.price * p.quantity), 0).toFixed(2)}
+                </p>
+              </div>
+            )}
+
+            <div className="flex justify-end gap-3 pt-2 border-t">
+              <Button variant="outline" onClick={() => setShowAddProductDialog(false)}>
+                Cancel
+              </Button>
+              <Button
+                onClick={handleAddProducts}
+                disabled={selectedProducts.length === 0}
+                className="bg-emerald-600 hover:bg-emerald-700"
+              >
+                Add {selectedProducts.length > 0 && `(${selectedProducts.length})`} Products
               </Button>
             </div>
           </div>
