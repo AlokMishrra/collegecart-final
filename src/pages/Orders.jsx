@@ -250,6 +250,59 @@ export default function Orders() {
           );
         })}
       </div>
+
+      {/* Edit Order Dialog */}
+      <Dialog open={showEditDialog} onOpenChange={setShowEditDialog}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Edit Order Details</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div>
+              <Label htmlFor="edit_name">Customer Name</Label>
+              <Input
+                id="edit_name"
+                value={editForm.customer_name}
+                onChange={(e) => setEditForm({ ...editForm, customer_name: e.target.value })}
+              />
+            </div>
+            <div>
+              <Label htmlFor="edit_phone">Phone Number</Label>
+              <Input
+                id="edit_phone"
+                value={editForm.phone_number}
+                onChange={(e) => setEditForm({ ...editForm, phone_number: e.target.value })}
+              />
+            </div>
+            <div>
+              <Label htmlFor="edit_address">Delivery Address</Label>
+              <Textarea
+                id="edit_address"
+                value={editForm.delivery_address}
+                onChange={(e) => setEditForm({ ...editForm, delivery_address: e.target.value })}
+                rows={3}
+              />
+            </div>
+            <div>
+              <Label htmlFor="edit_notes">Delivery Notes</Label>
+              <Textarea
+                id="edit_notes"
+                value={editForm.delivery_notes}
+                onChange={(e) => setEditForm({ ...editForm, delivery_notes: e.target.value })}
+                rows={2}
+              />
+            </div>
+            <div className="flex justify-end gap-3">
+              <Button variant="outline" onClick={() => setShowEditDialog(false)}>
+                Cancel
+              </Button>
+              <Button onClick={handleSaveEdit} className="bg-emerald-600 hover:bg-emerald-700">
+                Save Changes
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
