@@ -24,8 +24,6 @@ export default function Orders() {
   const [editingOrder, setEditingOrder] = useState(null);
   const [showEditDialog, setShowEditDialog] = useState(false);
   const [editForm, setEditForm] = useState({
-    customer_name: "",
-    phone_number: "",
     delivery_address: "",
     delivery_notes: ""
   });
@@ -86,8 +84,6 @@ export default function Orders() {
   const handleEditClick = (order) => {
     setEditingOrder(order);
     setEditForm({
-      customer_name: order.customer_name,
-      phone_number: order.phone_number,
       delivery_address: order.delivery_address,
       delivery_notes: order.delivery_notes || ""
     });
@@ -258,22 +254,6 @@ export default function Orders() {
             <DialogTitle>Edit Order Details</DialogTitle>
           </DialogHeader>
           <div className="space-y-4">
-            <div>
-              <Label htmlFor="edit_name">Customer Name</Label>
-              <Input
-                id="edit_name"
-                value={editForm.customer_name}
-                onChange={(e) => setEditForm({ ...editForm, customer_name: e.target.value })}
-              />
-            </div>
-            <div>
-              <Label htmlFor="edit_phone">Phone Number</Label>
-              <Input
-                id="edit_phone"
-                value={editForm.phone_number}
-                onChange={(e) => setEditForm({ ...editForm, phone_number: e.target.value })}
-              />
-            </div>
             <div>
               <Label htmlFor="edit_address">Delivery Address</Label>
               <Textarea
