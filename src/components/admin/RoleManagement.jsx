@@ -12,17 +12,20 @@ import { Plus, Edit, Trash2, Shield } from "lucide-react";
 import ConfirmDialog from "../shared/ConfirmDialog";
 
 const AVAILABLE_PERMISSIONS = [
+  { id: "view_summary", label: "View Dashboard" },
   { id: "products_view", label: "View Products" },
-  { id: "products_manage", label: "Manage Products" },
+  { id: "manage_products", label: "Manage Products" },
   { id: "categories_view", label: "View Categories" },
-  { id: "categories_manage", label: "Manage Categories" },
-  { id: "campaigns_manage", label: "Manage Campaigns" },
+  { id: "manage_categories", label: "Manage Categories" },
+  { id: "manage_campaigns", label: "Manage Campaigns" },
+  { id: "manage_reviews", label: "Manage Reviews" },
+  { id: "manage_crm", label: "Manage CRM" },
   { id: "orders_view", label: "View Orders" },
-  { id: "orders_manage", label: "Manage Orders" },
+  { id: "manage_orders", label: "Manage Orders" },
   { id: "delivery_view", label: "View Delivery" },
-  { id: "delivery_manage", label: "Manage Delivery Personnel" },
-  { id: "settings_manage", label: "Manage Settings" },
-  { id: "roles_manage", label: "Manage Roles" },
+  { id: "manage_delivery", label: "Manage Delivery Personnel" },
+  { id: "manage_settings", label: "Manage Settings" },
+  { id: "manage_roles", label: "Manage Roles" },
   { id: "users_manage", label: "Manage Users" }
 ];
 

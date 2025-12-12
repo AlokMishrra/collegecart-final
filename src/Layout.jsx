@@ -123,10 +123,10 @@ export default function Layout({ children, currentPageName }) {
     },
     {
       title: "Loyalty Rewards",
-      url: createPageUrl("Profile"),
-      icon: Bell,
+      url: createPageUrl("LoyaltyRewards"),
+      icon: Award,
       showCondition: () => !isDeliveryRole
-    },
+      },
     {
       title: "Admin Panel",
       url: createPageUrl("Admin"),

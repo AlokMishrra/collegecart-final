@@ -6,6 +6,7 @@ import Admin from './pages/Admin';
 import Delivery from './pages/Delivery';
 import CategoryProducts from './pages/CategoryProducts';
 import Profile from './pages/Profile';
+import LoyaltyRewards from './pages/LoyaltyRewards';
 import __Layout from './Layout.jsx';
 
 
@@ -18,6 +19,7 @@ export const PAGES = {
     "Delivery": Delivery,
     "CategoryProducts": CategoryProducts,
     "Profile": Profile,
+    "LoyaltyRewards": LoyaltyRewards,
 }
 
 export const pagesConfig = {

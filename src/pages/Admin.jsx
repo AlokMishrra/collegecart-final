@@ -17,6 +17,8 @@ import ProductManagement from "../components/admin/ProductManagement";
   import RoleManagement from "../components/admin/RoleManagement";
   import ReviewModeration from "../components/admin/ReviewModeration";
   import CampaignManagement from "../components/admin/CampaignManagement";
+  import CRMModule from "../components/admin/CRMModule";
+  import EnhancedDashboard from "../components/admin/EnhancedDashboard";
 
 export default function Admin() {
   const navigate = useNavigate();
@@ -64,7 +66,9 @@ export default function Admin() {
 
   // Define tabs with their required permissions
   const adminTabs = [
-    { value: "summary", label: "Summary", permission: "view_summary", component: <DailyOrderSummary /> },
+    { value: "dashboard", label: "Dashboard", permission: "view_summary", component: <EnhancedDashboard /> },
+    { value: "summary", label: "Daily Summary", permission: "view_summary", component: <DailyOrderSummary /> },
+    { value: "crm", label: "CRM", permission: "manage_crm", component: <CRMModule /> },
     { value: "products", label: "Products", permission: "manage_products", component: <ProductManagement /> },
     { value: "categories", label: "Categories", permission: "manage_categories", component: <CategoryManagement /> },
     { value: "campaigns", label: "Campaigns", permission: "manage_campaigns", component: <CampaignManagement /> },
