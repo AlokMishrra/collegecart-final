@@ -5,9 +5,12 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
+import { Sparkles } from "lucide-react";
 import ImageUploader from "../shared/ImageUploader";
+import AIDescriptionGenerator from "./AIDescriptionGenerator";
 
 export default function ProductForm({ product, categories, onSave, onCancel }) {
+  const [showAIGenerator, setShowAIGenerator] = useState(false);
   const [formData, setFormData] = useState({
     name: product?.name || "",
     description: product?.description || "",
@@ -266,7 +269,30 @@ export default function ProductForm({ product, categories, onSave, onCancel }) {
 
         <div className="space-y-4">
           <div>
-            <Label htmlFor="description">Description</Label>
+            <div className="flex items-center justify-between mb-2">
+              <Label htmlFor="description">Description</Label>
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={() => setShowAIGenerator(!showAIGenerator)}
+                className="text-purple-600 border-purple-300"
+              >
+                <Sparkles className="w-3 h-3 mr-1" />
+                {showAIGenerator ? "Hide" : "AI Generator"}
+              </Button>
+            </div>
+            {showAIGenerator && (
+              <div className="mb-4 p-4 bg-purple-50 border border-purple-200 rounded-lg">
+                <AIDescriptionGenerator
+                  productName={formData.name}
+                  onSelectDescription={(desc) => {
+                    setFormData({ ...formData, description: desc });
+                    setShowAIGenerator(false);
+                  }}
+                />
+              </div>
+            )}
             <Textarea
               id="description"
               value={formData.description}
