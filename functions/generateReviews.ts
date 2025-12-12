@@ -47,21 +47,24 @@ Deno.serve(async (req) => {
     
     for (const product of products) {
       // Generate 45 reviews per product
+      const reviewsToCreate = [];
       for (let i = 0; i < 45; i++) {
         const rating = i < 30 ? 5 : (i < 40 ? 4 : 3); // Most reviews are 5 stars
         const randomName = reviewerNames[Math.floor(Math.random() * reviewerNames.length)];
         const randomComment = comments[Math.floor(Math.random() * comments.length)];
         
-        await base44.asServiceRole.entities.Review.create({
+        reviewsToCreate.push({
           product_id: product.id,
           user_id: "system",
           user_name: randomName,
           rating: rating,
           comment: randomComment
         });
-        
-        reviewsCreated++;
       }
+      
+      // Bulk create all reviews for this product
+      await base44.asServiceRole.entities.Review.bulkCreate(reviewsToCreate);
+      reviewsCreated += reviewsToCreate.length;
     }
     
     return Response.json({
