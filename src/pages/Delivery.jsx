@@ -14,6 +14,7 @@ import { motion, AnimatePresence } from "framer-motion";
   import DeliveryStats from "../components/delivery/DeliveryStats";
   import DeliveryNotifications from "../components/delivery/DeliveryNotifications";
   import CODQRGenerator from "../components/delivery/CODQRGenerator";
+  import DeliveryAI from "../components/delivery/DeliveryAI";
 
 export default function Delivery() {
   const [deliveryPerson, setDeliveryPerson] = useState(null);
