@@ -575,33 +575,27 @@ export default function Cart() {
                     </SelectTrigger>
                     <SelectContent>
                       <SelectItem value="cash">Cash on Delivery</SelectItem>
-                      <SelectItem value="online">Online Payment (UPI)</SelectItem>
+                      <SelectItem value="online">Online Payment (Pay on Delivery via UPI)</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
 
                 {paymentMethod === "online" && (
-                  <div className="bg-emerald-50 border border-emerald-200 rounded-lg p-4">
-                    <Label className="text-sm font-medium text-emerald-900">Pay ₹{calculateTotal().toFixed(2)} via UPI</Label>
-                    <div className="mt-3 flex flex-col items-center">
-                      <img
-                        src={`https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=upi://pay?pa=7248316506@okbizaxis%26pn=CollegeCart%26am=${calculateTotal().toFixed(2)}%26cu=INR`}
-                        alt="UPI QR Code"
-                        className="w-40 h-40 border-4 border-white rounded-lg shadow-md"
-                      />
-                      <p className="text-xs text-emerald-700 mt-2">Scan QR with any UPI app</p>
-                      <Button
-                        type="button"
-                        variant="outline"
-                        className="mt-3 w-full"
-                        onClick={() => {
-                          const upiUrl = `upi://pay?pa=7248316506@okbizaxis&pn=CollegeCart&am=${calculateTotal().toFixed(2)}&cu=INR`;
-                          window.location.href = upiUrl;
-                        }}
-                      >
-                        Open UPI App
-                      </Button>
-                      <p className="text-xs text-gray-500 mt-2">UPI ID: 7248316506@okbizaxis</p>
+                  <div className="bg-blue-50 border border-blue-300 rounded-lg p-4">
+                    <div className="flex items-start gap-2">
+                      <div className="text-blue-600 mt-1">ℹ️</div>
+                      <div>
+                        <p className="text-sm font-semibold text-blue-900 mb-2">Online Payment Instructions</p>
+                        <p className="text-sm text-blue-800">
+                          You will pay <span className="font-bold">₹{calculateTotal().toFixed(2)}</span> via UPI when the delivery person arrives.
+                        </p>
+                        <p className="text-xs text-blue-700 mt-2">
+                          UPI ID: <span className="font-mono font-semibold">7248316506@okbizaxis</span>
+                        </p>
+                        <p className="text-xs text-blue-600 mt-1">
+                          The delivery person will show you a QR code to scan and complete the payment.
+                        </p>
+                      </div>
                     </div>
                   </div>
                 )}
