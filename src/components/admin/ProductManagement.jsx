@@ -163,21 +163,23 @@ export default function ProductManagement() {
               Add Product
             </Button>
           </DialogTrigger>
-          <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+          <DialogContent className="max-w-4xl max-h-[95vh] overflow-hidden flex flex-col">
             <DialogHeader>
               <DialogTitle>
                 {selectedProduct ? "Edit Product" : "Add New Product"}
               </DialogTitle>
             </DialogHeader>
-            <ProductForm
-              product={selectedProduct}
-              categories={categories}
-              onSave={handleSaveProduct}
-              onCancel={() => {
-                setIsFormOpen(false);
-                setSelectedProduct(null);
-              }}
-            />
+            <div className="overflow-y-auto flex-1 pr-2">
+              <ProductForm
+                product={selectedProduct}
+                categories={categories}
+                onSave={handleSaveProduct}
+                onCancel={() => {
+                  setIsFormOpen(false);
+                  setSelectedProduct(null);
+                }}
+              />
+            </div>
           </DialogContent>
         </Dialog>
       </div>
@@ -196,73 +198,75 @@ export default function ProductManagement() {
 
       <Card>
         <CardContent className="p-0">
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Image</TableHead>
-                <TableHead>Name</TableHead>
-                <TableHead>Category</TableHead>
-                <TableHead>Price</TableHead>
-                <TableHead>Stock</TableHead>
-                <TableHead>Status</TableHead>
-                <TableHead>Actions</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {filteredProducts.map((product) => (
-                <TableRow key={product.id}>
-                  <TableCell>
-                    <img
-                      src={product.image_url || "https://images.unsplash.com/photo-1542838132-92c53300491e?w=100"}
-                      alt={product.name}
-                      className="w-12 h-12 object-cover rounded-lg"
-                      onError={(e) => {
-                        e.target.src = "https://images.unsplash.com/photo-1542838132-92c53300491e?w=100";
-                      }}
-                    />
-                  </TableCell>
-                  <TableCell>
-                    <div>
-                      <p className="font-medium">{product.name}</p>
-                      <p className="text-sm text-gray-500 truncate max-w-xs">
-                        {product.description}
-                      </p>
-                    </div>
-                  </TableCell>
-                  <TableCell>{getCategoryName(product.category_id)}</TableCell>
-                  <TableCell>₹{product.price}</TableCell>
-                  <TableCell>{product.stock_quantity}</TableCell>
-                  <TableCell>
-                    <Badge variant={product.is_available ? "default" : "secondary"}>
-                      {product.is_available ? "Available" : "Unavailable"}
-                    </Badge>
-                  </TableCell>
-                  <TableCell>
-                    <div className="flex items-center gap-2">
-                      <Button
-                        variant="outline"
-                        size="icon"
-                        onClick={() => {
-                          setSelectedProduct(product);
-                          setIsFormOpen(true);
-                        }}
-                      >
-                        <Edit className="w-4 h-4" />
-                      </Button>
-                      <Button
-                        variant="outline"
-                        size="icon"
-                        onClick={() => setDeleteDialog({ open: true, product })}
-                        className="text-red-600 hover:text-red-700"
-                      >
-                        <Trash2 className="w-4 h-4" />
-                      </Button>
-                    </div>
-                  </TableCell>
+          <div className="overflow-x-auto">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Image</TableHead>
+                  <TableHead>Name</TableHead>
+                  <TableHead>Category</TableHead>
+                  <TableHead>Price</TableHead>
+                  <TableHead>Stock</TableHead>
+                  <TableHead>Status</TableHead>
+                  <TableHead>Actions</TableHead>
                 </TableRow>
-              ))}
-            </TableBody>
-          </Table>
+              </TableHeader>
+              <TableBody>
+                {filteredProducts.map((product) => (
+                  <TableRow key={product.id}>
+                    <TableCell>
+                      <img
+                        src={product.image_url || "https://images.unsplash.com/photo-1542838132-92c53300491e?w=100"}
+                        alt={product.name}
+                        className="w-12 h-12 object-cover rounded-lg"
+                        onError={(e) => {
+                          e.target.src = "https://images.unsplash.com/photo-1542838132-92c53300491e?w=100";
+                        }}
+                      />
+                    </TableCell>
+                    <TableCell>
+                      <div>
+                        <p className="font-medium">{product.name}</p>
+                        <p className="text-sm text-gray-500 truncate max-w-xs">
+                          {product.description}
+                        </p>
+                      </div>
+                    </TableCell>
+                    <TableCell>{getCategoryName(product.category_id)}</TableCell>
+                    <TableCell>₹{product.price}</TableCell>
+                    <TableCell>{product.stock_quantity}</TableCell>
+                    <TableCell>
+                      <Badge variant={product.is_available ? "default" : "secondary"}>
+                        {product.is_available ? "Available" : "Unavailable"}
+                      </Badge>
+                    </TableCell>
+                    <TableCell>
+                      <div className="flex items-center gap-2">
+                        <Button
+                          variant="outline"
+                          size="icon"
+                          onClick={() => {
+                            setSelectedProduct(product);
+                            setIsFormOpen(true);
+                          }}
+                        >
+                          <Edit className="w-4 h-4" />
+                        </Button>
+                        <Button
+                          variant="outline"
+                          size="icon"
+                          onClick={() => setDeleteDialog({ open: true, product })}
+                          className="text-red-600 hover:text-red-700"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </Button>
+                      </div>
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </div>
         </CardContent>
       </Card>
 
