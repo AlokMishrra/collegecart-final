@@ -14,18 +14,66 @@ export default function ReviewSection({ productId, user }) {
   const [comment, setComment] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [userHasReviewed, setUserHasReviewed] = useState(false);
+  const [canReview, setCanReview] = useState(false);
+  const [deliveredOrderId, setDeliveredOrderId] = useState(null);
 
   useEffect(() => {
     loadReviews();
-  }, [productId]);
+    checkIfCanReview();
+  }, [productId, user]);
+
+  const checkIfCanReview = async () => {
+    if (!user) {
+      setCanReview(false);
+      return;
+    }
+
+    try {
+      // Check if user has any delivered orders with this product
+      const userOrders = await base44.entities.Order.filter({ 
+        user_id: user.id, 
+        status: "delivered" 
+      });
+
+      const hasProductInDeliveredOrder = userOrders.find(order => 
+        order.items?.some(item => item.product_id === productId)
+      );
+
+      setCanReview(!!hasProductInDeliveredOrder);
+      if (hasProductInDeliveredOrder) {
+        setDeliveredOrderId(hasProductInDeliveredOrder.id);
+      }
+    } catch (error) {
+      console.error("Error checking if user can review:", error);
+      setCanReview(false);
+    }
+  };
 
   const loadReviews = async () => {
     try {
+      // Get all reviews for this product
       const allReviews = await base44.entities.Review.filter({ product_id: productId }, '-created_date');
-      setReviews(allReviews);
+      
+      // Filter to only include reviews from delivered orders
+      const reviewsWithOrders = await Promise.all(
+        allReviews.map(async (review) => {
+          if (!review.order_id) return null;
+          
+          try {
+            const orders = await base44.entities.Order.filter({ id: review.order_id });
+            const order = orders[0];
+            return order?.status === "delivered" ? review : null;
+          } catch (error) {
+            return null;
+          }
+        })
+      );
+      
+      const validReviews = reviewsWithOrders.filter(r => r !== null);
+      setReviews(validReviews);
       
       if (user) {
-        const userReview = allReviews.find(r => r.user_id === user.id);
+        const userReview = validReviews.find(r => r.user_id === user.id);
         setUserHasReviewed(!!userReview);
       }
     } catch (error) {
@@ -34,7 +82,7 @@ export default function ReviewSection({ productId, user }) {
   };
 
   const submitReview = async () => {
-    if (!rating || !user) return;
+    if (!rating || !user || !deliveredOrderId) return;
 
     setIsSubmitting(true);
     try {
@@ -43,7 +91,8 @@ export default function ReviewSection({ productId, user }) {
         user_id: user.id,
         user_name: user.full_name || user.email,
         rating,
-        comment: comment.trim()
+        comment: comment.trim(),
+        order_id: deliveredOrderId
       });
 
       await base44.entities.Notification.create({
@@ -56,6 +105,7 @@ export default function ReviewSection({ productId, user }) {
       setRating(0);
       setComment("");
       loadReviews();
+      checkIfCanReview();
     } catch (error) {
       console.error("Error submitting review:", error);
     }
@@ -92,7 +142,7 @@ export default function ReviewSection({ productId, user }) {
         </CardHeader>
         <CardContent className="space-y-6">
           {/* Write Review */}
-          {user && !userHasReviewed && (
+          {user && !userHasReviewed && canReview && (
             <div className="border-b pb-6">
               <h3 className="font-semibold mb-3">Write a Review</h3>
               <div className="space-y-4">
@@ -135,6 +185,12 @@ export default function ReviewSection({ productId, user }) {
                   {isSubmitting ? "Submitting..." : "Submit Review"}
                 </Button>
               </div>
+            </div>
+          )}
+
+          {user && !canReview && !userHasReviewed && (
+            <div className="bg-orange-50 border border-orange-200 rounded-lg p-4">
+              <p className="text-orange-800 text-sm">You can only review products after your order has been delivered</p>
             </div>
           )}
 

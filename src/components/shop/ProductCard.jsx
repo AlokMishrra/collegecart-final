@@ -40,12 +40,28 @@ export default function ProductCard({ product, cartQuantity, onAddToCart }) {
   const loadReviews = async () => {
     try {
       const reviewData = await base44.entities.Review.filter({ product_id: product.id });
-      setReviews(reviewData);
-      setReviewCount(reviewData.length);
       
-      if (reviewData.length > 0) {
-        const totalRating = reviewData.reduce((sum, review) => sum + review.rating, 0);
-        setAvgRating(totalRating / reviewData.length);
+      // Filter to only include reviews from delivered orders
+      const validReviews = [];
+      for (const review of reviewData) {
+        if (review.order_id) {
+          try {
+            const orders = await base44.entities.Order.filter({ id: review.order_id });
+            if (orders[0]?.status === "delivered") {
+              validReviews.push(review);
+            }
+          } catch (error) {
+            console.error("Error checking order status:", error);
+          }
+        }
+      }
+      
+      setReviews(validReviews);
+      setReviewCount(validReviews.length);
+      
+      if (validReviews.length > 0) {
+        const totalRating = validReviews.reduce((sum, review) => sum + review.rating, 0);
+        setAvgRating(totalRating / validReviews.length);
       }
     } catch (error) {
       console.error("Error loading reviews:", error);
