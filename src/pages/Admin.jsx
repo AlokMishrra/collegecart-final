@@ -96,13 +96,19 @@ export default function Admin() {
         </Card>
       ) : (
         <Tabs defaultValue={defaultTab} className="space-y-6">
-          <TabsList className={`grid w-full grid-cols-${allowedTabs.length} overflow-x-auto`}>
-            {allowedTabs.map(tab => (
-              <TabsTrigger key={tab.value} value={tab.value}>
-                {tab.label}
-              </TabsTrigger>
-            ))}
-          </TabsList>
+          <div className="border-b border-gray-200 overflow-x-auto">
+            <TabsList className="inline-flex h-auto bg-transparent border-0 p-0 gap-0">
+              {allowedTabs.map(tab => (
+                <TabsTrigger 
+                  key={tab.value} 
+                  value={tab.value}
+                  className="rounded-none border-b-2 border-transparent data-[state=active]:border-emerald-600 data-[state=active]:bg-transparent data-[state=active]:text-emerald-600 bg-transparent px-6 py-3 text-gray-600 hover:text-gray-900"
+                >
+                  {tab.label}
+                </TabsTrigger>
+              ))}
+            </TabsList>
+          </div>
 
           {allowedTabs.map(tab => (
             <TabsContent key={tab.value} value={tab.value}>
