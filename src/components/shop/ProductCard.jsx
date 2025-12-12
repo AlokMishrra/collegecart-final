@@ -8,34 +8,16 @@ import { Star, Clock, Truck } from "lucide-react";
 import { Link } from "react-router-dom";
 import { createPageUrl } from "@/utils";
 
-export default function ProductCard({ product, cartQuantity, onAddToCart, onUpdateQuantity }) {
+export default function ProductCard({ product, cartQuantity, onAddToCart, onUpdateQuantity, hostelStock: propHostelStock, isInStock }) {
   const [reviews, setReviews] = useState([]);
   const [avgRating, setAvgRating] = useState(0);
   const [reviewCount, setReviewCount] = useState(0);
-  const [user, setUser] = useState(null);
-  const [hostelStock, setHostelStock] = useState(0);
+  
+  const hostelStock = propHostelStock !== undefined ? propHostelStock : product.stock_quantity || 0;
 
   useEffect(() => {
     loadReviews();
-    loadUser();
   }, [product.id]);
-
-  const loadUser = async () => {
-    try {
-      const currentUser = await User.me();
-      setUser(currentUser);
-      
-      // Get hostel-specific stock
-      if (currentUser?.selected_hostel && currentUser.selected_hostel !== 'Other') {
-        const stock = product.hostel_stock?.[currentUser.selected_hostel] || 0;
-        setHostelStock(stock);
-      } else {
-        setHostelStock(product.stock_quantity || 0);
-      }
-    } catch (error) {
-      setHostelStock(product.stock_quantity || 0);
-    }
-  };
 
   const loadReviews = async () => {
     try {
@@ -72,7 +54,7 @@ export default function ProductCard({ product, cartQuantity, onAddToCart, onUpda
     ? Math.round(((product.original_price - product.price) / product.original_price) * 100)
     : 0;
 
-  const isOutOfStock = hostelStock === 0;
+  const isOutOfStock = isInStock !== undefined ? !isInStock : hostelStock === 0;
 
   return (
     <Card className="overflow-hidden hover:shadow-xl transition-all duration-300">
