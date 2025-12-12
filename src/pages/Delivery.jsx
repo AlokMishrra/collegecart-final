@@ -372,6 +372,9 @@ export default function Delivery() {
       {/* Delivery Statistics */}
       <DeliveryStats deliveryPerson={deliveryPerson} />
 
+      {/* AI Delivery Assistant */}
+      <DeliveryAI deliveryPerson={deliveryPerson} orders={assignedOrders} />
+
       {/* Available Orders to Accept */}
       {availableOrders.length > 0 && (
         <div className="space-y-4">

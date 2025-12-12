@@ -24,6 +24,8 @@ import ProductManagement from "../components/admin/ProductManagement";
   import FeedbackAnalysis from "../components/admin/FeedbackAnalysis";
   import CustomerRetention from "../components/admin/CustomerRetention";
   import AIOrderManagement from "../components/admin/AIOrderManagement";
+  import UnifiedAIDashboard from "../components/admin/UnifiedAIDashboard";
+  import AIProductInsights from "../components/admin/AIProductInsights";
 
 export default function Admin() {
   const navigate = useNavigate();
@@ -72,6 +74,7 @@ export default function Admin() {
   // Define tabs with their required permissions
   const adminTabs = [
     { value: "dashboard", label: "Dashboard", permission: "view_summary", component: <EnhancedDashboard /> },
+    { value: "ai-insights", label: "AI Intelligence", permission: "view_summary", component: <UnifiedAIDashboard /> },
     { value: "summary", label: "Daily Summary", permission: "view_summary", component: <DailyOrderSummary /> },
     { value: "crm", label: "CRM", permission: "manage_crm", component: <CRMModule /> },
     { value: "retention", label: "Customer Retention", permission: "manage_crm", component: <CustomerRetention /> },
@@ -79,6 +82,7 @@ export default function Admin() {
     { value: "feedback", label: "Feedback Analysis", permission: "manage_reviews", component: <FeedbackAnalysis /> },
     { value: "ai-orders", label: "AI Order Management", permission: "manage_orders", component: <AIOrderManagement /> },
     { value: "products", label: "Products", permission: "manage_products", component: <ProductManagement /> },
+    { value: "product-insights", label: "AI Product Insights", permission: "manage_products", component: <AIProductInsights /> },
     { value: "categories", label: "Categories", permission: "manage_categories", component: <CategoryManagement /> },
     { value: "campaigns", label: "Campaigns", permission: "manage_campaigns", component: <CampaignManagement /> },
     { value: "recommendations", label: "AI Recommendations", permission: "manage_settings", component: <RecommendationConfig /> },
