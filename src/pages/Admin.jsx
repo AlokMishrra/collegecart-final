@@ -15,6 +15,7 @@ import ProductManagement from "../components/admin/ProductManagement";
   import DailyOrderSummary from "../components/admin/DailyOrderSummary";
   import SettingsManagement from "../components/admin/SettingsManagement";
   import RoleManagement from "../components/admin/RoleManagement";
+  import ReviewModeration from "../components/admin/ReviewModeration";
 
 export default function Admin() {
   const navigate = useNavigate();
@@ -65,6 +66,7 @@ export default function Admin() {
     { value: "summary", label: "Summary", permission: "view_summary", component: <DailyOrderSummary /> },
     { value: "products", label: "Products", permission: "manage_products", component: <ProductManagement /> },
     { value: "categories", label: "Categories", permission: "manage_categories", component: <CategoryManagement /> },
+    { value: "reviews", label: "Reviews", permission: "manage_reviews", component: <ReviewModeration /> },
     { value: "delivery", label: "Delivery", permission: "manage_delivery", component: <DeliveryPersonManagement /> },
     { value: "orders", label: "Orders", permission: "manage_orders", component: <OrderManagement /> },
     { value: "settings", label: "Settings", permission: "manage_settings", component: <SettingsManagement /> },
