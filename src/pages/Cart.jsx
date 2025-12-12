@@ -301,18 +301,6 @@ export default function Cart() {
         console.error("Error sending email notification:", emailError);
       }
 
-      // Try to open phone dialer automatically (works on mobile devices)
-      try {
-        const callLink = document.createElement('a');
-        callLink.href = 'tel:7248316506';
-        callLink.style.display = 'none';
-        document.body.appendChild(callLink);
-        callLink.click();
-        document.body.removeChild(callLink);
-      } catch (dialerError) {
-        console.log("Could not auto-open dialer");
-      }
-
       // Clear cart
       await Promise.all(cartItems.map(item => CartItem.delete(item.id)));
 
