@@ -40,6 +40,9 @@ export default function Cart() {
         const [paymentMethod, setPaymentMethod] = useState("cash");
         const [loyaltyPoints, setLoyaltyPoints] = useState(0);
         const [pointsToRedeem, setPointsToRedeem] = useState(0);
+        const [discountCode, setDiscountCode] = useState("");
+        const [appliedCampaign, setAppliedCampaign] = useState(null);
+        const [codeError, setCodeError] = useState("");
 
   const loadCart = useCallback(async (userId) => {
     setIsLoading(true);
@@ -168,8 +171,82 @@ export default function Cart() {
     return pointsToRedeem / 10;
   };
 
+  const calculateCampaignDiscount = () => {
+    if (!appliedCampaign) return 0;
+    const subtotal = calculateSubtotal();
+    if (appliedCampaign.discount_type === 'percentage') {
+      return subtotal * (appliedCampaign.discount_value / 100);
+    } else if (appliedCampaign.discount_type === 'fixed') {
+      return Math.min(appliedCampaign.discount_value, subtotal);
+    }
+    return 0;
+  };
+
   const calculateTotal = () => {
-    return Math.max(0, calculateSubtotal() + calculateShippingCharge() - calculatePointsDiscount());
+    let shipping = calculateShippingCharge();
+    if (appliedCampaign?.discount_type === 'free_shipping') {
+      shipping = 0;
+    }
+    return Math.max(0, calculateSubtotal() + shipping - calculatePointsDiscount() - calculateCampaignDiscount());
+  };
+
+  const applyDiscountCode = async () => {
+    setCodeError("");
+    if (!discountCode.trim()) return;
+
+    try {
+      const campaigns = await base44.entities.Campaign.filter({ 
+        code: discountCode.toUpperCase(),
+        is_active: true 
+      });
+
+      if (campaigns.length === 0) {
+        setCodeError("Invalid discount code");
+        return;
+      }
+
+      const campaign = campaigns[0];
+      const now = new Date();
+      const start = new Date(campaign.start_date);
+      const end = new Date(campaign.end_date);
+
+      if (now < start || now > end) {
+        setCodeError("This campaign has expired");
+        return;
+      }
+
+      if (campaign.usage_limit && campaign.usage_count >= campaign.usage_limit) {
+        setCodeError("This code has reached its usage limit");
+        return;
+      }
+
+      if (calculateSubtotal() < campaign.min_order_amount) {
+        setCodeError(`Minimum order of ₹${campaign.min_order_amount} required`);
+        return;
+      }
+
+      // Check user usage
+      const userUsage = await base44.entities.CampaignUsage.filter({
+        campaign_id: campaign.id,
+        user_id: user.id
+      });
+
+      if (userUsage.length >= campaign.usage_per_user) {
+        setCodeError("You've already used this code");
+        return;
+      }
+
+      setAppliedCampaign(campaign);
+      await base44.entities.Notification.create({
+        user_id: user.id,
+        title: "Discount Applied!",
+        message: `${campaign.name} discount code applied successfully`,
+        type: "success"
+      });
+    } catch (error) {
+      console.error("Error applying code:", error);
+      setCodeError("Failed to apply code");
+    }
   };
 
   const getCartQuantity = (productId) => {
@@ -284,6 +361,23 @@ export default function Cart() {
           order_id: newOrder.id,
           description: `Redeemed ${pointsToRedeem} points for ₹${calculatePointsDiscount().toFixed(2)} discount on order ${orderNumber}`,
           balance_after: currentBalance - pointsToRedeem
+        });
+      }
+
+      // Track campaign usage
+      if (appliedCampaign) {
+        await base44.entities.CampaignUsage.create({
+          campaign_id: appliedCampaign.id,
+          user_id: user.id,
+          order_id: newOrder.id,
+          discount_amount: calculateCampaignDiscount(),
+          order_amount: finalAmount
+        });
+
+        await base44.entities.Campaign.update(appliedCampaign.id, {
+          usage_count: (appliedCampaign.usage_count || 0) + 1,
+          total_revenue: (appliedCampaign.total_revenue || 0) + finalAmount,
+          total_discount_given: (appliedCampaign.total_discount_given || 0) + calculateCampaignDiscount()
         });
       }
 
@@ -638,6 +732,37 @@ export default function Cart() {
                   </div>
                 )}
 
+                {/* Discount Code */}
+                <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                  <Label className="text-sm font-semibold text-blue-900 mb-2 block">Discount Code</Label>
+                  <div className="flex gap-2">
+                    <Input
+                      placeholder="Enter code"
+                      value={discountCode}
+                      onChange={(e) => {
+                        setDiscountCode(e.target.value.toUpperCase());
+                        setCodeError("");
+                      }}
+                      disabled={!!appliedCampaign}
+                      className="border-blue-300"
+                    />
+                    <Button
+                      type="button"
+                      onClick={appliedCampaign ? () => { setAppliedCampaign(null); setDiscountCode(""); } : applyDiscountCode}
+                      variant="outline"
+                      className={appliedCampaign ? "bg-red-50 text-red-600" : "bg-blue-50 text-blue-600"}
+                    >
+                      {appliedCampaign ? "Remove" : "Apply"}
+                    </Button>
+                  </div>
+                  {codeError && <p className="text-xs text-red-600 mt-1">{codeError}</p>}
+                  {appliedCampaign && (
+                    <p className="text-xs text-green-600 mt-1 font-medium">
+                      ✓ {appliedCampaign.name} applied!
+                    </p>
+                  )}
+                </div>
+
                 {/* Loyalty Points Redemption */}
                 {loyaltyPoints >= 100 && (
                   <div className="bg-emerald-50 border border-emerald-200 rounded-lg p-4">
@@ -716,6 +841,18 @@ export default function Cart() {
                   <p className="text-xs text-gray-500">
                     Add ₹{(settings.free_delivery_above - calculateSubtotal()).toFixed(2)} more for free delivery
                   </p>
+                )}
+                {appliedCampaign && calculateCampaignDiscount() > 0 && (
+                  <div className="flex justify-between text-sm text-blue-600">
+                    <span>Campaign Discount ({appliedCampaign.code}):</span>
+                    <span className="font-medium">-₹{calculateCampaignDiscount().toFixed(2)}</span>
+                  </div>
+                )}
+                {appliedCampaign?.discount_type === 'free_shipping' && calculateShippingCharge() > 0 && (
+                  <div className="flex justify-between text-sm text-blue-600">
+                    <span>Free Shipping ({appliedCampaign.code}):</span>
+                    <span className="font-medium">-₹{calculateShippingCharge().toFixed(2)}</span>
+                  </div>
                 )}
                 {pointsToRedeem > 0 && (
                   <div className="flex justify-between text-sm text-emerald-600">
