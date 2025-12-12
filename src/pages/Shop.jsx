@@ -277,6 +277,7 @@ export default function Shop() {
               category={category}
               products={categorizedProducts[category.id] || []}
               onAddToCart={addToCart}
+              onUpdateQuantity={updateCartQuantity}
               getCartQuantity={getCartQuantity}
             />
           ))}

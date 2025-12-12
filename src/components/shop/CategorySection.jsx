@@ -5,7 +5,7 @@ import { Link } from "react-router-dom";
 import { createPageUrl } from "@/utils";
 import { Button } from "@/components/ui/button";
 
-export default function CategorySection({ category, products, onAddToCart, getCartQuantity }) {
+export default function CategorySection({ category, products, onAddToCart, onUpdateQuantity, getCartQuantity }) {
   if (!products || products.length === 0) return null;
 
   return (
@@ -82,7 +82,9 @@ export default function CategorySection({ category, products, onAddToCart, getCa
                           <button
                             onClick={(e) => {
                               e.preventDefault();
-                              // Handle decrease
+                              if (onUpdateQuantity) {
+                                onUpdateQuantity(product, -1);
+                              }
                             }}
                             className="w-6 h-6 flex items-center justify-center text-emerald-600 font-bold"
                           >
@@ -92,7 +94,11 @@ export default function CategorySection({ category, products, onAddToCart, getCa
                           <button
                             onClick={(e) => {
                               e.preventDefault();
-                              onAddToCart(product);
+                              if (onUpdateQuantity) {
+                                onUpdateQuantity(product, 1);
+                              } else {
+                                onAddToCart(product);
+                              }
                             }}
                             className="w-6 h-6 flex items-center justify-center text-emerald-600 font-bold"
                           >
