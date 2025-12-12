@@ -91,6 +91,18 @@ export default function Shop() {
     return currentTime >= fromTime && currentTime <= toTime;
   };
 
+  const getHostelStock = (product) => {
+    if (!user?.selected_hostel || user.selected_hostel === 'Other') {
+      return product.stock_quantity || 0;
+    }
+    return product.hostel_stock?.[user.selected_hostel] || 0;
+  };
+
+  const isProductInStock = (product) => {
+    const hostelStock = getHostelStock(product);
+    return hostelStock > 0;
+  };
+
   const loadData = async () => {
     setIsLoading(true);
     try {
@@ -136,11 +148,34 @@ export default function Shop() {
       return;
     }
 
+    // Check hostel stock before adding
+    if (quantityChange > 0 && !isProductInStock(product)) {
+      await Notification.create({
+        user_id: user.id,
+        title: "Out of Stock",
+        message: `${product.name} is currently out of stock in your hostel`,
+        type: "error"
+      });
+      return;
+    }
+
     try {
       const existingItem = cartItems.find(item => item.product_id === product.id);
+      const hostelStock = getHostelStock(product);
       
       if (existingItem) {
         const newQuantity = existingItem.quantity + quantityChange;
+        
+        // Check if new quantity exceeds hostel stock
+        if (newQuantity > hostelStock) {
+          await Notification.create({
+            user_id: user.id,
+            title: "Stock Limit Reached",
+            message: `Only ${hostelStock} units available in your hostel`,
+            type: "warning"
+          });
+          return;
+        }
         
         if (newQuantity <= 0) {
           await CartItem.delete(existingItem.id);
@@ -319,6 +354,8 @@ export default function Shop() {
                   cartQuantity={getCartQuantity(product.id)}
                   onAddToCart={addToCart}
                   onUpdateQuantity={updateCartQuantity}
+                  hostelStock={getHostelStock(product)}
+                  isInStock={isProductInStock(product)}
                 />
               ))}
           </AnimatePresence>
@@ -333,7 +370,9 @@ export default function Shop() {
               onAddToCart={addToCart}
               onUpdateQuantity={updateCartQuantity}
               getCartQuantity={getCartQuantity}
-            />
+              getHostelStock={getHostelStock}
+              isProductInStock={isProductInStock}
+              />
           ))}
         </div>
       )}
