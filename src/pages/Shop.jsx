@@ -123,7 +123,7 @@ export default function Shop() {
     }
   };
 
-  const addToCart = async (product) => {
+  const updateCartQuantity = async (product, quantityChange) => {
     if (!user) {
       await User.login();
       return;
@@ -133,10 +133,16 @@ export default function Shop() {
       const existingItem = cartItems.find(item => item.product_id === product.id);
       
       if (existingItem) {
-        await CartItem.update(existingItem.id, {
-          quantity: existingItem.quantity + 1
-        });
-      } else {
+        const newQuantity = existingItem.quantity + quantityChange;
+        
+        if (newQuantity <= 0) {
+          await CartItem.delete(existingItem.id);
+        } else {
+          await CartItem.update(existingItem.id, {
+            quantity: newQuantity
+          });
+        }
+      } else if (quantityChange > 0) {
         await CartItem.create({
           product_id: product.id,
           user_id: user.id,
@@ -144,18 +150,23 @@ export default function Shop() {
         });
       }
 
-      // Create notification
-      await Notification.create({
-        user_id: user.id,
-        title: "Added to Cart",
-        message: `${product.name} has been added to your cart`,
-        type: "success"
-      });
+      if (quantityChange > 0) {
+        await Notification.create({
+          user_id: user.id,
+          title: "Added to Cart",
+          message: `${product.name} has been added to your cart`,
+          type: "success"
+        });
+      }
 
       loadCartItems(user.id);
     } catch (error) {
-      console.error("Error adding to cart:", error);
+      console.error("Error updating cart:", error);
     }
+  };
+
+  const addToCart = async (product) => {
+    await updateCartQuantity(product, 1);
   };
 
   const getCartQuantity = (productId) => {
@@ -252,7 +263,8 @@ export default function Shop() {
                   key={product.id}
                   product={product}
                   cartQuantity={getCartQuantity(product.id)}
-                  onAddToCart={() => addToCart(product)}
+                  onAddToCart={addToCart}
+                  onUpdateQuantity={updateCartQuantity}
                 />
               ))}
           </AnimatePresence>

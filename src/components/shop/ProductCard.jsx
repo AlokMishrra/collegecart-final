@@ -8,7 +8,7 @@ import { Star, Clock, Truck } from "lucide-react";
 import { Link } from "react-router-dom";
 import { createPageUrl } from "@/utils";
 
-export default function ProductCard({ product, cartQuantity, onAddToCart }) {
+export default function ProductCard({ product, cartQuantity, onAddToCart, onUpdateQuantity }) {
   const [reviews, setReviews] = useState([]);
   const [avgRating, setAvgRating] = useState(0);
   const [reviewCount, setReviewCount] = useState(0);
@@ -142,7 +142,7 @@ export default function ProductCard({ product, cartQuantity, onAddToCart }) {
           <Button
             size="sm"
             disabled
-            className="w-full bg-gray-400 cursor-not-allowed"
+            className="w-full bg-red-500 text-white cursor-not-allowed"
           >
             OUT OF STOCK
           </Button>
@@ -153,7 +153,9 @@ export default function ProductCard({ product, cartQuantity, onAddToCart }) {
               variant="outline"
               onClick={(e) => {
                 e.preventDefault();
-                onAddToCart(product, -1);
+                if (onUpdateQuantity) {
+                  onUpdateQuantity(product, -1);
+                }
               }}
               className="flex-1"
             >
@@ -164,7 +166,11 @@ export default function ProductCard({ product, cartQuantity, onAddToCart }) {
               size="sm"
               onClick={(e) => {
                 e.preventDefault();
-                onAddToCart(product);
+                if (onUpdateQuantity) {
+                  onUpdateQuantity(product, 1);
+                } else {
+                  onAddToCart(product);
+                }
               }}
               className="flex-1 bg-emerald-600 hover:bg-emerald-700"
             >
