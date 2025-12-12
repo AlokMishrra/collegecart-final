@@ -14,7 +14,8 @@ import {
   Menu,
   X,
   LogOut,
-  Building2
+  Building2,
+  Award
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -118,6 +119,12 @@ export default function Layout({ children, currentPageName }) {
       title: "Order History",
       url: createPageUrl("Orders") + "?tab=history",
       icon: Package,
+      showCondition: () => !isDeliveryRole
+    },
+    {
+      title: "Loyalty Rewards",
+      url: createPageUrl("Profile"),
+      icon: Bell,
       showCondition: () => !isDeliveryRole
     },
     {

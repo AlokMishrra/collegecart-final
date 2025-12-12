@@ -249,6 +249,13 @@ export default function Delivery() {
           message: `Your order #${order.order_number} has been delivered. Thank you for choosing CollegeCart!`,
           type: "success"
         });
+
+        // Award loyalty points
+        try {
+          await base44.functions.invoke('awardLoyaltyPoints', { orderId: orderId });
+        } catch (error) {
+          console.error("Error awarding loyalty points:", error);
+        }
       }
 
       if (deliveryPerson) {
@@ -262,14 +269,14 @@ export default function Delivery() {
           total_earnings: newTotalEarnings,
           current_orders: (deliveryPerson.current_orders || []).filter(id => id !== orderId)
         });
-        
+
         // Update local state
         setDeliveryPerson(prev => ({
           ...prev,
           total_deliveries: newTotalDeliveries,
           total_earnings: newTotalEarnings
         }));
-        
+
         // Refresh orders locally for immediate UI update
         setAssignedOrders(prevOrders => prevOrders.filter(o => o.id !== orderId));
       }

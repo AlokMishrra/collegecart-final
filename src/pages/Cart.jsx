@@ -38,6 +38,8 @@ export default function Cart() {
         const [deliveryNotes, setDeliveryNotes] = useState("");
         const [customAddress, setCustomAddress] = useState("");
         const [paymentMethod, setPaymentMethod] = useState("cash");
+        const [loyaltyPoints, setLoyaltyPoints] = useState(0);
+        const [pointsToRedeem, setPointsToRedeem] = useState(0);
 
   const loadCart = useCallback(async (userId) => {
     setIsLoading(true);
@@ -83,6 +85,16 @@ export default function Cart() {
     }
   }, []);
 
+  const loadLoyaltyPoints = useCallback(async (userId) => {
+    try {
+      const transactions = await base44.entities.LoyaltyTransaction.filter({ user_id: userId });
+      const balance = transactions.reduce((sum, t) => sum + t.points, 0);
+      setLoyaltyPoints(balance);
+    } catch (error) {
+      console.error("Error loading loyalty points:", error);
+    }
+  }, []);
+
   const checkUser = useCallback(async () => {
     try {
       const currentUser = await User.me();
@@ -90,12 +102,13 @@ export default function Cart() {
       loadCart(currentUser.id);
       loadSettings();
       checkFirstOrder(currentUser.id);
+      loadLoyaltyPoints(currentUser.id);
       setCustomerName(currentUser.full_name || "");
       setPhoneNumber(currentUser.phone_number || "");
     } catch (error) {
       navigate(createPageUrl('Shop'));
     }
-  }, [navigate, loadCart, loadSettings, checkFirstOrder]); // Dependencies: navigate and loadCart.
+  }, [navigate, loadCart, loadSettings, checkFirstOrder, loadLoyaltyPoints]);
 
   useEffect(() => {
     checkUser();
@@ -151,8 +164,12 @@ export default function Cart() {
     return totalDeliveryCharge > 0 ? totalDeliveryCharge : (settings.shipping_charge || 0);
   };
 
+  const calculatePointsDiscount = () => {
+    return pointsToRedeem / 10;
+  };
+
   const calculateTotal = () => {
-    return calculateSubtotal() + calculateShippingCharge();
+    return Math.max(0, calculateSubtotal() + calculateShippingCharge() - calculatePointsDiscount());
   };
 
   const getCartQuantity = (productId) => {
@@ -242,18 +259,33 @@ export default function Cart() {
         ? customAddress 
         : `${selectedHostel} Hostel, Room No: ${roomNumber}`;
 
+      const finalAmount = calculateTotal();
+      
       const newOrder = await Order.create({
         user_id: user.id,
         order_number: orderNumber,
         customer_name: customerName,
         items: orderItems,
-        total_amount: calculateTotal(),
+        total_amount: finalAmount,
         delivery_address: fullAddress,
         phone_number: phoneNumber,
         delivery_notes: deliveryNotes,
         status: "confirmed",
         payment_method: paymentMethod
       });
+
+      // Redeem loyalty points if used
+      if (pointsToRedeem > 0) {
+        const currentBalance = loyaltyPoints;
+        await base44.entities.LoyaltyTransaction.create({
+          user_id: user.id,
+          points: -pointsToRedeem,
+          transaction_type: "redeemed",
+          order_id: newOrder.id,
+          description: `Redeemed ${pointsToRedeem} points for ₹${calculatePointsDiscount().toFixed(2)} discount on order ${orderNumber}`,
+          balance_after: currentBalance - pointsToRedeem
+        });
+      }
 
       // Notify all delivery persons about new order
       const allDeliveryPersons = await DeliveryPerson.list();
@@ -605,9 +637,67 @@ export default function Cart() {
                     </div>
                   </div>
                 )}
+
+                {/* Loyalty Points Redemption */}
+                {loyaltyPoints >= 100 && (
+                  <div className="bg-emerald-50 border border-emerald-200 rounded-lg p-4">
+                    <div className="flex items-center gap-2 mb-3">
+                      <div className="w-8 h-8 bg-emerald-100 rounded-full flex items-center justify-center">
+                        <span className="text-emerald-600 font-bold text-sm">★</span>
+                      </div>
+                      <div className="flex-1">
+                        <Label className="text-sm font-semibold text-emerald-900">Use Loyalty Points</Label>
+                        <p className="text-xs text-emerald-700">Available: {loyaltyPoints} points (₹{(loyaltyPoints / 10).toFixed(2)})</p>
+                      </div>
+                    </div>
+                    <div className="space-y-2">
+                      <Input
+                        type="number"
+                        min="0"
+                        max={Math.min(loyaltyPoints, calculateSubtotal() * 10)}
+                        value={pointsToRedeem}
+                        onChange={(e) => {
+                          const value = parseInt(e.target.value) || 0;
+                          const maxPoints = Math.min(loyaltyPoints, Math.floor((calculateSubtotal() + calculateShippingCharge()) * 10));
+                          setPointsToRedeem(Math.min(value, maxPoints));
+                        }}
+                        placeholder="Enter points to redeem"
+                        className="border-emerald-300"
+                      />
+                      <div className="flex gap-2">
+                        <Button
+                          type="button"
+                          variant="outline"
+                          size="sm"
+                          onClick={() => setPointsToRedeem(Math.min(100, loyaltyPoints))}
+                          className="flex-1 text-xs"
+                        >
+                          Use 100
+                        </Button>
+                        <Button
+                          type="button"
+                          variant="outline"
+                          size="sm"
+                          onClick={() => {
+                            const maxPoints = Math.min(loyaltyPoints, Math.floor((calculateSubtotal() + calculateShippingCharge()) * 10));
+                            setPointsToRedeem(maxPoints);
+                          }}
+                          className="flex-1 text-xs"
+                        >
+                          Use Max
+                        </Button>
+                      </div>
+                      {pointsToRedeem > 0 && (
+                        <p className="text-xs text-emerald-700 font-medium">
+                          You'll save ₹{calculatePointsDiscount().toFixed(2)} on this order
+                        </p>
+                      )}
+                    </div>
+                  </div>
+                )}
                 </div>
-              
-              <div className="border-t pt-4 space-y-2">
+
+                <div className="border-t pt-4 space-y-2">
                 <div className="flex justify-between text-sm">
                   <span className="text-gray-600">Subtotal:</span>
                   <span className="font-medium">₹{calculateSubtotal().toFixed(2)}</span>
@@ -627,10 +717,21 @@ export default function Cart() {
                     Add ₹{(settings.free_delivery_above - calculateSubtotal()).toFixed(2)} more for free delivery
                   </p>
                 )}
+                {pointsToRedeem > 0 && (
+                  <div className="flex justify-between text-sm text-emerald-600">
+                    <span>Points Discount:</span>
+                    <span className="font-medium">-₹{calculatePointsDiscount().toFixed(2)}</span>
+                  </div>
+                )}
                 <div className="flex justify-between items-center text-lg font-bold pt-2 border-t">
                   <span>Total:</span>
                   <span className="text-emerald-600">₹{calculateTotal().toFixed(2)}</span>
                 </div>
+                {pointsToRedeem > 0 && (
+                  <p className="text-xs text-emerald-600 font-medium">
+                    🎉 Saved ₹{calculatePointsDiscount().toFixed(2)} with loyalty points!
+                  </p>
+                )}
               </div>
               
               <Button
