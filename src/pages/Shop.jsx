@@ -68,6 +68,21 @@ export default function Shop() {
     loadData();
   };
 
+  const isProductAvailableNow = (product) => {
+    if (!product.available_from || !product.available_to) return true;
+    
+    const now = new Date();
+    const currentTime = now.getHours() * 60 + now.getMinutes();
+    
+    const [fromHour, fromMin] = product.available_from.split(':').map(Number);
+    const [toHour, toMin] = product.available_to.split(':').map(Number);
+    
+    const fromTime = fromHour * 60 + fromMin;
+    const toTime = toHour * 60 + toMin;
+    
+    return currentTime >= fromTime && currentTime <= toTime;
+  };
+
   const loadData = async () => {
     setIsLoading(true);
     try {
@@ -77,14 +92,18 @@ export default function Shop() {
         User.me().catch(() => null)
       ]);
       
-      // Filter products based on user's selected hostel
-      let filteredProducts = productsData;
-      if (currentUser?.selected_hostel && currentUser.selected_hostel !== 'Other') {
-        filteredProducts = productsData.filter(product => {
+      // Filter products based on user's selected hostel and time availability
+      let filteredProducts = productsData.filter(product => {
+        // Check time availability
+        if (!isProductAvailableNow(product)) return false;
+        
+        // Check hostel stock
+        if (currentUser?.selected_hostel && currentUser.selected_hostel !== 'Other') {
           const hostelStock = product.hostel_stock?.[currentUser.selected_hostel] || 0;
           return hostelStock > 0;
-        });
-      }
+        }
+        return true;
+      });
       
       setProducts(filteredProducts);
       setCategories(categoriesData);

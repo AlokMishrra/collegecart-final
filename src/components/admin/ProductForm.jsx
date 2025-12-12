@@ -26,7 +26,9 @@ export default function ProductForm({ product, categories, onSave, onCancel }) {
     is_available: product?.is_available ?? true,
     delivery_charge: product?.delivery_charge || 0,
     profit_margin: product?.profit_margin || 0,
-    delivery_time: product?.delivery_time || "13 mins"
+    delivery_time: product?.delivery_time || "13 mins",
+    available_from: product?.available_from || "",
+    available_to: product?.available_to || ""
   });
 
   const handleSubmit = (e) => {
@@ -222,6 +224,33 @@ export default function ProductForm({ product, categories, onSave, onCancel }) {
               placeholder="e.g., 13 mins, 20 mins"
             />
             <p className="text-xs text-gray-500 mt-1">Estimated delivery time shown to customers</p>
+          </div>
+
+          <div>
+            <Label className="mb-3 block">Availability Timing (Optional)</Label>
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <Label htmlFor="available_from" className="text-sm">From (24-hour)</Label>
+                <Input
+                  id="available_from"
+                  type="time"
+                  value={formData.available_from}
+                  onChange={(e) => handleInputChange("available_from", e.target.value)}
+                  placeholder="08:00"
+                />
+              </div>
+              <div>
+                <Label htmlFor="available_to" className="text-sm">To (24-hour)</Label>
+                <Input
+                  id="available_to"
+                  type="time"
+                  value={formData.available_to}
+                  onChange={(e) => handleInputChange("available_to", e.target.value)}
+                  placeholder="22:00"
+                />
+              </div>
+            </div>
+            <p className="text-xs text-gray-500 mt-1">Leave empty for 24/7 availability</p>
           </div>
 
           <div className="flex items-center space-x-2">
