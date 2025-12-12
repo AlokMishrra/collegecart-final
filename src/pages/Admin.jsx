@@ -26,6 +26,9 @@ import ProductManagement from "../components/admin/ProductManagement";
   import AIOrderManagement from "../components/admin/AIOrderManagement";
   import UnifiedAIDashboard from "../components/admin/UnifiedAIDashboard";
   import AIProductInsights from "../components/admin/AIProductInsights";
+  import AIInventoryForecasting from "../components/admin/AIInventoryForecasting";
+  import DynamicPricing from "../components/admin/DynamicPricing";
+  import AISupportAssistant from "../components/admin/AISupportAssistant";
 
 export default function Admin() {
   const navigate = useNavigate();
@@ -81,8 +84,11 @@ export default function Admin() {
     { value: "marketing", label: "Marketing Automation", permission: "manage_campaigns", component: <MarketingAutomation /> },
     { value: "feedback", label: "Feedback Analysis", permission: "manage_reviews", component: <FeedbackAnalysis /> },
     { value: "ai-orders", label: "AI Order Management", permission: "manage_orders", component: <AIOrderManagement /> },
+    { value: "support-ai", label: "AI Support Assistant", permission: "manage_orders", component: <AISupportAssistant /> },
     { value: "products", label: "Products", permission: "manage_products", component: <ProductManagement /> },
     { value: "product-insights", label: "AI Product Insights", permission: "manage_products", component: <AIProductInsights /> },
+    { value: "inventory-forecast", label: "Inventory Forecasting", permission: "manage_products", component: <AIInventoryForecasting /> },
+    { value: "dynamic-pricing", label: "Dynamic Pricing", permission: "manage_products", component: <DynamicPricing /> },
     { value: "categories", label: "Categories", permission: "manage_categories", component: <CategoryManagement /> },
     { value: "campaigns", label: "Campaigns", permission: "manage_campaigns", component: <CampaignManagement /> },
     { value: "recommendations", label: "AI Recommendations", permission: "manage_settings", component: <RecommendationConfig /> },

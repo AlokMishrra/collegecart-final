@@ -44,20 +44,29 @@ export default function AIOrderManagement() {
 
 ${JSON.stringify(orderData.slice(0, 20), null, 2)}
 
+Fraud Detection Criteria:
+- Unusually large orders from new customers
+- Multiple orders in short time
+- High-value items with cash payment
+- Suspicious delivery addresses
+- Payment method patterns
+
 For each order, identify:
-1. Fraud risk (0-100)
+1. Fraud risk (0-100) with specific fraud indicators
 2. Delivery delay risk (0-100)
-3. Risk factors
+3. Risk factors with confidence scores
 4. Recommended actions
 
 Return JSON array:
 [{
   "order_id": "id",
   "fraud_score": <0-100>,
+  "fraud_indicators": ["indicator1", "indicator2"],
   "delay_score": <0-100>,
   "risk_level": "low|medium|high|critical",
   "risk_factors": ["factor1", "factor2"],
-  "recommended_action": "string"
+  "recommended_action": "string",
+  "auto_flag": <boolean>
 }]`;
 
       const analysis = await base44.integrations.Core.InvokeLLM({
@@ -72,10 +81,12 @@ Return JSON array:
                 properties: {
                   order_id: { type: "string" },
                   fraud_score: { type: "number" },
+                  fraud_indicators: { type: "array", items: { type: "string" } },
                   delay_score: { type: "number" },
                   risk_level: { type: "string" },
                   risk_factors: { type: "array", items: { type: "string" } },
-                  recommended_action: { type: "string" }
+                  recommended_action: { type: "string" },
+                  auto_flag: { type: "boolean" }
                 }
               }
             }
