@@ -155,6 +155,11 @@ export default function Cart() {
     return calculateSubtotal() + calculateShippingCharge();
   };
 
+  const getCartQuantity = (productId) => {
+    const item = cartItems.find(item => item.product_id === productId);
+    return item ? item.quantity : 0;
+  };
+
   const addToCart = async (product) => {
     if (!user) {
       await base44.auth.redirectToLogin();
@@ -472,7 +477,7 @@ export default function Cart() {
           {user && (
             <RecommendationEngine
               user={user}
-              onAddToCart={addToCartFromRecommendation}
+              onAddToCart={addToCart}
               getCartQuantity={getCartQuantity}
               context="checkout"
             />
