@@ -28,11 +28,12 @@ export default function Delivery() {
 
   const loadAssignedOrders = useCallback(async (deliveryPersonId) => {
     try {
-      const orders = await Order.filter({
-        delivery_person_id: deliveryPersonId,
-        status: "out_for_delivery"
-      });
-      setAssignedOrders(orders);
+      // Load both preparing and out_for_delivery orders
+      const [preparingOrders, outForDeliveryOrders] = await Promise.all([
+        Order.filter({ delivery_person_id: deliveryPersonId, status: "preparing" }),
+        Order.filter({ delivery_person_id: deliveryPersonId, status: "out_for_delivery" })
+      ]);
+      setAssignedOrders([...preparingOrders, ...outForDeliveryOrders]);
     } catch (error) {
       console.error("Error loading assigned orders:", error);
     }
@@ -190,7 +191,7 @@ export default function Delivery() {
     try {
       await Order.update(orderId, {
         delivery_person_id: deliveryPerson.id,
-        status: "out_for_delivery"
+        status: "preparing"
       });
 
       // Update delivery person's current orders
@@ -209,6 +210,29 @@ export default function Delivery() {
       console.error("Error accepting order:", error);
     } finally {
       setAcceptingOrderId(null);
+    }
+  };
+
+  const markOutForDelivery = async (orderId) => {
+    setUpdatingOrderId(orderId);
+    try {
+      await Order.update(orderId, { status: "out_for_delivery" });
+
+      const order = assignedOrders.find(o => o.id === orderId);
+      if (order) {
+        await Notification.create({
+          user_id: order.user_id,
+          title: "Order Out for Delivery!",
+          message: `Your order #${order.order_number} is on its way!`,
+          type: "info"
+        });
+      }
+
+      await loadAssignedOrders(deliveryPerson.id);
+    } catch (error) {
+      console.error("Error marking order out for delivery:", error);
+    } finally {
+      setUpdatingOrderId(null);
     }
   };
 
@@ -445,10 +469,17 @@ export default function Delivery() {
                       <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-4">
                         <div className="flex-1">
                           <div className="flex items-center gap-3 mb-2">
-                            <Badge className="bg-orange-100 text-orange-800">
-                              <Truck className="w-4 h-4 mr-1" />
-                              OUT FOR DELIVERY
-                            </Badge>
+                            {order.status === "preparing" ? (
+                              <Badge className="bg-purple-100 text-purple-800">
+                                <Package className="w-4 h-4 mr-1" />
+                                PREPARING
+                              </Badge>
+                            ) : (
+                              <Badge className="bg-orange-100 text-orange-800">
+                                <Truck className="w-4 h-4 mr-1" />
+                                OUT FOR DELIVERY
+                              </Badge>
+                            )}
                             <h3 className="font-semibold text-lg">Order #{order.order_number}</h3>
                           </div>
                           
@@ -502,19 +533,36 @@ export default function Delivery() {
                         </div>
 
                         <div className="flex flex-col gap-2 w-full lg:w-auto">
-                          <CODQRGenerator order={order} />
-                          <Button
-                            onClick={() => markOrderDelivered(order.id)}
-                            disabled={updatingOrderId === order.id}
-                            className="bg-green-600 hover:bg-green-700 w-full lg:w-auto"
-                          >
-                            {updatingOrderId === order.id ? (
+                          {order.status === "preparing" ? (
+                            <Button
+                              onClick={() => markOutForDelivery(order.id)}
+                              disabled={updatingOrderId === order.id}
+                              className="bg-orange-600 hover:bg-orange-700 w-full lg:w-auto"
+                            >
+                              {updatingOrderId === order.id ? (
                                 <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                            ) : (
-                                <CheckCircle className="w-4 h-4 mr-2" />
-                            )}
-                            Mark as Delivered
-                          </Button>
+                              ) : (
+                                <Truck className="w-4 h-4 mr-2" />
+                              )}
+                              Out for Delivery
+                            </Button>
+                          ) : (
+                            <>
+                              <CODQRGenerator order={order} />
+                              <Button
+                                onClick={() => markOrderDelivered(order.id)}
+                                disabled={updatingOrderId === order.id}
+                                className="bg-green-600 hover:bg-green-700 w-full lg:w-auto"
+                              >
+                                {updatingOrderId === order.id ? (
+                                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                                ) : (
+                                    <CheckCircle className="w-4 h-4 mr-2" />
+                                )}
+                                Mark as Delivered
+                              </Button>
+                            </>
+                          )}
                           <Button
                             variant="outline"
                             onClick={() => window.open(`tel:${order.phone_number}`)}
