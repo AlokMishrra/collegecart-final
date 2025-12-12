@@ -21,6 +21,7 @@ import QuickAddToCart from "../components/shop/QuickAddToCart";
   import ProductCard from "../components/shop/ProductCard";
   import HostelSelector from "../components/shop/HostelSelector";
   import RecommendationEngine from "../components/shop/RecommendationEngine";
+  import EnhancedSearch from "../components/shop/EnhancedSearch";
 
 export default function Shop() {
   const [products, setProducts] = useState([]);
@@ -32,6 +33,12 @@ export default function Shop() {
   const [categorizedProducts, setCategorizedProducts] = useState({});
   const [selectedCategory, setSelectedCategory] = useState(null);
   const [showHostelSelector, setShowHostelSelector] = useState(false);
+  const [filters, setFilters] = useState({
+    availability: "all",
+    rating: "all",
+    priceRange: [0, 1000]
+  });
+  const [sortBy, setSortBy] = useState("relevance");
 
   useEffect(() => {
     checkUser();
@@ -174,16 +181,64 @@ export default function Shop() {
     return item ? item.quantity : 0;
   };
 
-  const displayProducts = selectedCategory
-    ? products.filter(p => p.category_id === selectedCategory)
-    : products;
-    
-  const filteredProducts = searchQuery.trim()
-    ? displayProducts.filter(p => 
-        p.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        p.description?.toLowerCase().includes(searchQuery.toLowerCase())
-      )
-    : displayProducts;
+  const applyFiltersAndSort = (productList) => {
+    let filtered = [...productList];
+
+    // Apply search
+    if (searchQuery.trim()) {
+      const terms = searchQuery.toLowerCase().split(" ");
+      filtered = filtered.filter(p => {
+        const text = `${p.name} ${p.description || ""}`.toLowerCase();
+        return terms.some(term => text.includes(term));
+      });
+    }
+
+    // Apply category filter
+    if (selectedCategory) {
+      filtered = filtered.filter(p => p.category_id === selectedCategory);
+    }
+
+    // Apply price range filter
+    filtered = filtered.filter(p => 
+      p.price >= filters.priceRange[0] && p.price <= filters.priceRange[1]
+    );
+
+    // Apply availability filter
+    if (filters.availability === "in_stock") {
+      filtered = filtered.filter(p => {
+        if (user?.selected_hostel && user.selected_hostel !== 'Other') {
+          return (p.hostel_stock?.[user.selected_hostel] || 0) > 0;
+        }
+        return p.stock_quantity > 0;
+      });
+    }
+
+    // Apply rating filter
+    if (filters.rating !== "all") {
+      const minRating = parseFloat(filters.rating);
+      filtered = filtered.filter(p => (p.average_rating || 0) >= minRating);
+    }
+
+    // Apply sorting
+    switch (sortBy) {
+      case "price_low":
+        filtered.sort((a, b) => a.price - b.price);
+        break;
+      case "price_high":
+        filtered.sort((a, b) => b.price - a.price);
+        break;
+      case "rating":
+        filtered.sort((a, b) => (b.average_rating || 0) - (a.average_rating || 0));
+        break;
+      default:
+        // relevance - keep original order
+        break;
+    }
+
+    return filtered;
+  };
+
+  const filteredProducts = applyFiltersAndSort(products);
 
   return (
     <div className="max-w-7xl mx-auto space-y-6">
@@ -213,16 +268,15 @@ export default function Shop() {
         </div>
       )}
 
-      {/* Search */}
-      <div className="relative">
-        <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
-        <Input
-          placeholder="Search for products..."
-          value={searchQuery}
-          onChange={(e) => setSearchQuery(e.target.value)}
-          className="pl-10 h-12 w-full"
-        />
-      </div>
+      {/* Enhanced Search */}
+      <EnhancedSearch
+        products={products}
+        onSearch={setSearchQuery}
+        filters={filters}
+        onFilterChange={setFilters}
+        sortBy={sortBy}
+        onSortChange={setSortBy}
+      />
 
       {/* Category Filter */}
       <CategoryFilter
@@ -232,7 +286,7 @@ export default function Shop() {
       />
 
       {/* Personalized Recommendations */}
-      {!searchQuery.trim() && !selectedCategory && user && (
+      {!searchQuery.trim() && !selectedCategory && filters.availability === "all" && filters.rating === "all" && user && (
         <RecommendationEngine 
           user={user} 
           onAddToCart={addToCart}
@@ -255,7 +309,7 @@ export default function Shop() {
             </div>
           ))}
         </div>
-      ) : searchQuery.trim() || selectedCategory ? (
+      ) : searchQuery.trim() || selectedCategory || filters.availability !== "all" || filters.rating !== "all" || sortBy !== "relevance" ? (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
           <AnimatePresence>
             {filteredProducts.map((product) => (

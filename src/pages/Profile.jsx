@@ -9,6 +9,7 @@ import { Award, Star, TrendingUp, Gift, History, Trophy } from "lucide-react";
 import { motion } from "framer-motion";
 import { useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/utils";
+import NotificationPreferences from "../components/shared/NotificationPreferences";
 
 export default function Profile() {
   const navigate = useNavigate();
@@ -182,6 +183,9 @@ export default function Profile() {
           </CardContent>
         </Card>
       </motion.div>
+
+      {/* Notification Preferences */}
+      <NotificationPreferences />
 
       {/* Transaction History */}
       <Card>
