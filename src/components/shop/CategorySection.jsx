@@ -1,11 +1,33 @@
-import React from "react";
+import React, { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import { ChevronRight, Clock } from "lucide-react";
 import { Link } from "react-router-dom";
 import { createPageUrl } from "@/utils";
 import { Button } from "@/components/ui/button";
+import { User } from "@/entities/User";
 
 export default function CategorySection({ category, products, onAddToCart, onUpdateQuantity, getCartQuantity }) {
+  const [user, setUser] = useState(null);
+
+  useEffect(() => {
+    loadUser();
+  }, []);
+
+  const loadUser = async () => {
+    try {
+      const currentUser = await User.me();
+      setUser(currentUser);
+    } catch (error) {
+      // User not logged in
+    }
+  };
+
+  const getHostelStock = (product) => {
+    if (user?.selected_hostel && user.selected_hostel !== 'Other') {
+      return product.hostel_stock?.[user.selected_hostel] || 0;
+    }
+    return product.stock_quantity || 0;
+  };
   if (!products || products.length === 0) return null;
 
   return (
@@ -26,6 +48,8 @@ export default function CategorySection({ category, products, onAddToCart, onUpd
           {products.slice(0, 10).map((product, index) => {
             const cartQty = getCartQuantity(product.id);
             const hasDiscount = product.original_price && product.original_price > product.price;
+            const hostelStock = getHostelStock(product);
+            const isOutOfStock = hostelStock === 0;
             
             return (
               <motion.div
@@ -77,7 +101,15 @@ export default function CategorySection({ category, products, onAddToCart, onUpd
                         </div>
                       </div>
 
-                      {cartQty > 0 ? (
+                      {isOutOfStock ? (
+                        <Button
+                          size="sm"
+                          disabled
+                          className="w-full bg-red-500 text-white cursor-not-allowed h-8 text-xs font-semibold"
+                        >
+                          OUT OF STOCK
+                        </Button>
+                      ) : cartQty > 0 ? (
                         <div className="flex items-center justify-between bg-emerald-50 rounded-lg px-2 py-1">
                           <button
                             onClick={(e) => {
