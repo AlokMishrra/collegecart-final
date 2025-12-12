@@ -20,6 +20,8 @@ import ProductManagement from "../components/admin/ProductManagement";
   import CRMModule from "../components/admin/CRMModule";
   import EnhancedDashboard from "../components/admin/EnhancedDashboard";
   import RecommendationConfig from "../components/admin/RecommendationConfig";
+  import MarketingAutomation from "../components/admin/MarketingAutomation";
+  import FeedbackAnalysis from "../components/admin/FeedbackAnalysis";
 
 export default function Admin() {
   const navigate = useNavigate();
@@ -70,6 +72,8 @@ export default function Admin() {
     { value: "dashboard", label: "Dashboard", permission: "view_summary", component: <EnhancedDashboard /> },
     { value: "summary", label: "Daily Summary", permission: "view_summary", component: <DailyOrderSummary /> },
     { value: "crm", label: "CRM", permission: "manage_crm", component: <CRMModule /> },
+    { value: "marketing", label: "Marketing Automation", permission: "manage_campaigns", component: <MarketingAutomation /> },
+    { value: "feedback", label: "Feedback Analysis", permission: "manage_reviews", component: <FeedbackAnalysis /> },
     { value: "products", label: "Products", permission: "manage_products", component: <ProductManagement /> },
     { value: "categories", label: "Categories", permission: "manage_categories", component: <CategoryManagement /> },
     { value: "campaigns", label: "Campaigns", permission: "manage_campaigns", component: <CampaignManagement /> },
