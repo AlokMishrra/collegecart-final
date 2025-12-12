@@ -175,7 +175,7 @@ export default function Layout({ children, currentPageName }) {
       <div className="flex">
         {/* Sidebar */}
         <aside className={`
-          fixed lg:relative inset-y-0 left-0 z-50 w-64 bg-white shadow-xl border-r border-gray-200
+          fixed inset-y-0 left-0 z-50 w-64 bg-white shadow-xl border-r border-gray-200
           transform transition-transform duration-300 ease-in-out
           ${isSidebarOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'}
         `}>
@@ -277,8 +277,8 @@ export default function Layout({ children, currentPageName }) {
         )}
 
         {/* Main Content */}
-        <main className="flex-1 min-w-0">
-          <div className="hidden lg:flex items-center justify-between p-6 bg-white border-b border-gray-200">
+        <main className="flex-1 min-w-0 lg:ml-64 flex flex-col h-screen">
+          <div className="hidden lg:flex items-center justify-between p-6 bg-white border-b border-gray-200 fixed top-0 right-0 left-64 z-40">
             <h1 className="text-2xl font-bold text-gray-900">
               {currentPageName || 'CollegeCart'}
             </h1>
@@ -306,7 +306,7 @@ export default function Layout({ children, currentPageName }) {
               )}
             </div>
           </div>
-          <div className="p-4 lg:p-6">
+          <div className="p-4 lg:p-6 overflow-y-auto flex-1 lg:mt-[88px]">
             {children}
           </div>
         </main>
