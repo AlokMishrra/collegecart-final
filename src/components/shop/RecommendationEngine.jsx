@@ -1,32 +1,147 @@
 import React, { useState, useEffect } from "react";
 import { base44 } from "@/api/base44Client";
 import { Card, CardContent } from "@/components/ui/card";
-import { Sparkles } from "lucide-react";
+import { Sparkles, Loader2 } from "lucide-react";
 import ProductCard from "./ProductCard";
 
 export default function RecommendationEngine({ user, onAddToCart, getCartQuantity, context = "shop" }) {
   const [recommendations, setRecommendations] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [settings, setSettings] = useState(null);
 
   useEffect(() => {
     if (user) {
-      loadRecommendations();
+      loadSettings();
     }
   }, [user]);
 
-  const loadRecommendations = async () => {
+  const loadSettings = async () => {
+    try {
+      const allSettings = await base44.entities.RecommendationSettings.list();
+      const config = allSettings.length > 0 ? allSettings[0] : {
+        strategy: "ai_powered",
+        use_purchase_history: true,
+        use_browsing_behavior: true,
+        use_loyalty_tier: true,
+        max_recommendations: 8,
+        boost_high_margin: true
+      };
+      setSettings(config);
+      loadRecommendations(config);
+    } catch (error) {
+      console.error("Error loading settings:", error);
+      loadRecommendations(null);
+    }
+  };
+
+  const loadRecommendations = async (config) => {
     setIsLoading(true);
     try {
-      // Get user's order history
-      const orders = await base44.entities.Order.filter({ user_id: user.id });
+      const useAI = config?.strategy === "ai_powered";
       
-      // Get viewed products from localStorage
-      const viewedProducts = JSON.parse(localStorage.getItem(`viewed_products_${user.id}`) || "[]");
-      
-      // Get all products
+      if (useAI) {
+        await loadAIRecommendations(config);
+      } else {
+        await loadBasicRecommendations(config);
+      }
+    } catch (error) {
+      console.error("Error loading recommendations:", error);
+    }
+    setIsLoading(false);
+  };
+
+  const loadAIRecommendations = async (config) => {
+    try {
+      const orders = config?.use_purchase_history ? await base44.entities.Order.filter({ user_id: user.id }) : [];
+      const viewedProducts = config?.use_browsing_behavior ? JSON.parse(localStorage.getItem(`viewed_products_${user.id}`) || "[]") : [];
       const allProducts = await base44.entities.Product.filter({ is_available: true });
       
-      // Extract product IDs from orders
+      // Build user context
+      const purchasedProducts = [];
+      const categoryFrequency = {};
+      
+      orders.forEach(order => {
+        order.items?.forEach(item => {
+          purchasedProducts.push(item.product_name);
+          const product = allProducts.find(p => p.id === item.product_id);
+          if (product) {
+            categoryFrequency[product.category_id] = (categoryFrequency[product.category_id] || 0) + 1;
+          }
+        });
+      });
+
+      const recentlyViewed = viewedProducts.slice(0, 5).map(pid => 
+        allProducts.find(p => p.id === pid)?.name
+      ).filter(Boolean);
+
+      const userTier = config?.use_loyalty_tier ? (user.loyalty_tier || "Bronze") : null;
+
+      // Call AI for recommendations
+      const prompt = `You are a product recommendation AI for CollegeCart grocery delivery.
+
+User Profile:
+- Loyalty Tier: ${userTier || "Not available"}
+- Purchase History: ${purchasedProducts.slice(-10).join(", ") || "No previous purchases"}
+- Recently Viewed: ${recentlyViewed.join(", ") || "None"}
+- Selected Hostel: ${user.selected_hostel || "Not specified"}
+
+Available Products:
+${allProducts.map(p => `- ${p.name} (₹${p.price}, Category: ${p.category_id}, Margin: ${p.profit_margin || 0}%)`).slice(0, 50).join("\n")}
+
+Context: ${context === "shop" ? "Main shop page" : context === "checkout" ? "Checkout page" : "Product detail page"}
+
+Instructions:
+- Recommend ${config?.max_recommendations || 8} products that match user preferences
+- Consider purchase history and browsing patterns
+${config?.use_loyalty_tier ? `- Tier-based: ${userTier === "Platinum" || userTier === "Gold" ? "Premium products" : "Value products"}` : ""}
+${config?.boost_high_margin ? "- Prioritize products with profit margin > 15%" : ""}
+${config?.boost_new_products ? "- Include newly added products" : ""}
+- Only recommend available products
+- Diversify across categories
+- Avoid recently purchased items
+
+Return ONLY a JSON array of product names: ["Product Name 1", "Product Name 2", ...]`;
+
+      const aiResponse = await base44.integrations.Core.InvokeLLM({
+        prompt,
+        response_json_schema: {
+          type: "object",
+          properties: {
+            recommendations: {
+              type: "array",
+              items: { type: "string" }
+            }
+          }
+        }
+      });
+
+      const recommendedNames = aiResponse.recommendations || [];
+      const recommendedProducts = recommendedNames
+        .map(name => allProducts.find(p => p.name === name))
+        .filter(Boolean)
+        .filter(p => {
+          // Check hostel stock
+          if (user.selected_hostel && user.selected_hostel !== 'Other') {
+            const hostelStock = p.hostel_stock?.[user.selected_hostel] || 0;
+            return hostelStock > 0;
+          }
+          return true;
+        })
+        .slice(0, context === "checkout" ? 4 : (config?.max_recommendations || 8));
+
+      setRecommendations(recommendedProducts);
+    } catch (error) {
+      console.error("AI recommendation failed, falling back to basic:", error);
+      await loadBasicRecommendations(config);
+    }
+  };
+
+  const loadBasicRecommendations = async (config) => {
+    try {
+      const orders = config?.use_purchase_history ? await base44.entities.Order.filter({ user_id: user.id }) : [];
+      const viewedProducts = config?.use_browsing_behavior ? JSON.parse(localStorage.getItem(`viewed_products_${user.id}`) || "[]") : [];
+      const allProducts = await base44.entities.Product.filter({ is_available: true });
+      
       const purchasedProductIds = new Set();
       const categoryFrequency = {};
       
@@ -40,72 +155,53 @@ export default function RecommendationEngine({ user, onAddToCart, getCartQuantit
         });
       });
 
-      // Get frequently purchased categories
       const topCategories = Object.entries(categoryFrequency)
         .sort((a, b) => b[1] - a[1])
         .slice(0, 3)
         .map(([categoryId]) => categoryId);
 
-      // Recommendation algorithm
       const scoredProducts = allProducts.map(product => {
         let score = 0;
         
-        // Don't recommend recently purchased products
-        if (purchasedProductIds.has(product.id)) {
-          score -= 100;
-        }
+        if (purchasedProductIds.has(product.id)) score -= 100;
+        if (topCategories.includes(product.category_id)) score += 30;
         
-        // Boost products from frequently purchased categories
-        if (topCategories.includes(product.category_id)) {
-          score += 30;
-        }
-        
-        // Boost recently viewed products
         const viewIndex = viewedProducts.indexOf(product.id);
-        if (viewIndex !== -1) {
-          score += 20 - viewIndex; // More recent views get higher scores
-        }
+        if (viewIndex !== -1) score += 20 - viewIndex;
         
-        // Boost high-rated products
-        if (product.rating >= 4) {
-          score += 15;
-        }
+        if (product.rating >= 4) score += 15;
+        if (config?.boost_high_margin && product.profit_margin > 20) score += 10;
+        if (product.original_price && product.original_price > product.price) score += 8;
         
-        // Boost products with good profit margins
-        if (product.profit_margin > 20) {
-          score += 10;
-        }
-        
-        // Boost products with discounts
-        if (product.original_price && product.original_price > product.price) {
-          score += 8;
-        }
-        
-        // Check hostel stock availability
         if (user.selected_hostel && user.selected_hostel !== 'Other') {
           const hostelStock = product.hostel_stock?.[user.selected_hostel] || 0;
-          if (hostelStock === 0) {
-            score -= 50; // Heavily penalize out of stock
-          }
+          if (hostelStock === 0) score -= 50;
         }
 
         return { ...product, score };
       });
 
-      // Sort by score and take top recommendations
       const topRecommendations = scoredProducts
         .sort((a, b) => b.score - a.score)
         .filter(p => p.score > 0)
-        .slice(0, context === "checkout" ? 4 : 8);
+        .slice(0, context === "checkout" ? 4 : (config?.max_recommendations || 8));
 
       setRecommendations(topRecommendations);
     } catch (error) {
       console.error("Error loading recommendations:", error);
     }
-    setIsLoading(false);
   };
 
-  if (!user || isLoading || recommendations.length === 0) return null;
+  if (!user || recommendations.length === 0) return null;
+
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center py-8">
+        <Loader2 className="w-6 h-6 animate-spin text-emerald-600" />
+        <span className="ml-2 text-gray-600">Loading personalized recommendations...</span>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-4">
@@ -114,12 +210,17 @@ export default function RecommendationEngine({ user, onAddToCart, getCartQuantit
         <h2 className="text-xl font-bold text-gray-900">
           {context === "checkout" ? "You May Also Like" : "Recommended For You"}
         </h2>
+        {settings?.strategy === "ai_powered" && (
+          <span className="text-xs bg-purple-100 text-purple-700 px-2 py-1 rounded-full">AI Powered</span>
+        )}
       </div>
       
       <Card className="bg-gradient-to-r from-emerald-50 to-blue-50 border-emerald-200">
         <CardContent className="p-4">
           <p className="text-sm text-gray-600 mb-4">
-            Based on your preferences and purchase history
+            {settings?.strategy === "ai_powered" 
+              ? "Personalized by AI based on your preferences and shopping patterns"
+              : "Based on your preferences and purchase history"}
           </p>
           <div className={`grid gap-4 ${
             context === "checkout" 
