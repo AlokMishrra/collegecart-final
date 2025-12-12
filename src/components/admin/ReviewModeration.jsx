@@ -5,11 +5,13 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Star, Check, X, Clock } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Checkbox } from "@/components/ui/checkbox";
 
 export default function ReviewModeration() {
   const [reviews, setReviews] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [products, setProducts] = useState({});
+  const [selectedReviews, setSelectedReviews] = useState([]);
 
   useEffect(() => {
     loadReviews();
@@ -80,6 +82,68 @@ export default function ReviewModeration() {
     }
   };
 
+  const bulkApprove = async () => {
+    if (selectedReviews.length === 0) return;
+    
+    try {
+      for (const reviewId of selectedReviews) {
+        await base44.entities.Review.update(reviewId, { is_approved: true });
+        const review = reviews.find(r => r.id === reviewId);
+        if (review) {
+          await base44.entities.Notification.create({
+            user_id: review.user_id,
+            title: "Review Approved",
+            message: `Your review for ${products[review.product_id]?.name} has been approved.`,
+            type: "success"
+          });
+        }
+      }
+      setSelectedReviews([]);
+      loadReviews();
+    } catch (error) {
+      console.error("Error bulk approving:", error);
+    }
+  };
+
+  const bulkReject = async () => {
+    if (selectedReviews.length === 0) return;
+    
+    try {
+      for (const reviewId of selectedReviews) {
+        const review = reviews.find(r => r.id === reviewId);
+        await base44.entities.Review.delete(reviewId);
+        if (review) {
+          await base44.entities.Notification.create({
+            user_id: review.user_id,
+            title: "Review Not Approved",
+            message: `Your review for ${products[review.product_id]?.name} did not meet our guidelines.`,
+            type: "info"
+          });
+        }
+      }
+      setSelectedReviews([]);
+      loadReviews();
+    } catch (error) {
+      console.error("Error bulk rejecting:", error);
+    }
+  };
+
+  const toggleSelectAll = () => {
+    if (selectedReviews.length === pendingReviews.length) {
+      setSelectedReviews([]);
+    } else {
+      setSelectedReviews(pendingReviews.map(r => r.id));
+    }
+  };
+
+  const toggleSelect = (reviewId) => {
+    setSelectedReviews(prev => 
+      prev.includes(reviewId) 
+        ? prev.filter(id => id !== reviewId)
+        : [...prev, reviewId]
+    );
+  };
+
   const renderStars = (rating) => {
     return (
       <div className="flex gap-1">
@@ -113,10 +177,43 @@ export default function ReviewModeration() {
       {/* Pending Reviews */}
       <Card>
         <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Clock className="w-5 h-5 text-orange-600" />
-            Pending Reviews ({pendingReviews.length})
-          </CardTitle>
+          <div className="flex items-center justify-between">
+            <CardTitle className="flex items-center gap-2">
+              <Clock className="w-5 h-5 text-orange-600" />
+              Pending Reviews ({pendingReviews.length})
+            </CardTitle>
+            {pendingReviews.length > 0 && (
+              <div className="flex items-center gap-2">
+                <div className="flex items-center gap-2">
+                  <Checkbox
+                    checked={selectedReviews.length === pendingReviews.length}
+                    onCheckedChange={toggleSelectAll}
+                  />
+                  <span className="text-sm text-gray-600">Select All</span>
+                </div>
+                {selectedReviews.length > 0 && (
+                  <>
+                    <Button
+                      size="sm"
+                      onClick={bulkApprove}
+                      className="bg-green-600 hover:bg-green-700"
+                    >
+                      <Check className="w-4 h-4 mr-1" />
+                      Approve ({selectedReviews.length})
+                    </Button>
+                    <Button
+                      size="sm"
+                      variant="destructive"
+                      onClick={bulkReject}
+                    >
+                      <X className="w-4 h-4 mr-1" />
+                      Reject ({selectedReviews.length})
+                    </Button>
+                  </>
+                )}
+              </div>
+            )}
+          </div>
         </CardHeader>
         <CardContent>
           {pendingReviews.length === 0 ? (
@@ -128,7 +225,14 @@ export default function ReviewModeration() {
                   key={review.id}
                   className="border border-orange-200 bg-orange-50 rounded-lg p-4"
                 >
-                  <div className="flex items-start justify-between mb-3">
+                  <div className="flex items-start gap-3">
+                    <Checkbox
+                      checked={selectedReviews.includes(review.id)}
+                      onCheckedChange={() => toggleSelect(review.id)}
+                      className="mt-1"
+                    />
+                    <div className="flex-1">
+                      <div className="flex items-start justify-between mb-3">
                     <div>
                       <p className="font-semibold text-gray-900">
                         {products[review.product_id]?.name || "Product"}
@@ -148,23 +252,25 @@ export default function ReviewModeration() {
                     <p className="text-gray-700 mb-4 text-sm">{review.comment}</p>
                   )}
 
-                  <div className="flex gap-2">
-                    <Button
-                      size="sm"
-                      onClick={() => approveReview(review.id)}
-                      className="bg-green-600 hover:bg-green-700"
-                    >
-                      <Check className="w-4 h-4 mr-1" />
-                      Approve
-                    </Button>
-                    <Button
-                      size="sm"
-                      variant="destructive"
-                      onClick={() => rejectReview(review.id)}
-                    >
-                      <X className="w-4 h-4 mr-1" />
-                      Reject
-                    </Button>
+                      <div className="flex gap-2">
+                        <Button
+                          size="sm"
+                          onClick={() => approveReview(review.id)}
+                          className="bg-green-600 hover:bg-green-700"
+                        >
+                          <Check className="w-4 h-4 mr-1" />
+                          Approve
+                        </Button>
+                        <Button
+                          size="sm"
+                          variant="destructive"
+                          onClick={() => rejectReview(review.id)}
+                        >
+                          <X className="w-4 h-4 mr-1" />
+                          Reject
+                        </Button>
+                      </div>
+                    </div>
                   </div>
                 </div>
               ))}

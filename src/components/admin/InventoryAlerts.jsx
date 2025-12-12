@@ -3,13 +3,15 @@ import { base44 } from "@/api/base44Client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { AlertTriangle, Package } from "lucide-react";
+import { AlertTriangle, Package, ChevronDown, ChevronRight } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Button } from "@/components/ui/button";
 
 export default function InventoryAlerts() {
   const [lowStockProducts, setLowStockProducts] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [categories, setCategories] = useState({});
+  const [isExpanded, setIsExpanded] = useState(false);
 
   useEffect(() => {
     loadInventoryAlerts();
@@ -72,13 +74,18 @@ export default function InventoryAlerts() {
 
   return (
     <Card>
-      <CardHeader>
-        <CardTitle className="flex items-center gap-2">
-          <AlertTriangle className="w-5 h-5 text-orange-600" />
-          Inventory Alerts ({lowStockProducts.length})
+      <CardHeader className="cursor-pointer hover:bg-gray-50" onClick={() => setIsExpanded(!isExpanded)}>
+        <CardTitle className="flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <AlertTriangle className="w-5 h-5 text-orange-600" />
+            Inventory Alerts ({lowStockProducts.length})
+          </div>
+          <Button variant="ghost" size="icon">
+            {isExpanded ? <ChevronDown className="w-5 h-5" /> : <ChevronRight className="w-5 h-5" />}
+          </Button>
         </CardTitle>
       </CardHeader>
-      <CardContent>
+      {isExpanded && <CardContent>
         {lowStockProducts.length === 0 ? (
           <Alert className="bg-green-50 border-green-200">
             <Package className="w-4 h-4 text-green-600" />
@@ -142,7 +149,7 @@ export default function InventoryAlerts() {
             })}
           </div>
         )}
-      </CardContent>
+      </CardContent>}
     </Card>
   );
 }
