@@ -7,8 +7,9 @@ import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Textarea } from "@/components/ui/textarea";
-import { Users, ShoppingCart, Award, Mail, Search, Filter } from "lucide-react";
+import { Users, ShoppingCart, Award, Mail, Search, Filter, FileText } from "lucide-react";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import CRMReports from "./CRMReports";
 
 export default function CRMModule() {
   const [customers, setCustomers] = useState([]);
@@ -112,7 +113,7 @@ export default function CRMModule() {
   });
 
   return (
-    <div className="space-y-6">
+    <Tabs defaultValue="overview" className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
           <h2 className="text-2xl font-bold">Customer Relationship Management</h2>
@@ -123,6 +124,13 @@ export default function CRMModule() {
           Send Message
         </Button>
       </div>
+
+      <TabsList>
+        <TabsTrigger value="overview">Customer Overview</TabsTrigger>
+        <TabsTrigger value="reports">Reports & Analytics</TabsTrigger>
+      </TabsList>
+
+      <TabsContent value="overview" className="space-y-6">
 
       {/* Stats Overview */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
@@ -351,6 +359,11 @@ export default function CRMModule() {
           </DialogContent>
         </Dialog>
       )}
-    </div>
+      </TabsContent>
+
+      <TabsContent value="reports">
+        <CRMReports />
+      </TabsContent>
+    </Tabs>
   );
 }
