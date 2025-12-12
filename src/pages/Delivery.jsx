@@ -3,7 +3,7 @@ import { base44 } from "@/api/base44Client";
 import { Order } from "@/entities/Order";
 import { DeliveryPerson } from "@/entities/DeliveryPerson";
 import { Notification } from "@/entities/Notification";
-import { Truck, MapPin, Phone, Package, CheckCircle, Loader2, Lock } from "lucide-react";
+import { Truck, MapPin, Phone, Package, CheckCircle, Loader2, Lock, User } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -395,19 +395,27 @@ export default function Delivery() {
                           
                           <div className="grid md:grid-cols-2 gap-4 mb-4">
                             <div className="flex items-start gap-3">
+                              <User className="w-5 h-5 text-gray-400 mt-1" />
+                              <div>
+                                <p className="font-medium text-gray-900">Customer Name</p>
+                                <p className="text-gray-600">{order.customer_name}</p>
+                              </div>
+                            </div>
+                            <div className="flex items-start gap-3">
                               <MapPin className="w-5 h-5 text-gray-400 mt-1" />
                               <div>
                                 <p className="font-medium text-gray-900">Delivery Address</p>
                                 <p className="text-gray-600">{order.delivery_address}</p>
                               </div>
                             </div>
-                            <div>
-                              <p className="text-sm text-gray-600">Total Amount</p>
-                              <p className="text-xl font-bold text-emerald-600">
-                                ₹{order.total_amount.toFixed(2)}
-                              </p>
-                              <p className="text-sm text-gray-600">Your commission: ₹{(order.total_amount * 0.10).toFixed(2)}</p>
-                            </div>
+                          </div>
+
+                          <div>
+                            <p className="text-sm text-gray-600">Total Amount</p>
+                            <p className="text-xl font-bold text-emerald-600">
+                              ₹{order.total_amount.toFixed(2)}
+                            </p>
+                            <p className="text-sm text-gray-600">Your commission: ₹{(order.total_amount * 0.10).toFixed(2)}</p>
                           </div>
                         </div>
 
@@ -483,7 +491,14 @@ export default function Delivery() {
                             <h3 className="font-semibold text-lg">Order #{order.order_number}</h3>
                           </div>
                           
-                          <div className="grid md:grid-cols-2 gap-4 mb-4">
+                          <div className="grid md:grid-cols-3 gap-4 mb-4">
+                            <div className="flex items-start gap-3">
+                              <User className="w-5 h-5 text-gray-400 mt-1" />
+                              <div>
+                                <p className="font-medium text-gray-900">Customer Name</p>
+                                <p className="text-gray-600">{order.customer_name}</p>
+                              </div>
+                            </div>
                             <div className="flex items-start gap-3">
                               <MapPin className="w-5 h-5 text-gray-400 mt-1" />
                               <div>
