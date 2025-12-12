@@ -33,6 +33,7 @@ import ProductManagement from "../components/admin/ProductManagement";
   import Leaderboard from "../components/gamification/Leaderboard";
   import AIKnowledgeBase from "../components/knowledge/AIKnowledgeBase";
   import OnboardingTour from "../components/onboarding/OnboardingTour";
+  import BulkProductUpdate from "../components/admin/BulkProductUpdate";
 
 export default function Admin() {
   const navigate = useNavigate();
@@ -90,6 +91,7 @@ export default function Admin() {
     { value: "ai-orders", label: "AI Order Management", permission: "manage_orders", component: <AIOrderManagement /> },
     { value: "support-ai", label: "AI Support Assistant", permission: "manage_orders", component: <AISupportAssistant /> },
     { value: "products", label: "Products", permission: "manage_products", component: <ProductManagement /> },
+    { value: "bulk-update", label: "Bulk Update", permission: "manage_products", component: <BulkProductUpdate /> },
     { value: "product-insights", label: "AI Product Insights", permission: "manage_products", component: <AIProductInsights /> },
     { value: "inventory-forecast", label: "Inventory Forecasting", permission: "manage_products", component: <AIInventoryForecasting /> },
     { value: "dynamic-pricing", label: "Dynamic Pricing", permission: "manage_products", component: <DynamicPricing /> },
