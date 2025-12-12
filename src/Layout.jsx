@@ -19,6 +19,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import NotificationCenter from "./components/shared/NotificationCenter";
+import FeedbackPopup from "./components/shop/FeedbackPopup";
 
 export default function Layout({ children, currentPageName }) {
   const location = useLocation();
@@ -110,6 +111,12 @@ export default function Layout({ children, currentPageName }) {
     {
       title: "My Orders",
       url: createPageUrl("Orders"),
+      icon: Package,
+      showCondition: () => !isDeliveryRole
+    },
+    {
+      title: "Order History",
+      url: createPageUrl("Orders") + "?tab=history",
       icon: Package,
       showCondition: () => !isDeliveryRole
     },
@@ -318,6 +325,9 @@ export default function Layout({ children, currentPageName }) {
           </div>
         </main>
       </div>
-    </div>
-  );
-}
+
+      {/* Feedback Popup */}
+      {user && !isDeliveryRole && <FeedbackPopup user={user} />}
+      </div>
+      );
+      }

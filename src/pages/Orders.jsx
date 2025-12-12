@@ -35,6 +35,15 @@ export default function Orders() {
   const [selectedProducts, setSelectedProducts] = useState([]);
   const [activeTab, setActiveTab] = useState("active");
 
+  useEffect(() => {
+    // Check URL for tab parameter
+    const params = new URLSearchParams(window.location.search);
+    const tab = params.get('tab');
+    if (tab === 'history') {
+      setActiveTab('history');
+    }
+  }, []);
+
   const loadOrders = useCallback(async (userId) => {
     setIsLoading(true);
     try {
