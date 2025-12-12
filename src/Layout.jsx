@@ -28,11 +28,28 @@ export default function Layout({ children, currentPageName }) {
   const [isDeliveryPartner, setIsDeliveryPartner] = useState(false);
   const [userHasRole, setUserHasRole] = useState(false);
   const [userRole, setUserRole] = useState(null);
+  const [cartItemCount, setCartItemCount] = useState(0);
 
   useEffect(() => {
     checkUser();
     checkDeliveryPartner();
   }, []);
+
+  useEffect(() => {
+    if (user) {
+      loadCartCount();
+    }
+  }, [user]);
+
+  const loadCartCount = async () => {
+    try {
+      const cartItems = await base44.entities.CartItem.filter({ user_id: user.id });
+      const totalCount = cartItems.reduce((sum, item) => sum + item.quantity, 0);
+      setCartItemCount(totalCount);
+    } catch (error) {
+      console.error("Error loading cart count:", error);
+    }
+  };
 
   const checkUser = async () => {
     try {
@@ -134,6 +151,18 @@ export default function Layout({ children, currentPageName }) {
           </div>
           <div className="flex items-center gap-2">
             <NotificationCenter />
+            {user && !isDeliveryRole && (
+              <Link to={createPageUrl("Cart")}>
+                <Button variant="ghost" size="icon" className="relative">
+                  <ShoppingCart className="w-5 h-5" />
+                  {cartItemCount > 0 && (
+                    <Badge className="absolute -top-1 -right-1 h-5 w-5 flex items-center justify-center p-0 bg-emerald-600 text-white text-xs">
+                      {cartItemCount}
+                    </Badge>
+                  )}
+                </Button>
+              </Link>
+            )}
             {user && (
               <Button variant="ghost" size="icon" onClick={handleLogout}>
                 <LogOut className="w-4 h-4" />
@@ -255,6 +284,18 @@ export default function Layout({ children, currentPageName }) {
             </h1>
             <div className="flex items-center gap-4">
               <NotificationCenter />
+              {user && !isDeliveryRole && (
+                <Link to={createPageUrl("Cart")}>
+                  <Button variant="ghost" size="icon" className="relative">
+                    <ShoppingCart className="w-5 h-5" />
+                    {cartItemCount > 0 && (
+                      <Badge className="absolute -top-1 -right-1 h-5 w-5 flex items-center justify-center p-0 bg-emerald-600 text-white text-xs">
+                        {cartItemCount}
+                      </Badge>
+                    )}
+                  </Button>
+                </Link>
+              )}
               {!user && (
                 <Button
                   onClick={() => User.login()}
