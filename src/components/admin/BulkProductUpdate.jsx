@@ -11,8 +11,10 @@ import { toast } from "sonner";
 
 export default function BulkProductUpdate() {
   const [products, setProducts] = useState([]);
+  const [allProducts, setAllProducts] = useState([]);
   const [categories, setCategories] = useState([]);
   const [selectedProducts, setSelectedProducts] = useState([]);
+  const [selectedCategory, setSelectedCategory] = useState("all");
   const [isLoading, setIsLoading] = useState(false);
   const [updateData, setUpdateData] = useState({
     price: "",
@@ -41,11 +43,22 @@ export default function BulkProductUpdate() {
         base44.entities.Product.list('-created_date'),
         base44.entities.Category.list()
       ]);
+      setAllProducts(productsData);
       setProducts(productsData);
       setCategories(categoriesData);
     } catch (error) {
       console.error("Error loading data:", error);
     }
+  };
+
+  const filterByCategory = (categoryId) => {
+    setSelectedCategory(categoryId);
+    if (categoryId === "all") {
+      setProducts(allProducts);
+    } else {
+      setProducts(allProducts.filter(p => p.category_id === categoryId));
+    }
+    setSelectedProducts([]);
   };
 
   const toggleSelectAll = () => {
@@ -150,14 +163,33 @@ export default function BulkProductUpdate() {
         {/* Product Selection */}
         <Card>
           <CardHeader>
-            <div className="flex items-center justify-between">
-              <CardTitle>Select Products ({selectedProducts.length})</CardTitle>
-              <div className="flex items-center gap-2">
-                <Checkbox
-                  checked={selectedProducts.length === products.length}
-                  onCheckedChange={toggleSelectAll}
-                />
-                <span className="text-sm">Select All</span>
+            <div className="flex flex-col gap-3">
+              <div className="flex items-center justify-between">
+                <CardTitle>Select Products ({selectedProducts.length})</CardTitle>
+                <div className="flex items-center gap-2">
+                  <Checkbox
+                    checked={selectedProducts.length === products.length && products.length > 0}
+                    onCheckedChange={toggleSelectAll}
+                  />
+                  <span className="text-sm">Select All</span>
+                </div>
+              </div>
+              
+              <div>
+                <Label className="text-xs mb-1 block">Filter by Category</Label>
+                <Select value={selectedCategory} onValueChange={filterByCategory}>
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">All Categories ({allProducts.length})</SelectItem>
+                    {categories.map(cat => (
+                      <SelectItem key={cat.id} value={cat.id}>
+                        {cat.name} ({allProducts.filter(p => p.category_id === cat.id).length})
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </div>
             </div>
           </CardHeader>

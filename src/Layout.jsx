@@ -22,6 +22,7 @@ import { Badge } from "@/components/ui/badge";
 import NotificationCenter from "./components/shared/NotificationCenter";
 import FeedbackPopup from "./components/shop/FeedbackPopup";
 import CustomerSupportChatbot from "./components/shared/CustomerSupportChatbot";
+import InAppChat from "./components/chat/InAppChat";
 
 export default function Layout({ children, currentPageName }) {
   const location = useLocation();
@@ -305,6 +306,7 @@ export default function Layout({ children, currentPageName }) {
               {currentPageName || 'CollegeCart'}
             </h1>
             <div className="flex items-center gap-4">
+              {user && <InAppChat currentUser={user} />}
               <NotificationCenter />
               {user && !isDeliveryRole && (
                 <Link to={createPageUrl("Cart")}>

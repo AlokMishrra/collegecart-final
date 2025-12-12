@@ -34,6 +34,7 @@ import ProductManagement from "../components/admin/ProductManagement";
   import AIKnowledgeBase from "../components/knowledge/AIKnowledgeBase";
   import OnboardingTour from "../components/onboarding/OnboardingTour";
   import BulkProductUpdate from "../components/admin/BulkProductUpdate";
+  import NotificationConfigManager from "../components/admin/NotificationConfigManager";
 
 export default function Admin() {
   const navigate = useNavigate();
@@ -101,6 +102,7 @@ export default function Admin() {
     { value: "reviews", label: "Reviews", permission: "manage_reviews", component: <ReviewModeration /> },
     { value: "delivery", label: "Delivery", permission: "manage_delivery", component: <DeliveryPersonManagement /> },
     { value: "orders", label: "Orders", permission: "manage_orders", component: <OrderManagement /> },
+    { value: "notifications", label: "Notification Config", permission: "manage_settings", component: <NotificationConfigManager /> },
     { value: "gamification", label: "Gamification", permission: "manage_settings", component: <GamificationConfig /> },
     { value: "settings", label: "Settings", permission: "manage_settings", component: <SettingsManagement /> },
     { value: "roles", label: "Roles", permission: "manage_roles", component: <RoleManagement /> }
