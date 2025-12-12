@@ -33,16 +33,17 @@ export default function ProductForm({ product, categories, onSave, onCancel }) {
 
   const handleSubmit = (e) => {
     e.preventDefault();
+    const totalStock = parseInt(formData.stock_quantity);
     onSave({
       ...formData,
       price: parseFloat(formData.price),
       original_price: formData.original_price ? parseFloat(formData.original_price) : null,
-      stock_quantity: parseInt(formData.stock_quantity),
+      stock_quantity: totalStock,
       hostel_stock: {
-        Mithali: parseInt(formData.hostel_stock.Mithali) || 0,
-        Gavaskar: parseInt(formData.hostel_stock.Gavaskar) || 0,
-        Virat: parseInt(formData.hostel_stock.Virat) || 0,
-        Tendulkar: parseInt(formData.hostel_stock.Tendulkar) || 0
+        Mithali: parseInt(formData.hostel_stock.Mithali) || totalStock,
+        Gavaskar: parseInt(formData.hostel_stock.Gavaskar) || totalStock,
+        Virat: parseInt(formData.hostel_stock.Virat) || totalStock,
+        Tendulkar: parseInt(formData.hostel_stock.Tendulkar) || totalStock
       },
       delivery_charge: parseFloat(formData.delivery_charge) || 0,
       profit_margin: parseFloat(formData.profit_margin) || 0,
