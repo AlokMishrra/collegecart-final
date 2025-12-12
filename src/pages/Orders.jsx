@@ -2,7 +2,7 @@ import React, { useState, useEffect, useCallback } from "react";
 import { Order } from "@/entities/Order";
 import { User } from "@/entities/User";
 import { Notification } from "@/entities/Notification";
-import { Package, Clock, Truck, CheckCircle, XCircle, Edit, Plus, Search } from "lucide-react";
+import { Package, Clock, Truck, CheckCircle, XCircle, Edit, Plus, Search, History } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -12,6 +12,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { motion } from "framer-motion";
 import { useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/utils";
@@ -32,6 +33,7 @@ export default function Orders() {
   const [products, setProducts] = useState([]);
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedProducts, setSelectedProducts] = useState([]);
+  const [activeTab, setActiveTab] = useState("active");
 
   const loadOrders = useCallback(async (userId) => {
     setIsLoading(true);
@@ -216,6 +218,14 @@ export default function Orders() {
     );
   }
 
+  // Separate active and completed orders
+  const activeOrders = orders.filter(order => 
+    ['pending', 'confirmed', 'preparing', 'out_for_delivery'].includes(order.status)
+  );
+  const completedOrders = orders.filter(order => 
+    ['delivered', 'cancelled'].includes(order.status)
+  );
+
   if (orders.length === 0) {
     return (
       <div className="max-w-2xl mx-auto text-center py-12">
@@ -234,22 +244,17 @@ export default function Orders() {
     );
   }
 
-  return (
-    <div className="max-w-4xl mx-auto space-y-6">
-      <h1 className="text-3xl font-bold text-gray-900">My Orders</h1>
-
-      <div className="space-y-4">
-        {orders.map((order, index) => {
-          const StatusIcon = getStatusIcon(order.status);
-          
-          return (
-            <motion.div
-              key={order.id}
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: index * 0.1 }}
-            >
-              <Card className="hover:shadow-lg transition-shadow">
+  const renderOrderCard = (order, index) => {
+    const StatusIcon = getStatusIcon(order.status);
+    
+    return (
+      <motion.div
+        key={order.id}
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: index * 0.1 }}
+      >
+        <Card className="hover:shadow-lg transition-shadow">
                 <CardHeader>
                   <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
                     <div>
@@ -338,8 +343,68 @@ export default function Orders() {
               </Card>
             </motion.div>
           );
-        })}
-      </div>
+  };
+
+  return (
+    <div className="max-w-4xl mx-auto space-y-6">
+      <h1 className="text-3xl font-bold text-gray-900">My Orders</h1>
+
+      <Tabs value={activeTab} onValueChange={setActiveTab}>
+        <TabsList className="grid w-full grid-cols-2">
+          <TabsTrigger value="active" className="gap-2">
+            <Package className="w-4 h-4" />
+            Active Orders
+            {activeOrders.length > 0 && (
+              <Badge className="ml-1 bg-emerald-600">{activeOrders.length}</Badge>
+            )}
+          </TabsTrigger>
+          <TabsTrigger value="history" className="gap-2">
+            <History className="w-4 h-4" />
+            Order History
+            {completedOrders.length > 0 && (
+              <Badge variant="outline" className="ml-1">{completedOrders.length}</Badge>
+            )}
+          </TabsTrigger>
+        </TabsList>
+
+        <TabsContent value="active" className="space-y-4">
+          {activeOrders.length === 0 ? (
+            <Card>
+              <CardContent className="p-12 text-center">
+                <div className="w-16 h-16 mx-auto mb-4 bg-gray-100 rounded-full flex items-center justify-center">
+                  <Package className="w-8 h-8 text-gray-400" />
+                </div>
+                <h3 className="text-lg font-semibold text-gray-900 mb-2">No active orders</h3>
+                <p className="text-gray-600 mb-4">You don't have any orders in progress.</p>
+                <Button
+                  onClick={() => navigate(createPageUrl('Shop'))}
+                  className="bg-emerald-600 hover:bg-emerald-700"
+                >
+                  Start Shopping
+                </Button>
+              </CardContent>
+            </Card>
+          ) : (
+            activeOrders.map((order, index) => renderOrderCard(order, index))
+          )}
+        </TabsContent>
+
+        <TabsContent value="history" className="space-y-4">
+          {completedOrders.length === 0 ? (
+            <Card>
+              <CardContent className="p-12 text-center">
+                <div className="w-16 h-16 mx-auto mb-4 bg-gray-100 rounded-full flex items-center justify-center">
+                  <History className="w-8 h-8 text-gray-400" />
+                </div>
+                <h3 className="text-lg font-semibold text-gray-900 mb-2">No order history</h3>
+                <p className="text-gray-600">Your completed and cancelled orders will appear here.</p>
+              </CardContent>
+            </Card>
+          ) : (
+            completedOrders.map((order, index) => renderOrderCard(order, index))
+          )}
+        </TabsContent>
+      </Tabs>
 
       {/* Edit Order Dialog */}
       <Dialog open={showEditDialog} onOpenChange={setShowEditDialog}>
