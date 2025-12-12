@@ -29,6 +29,10 @@ import ProductManagement from "../components/admin/ProductManagement";
   import AIInventoryForecasting from "../components/admin/AIInventoryForecasting";
   import DynamicPricing from "../components/admin/DynamicPricing";
   import AISupportAssistant from "../components/admin/AISupportAssistant";
+  import GamificationConfig from "../components/admin/GamificationConfig";
+  import Leaderboard from "../components/gamification/Leaderboard";
+  import AIKnowledgeBase from "../components/knowledge/AIKnowledgeBase";
+  import OnboardingTour from "../components/onboarding/OnboardingTour";
 
 export default function Admin() {
   const navigate = useNavigate();
@@ -95,6 +99,7 @@ export default function Admin() {
     { value: "reviews", label: "Reviews", permission: "manage_reviews", component: <ReviewModeration /> },
     { value: "delivery", label: "Delivery", permission: "manage_delivery", component: <DeliveryPersonManagement /> },
     { value: "orders", label: "Orders", permission: "manage_orders", component: <OrderManagement /> },
+    { value: "gamification", label: "Gamification", permission: "manage_settings", component: <GamificationConfig /> },
     { value: "settings", label: "Settings", permission: "manage_settings", component: <SettingsManagement /> },
     { value: "roles", label: "Roles", permission: "manage_roles", component: <RoleManagement /> }
   ];
@@ -115,6 +120,15 @@ export default function Admin() {
       </div>
 
       <AdminStats />
+
+      {/* Onboarding Tour */}
+      <OnboardingTour user={user} />
+
+      {/* Leaderboard & Knowledge Base */}
+      <div className="grid md:grid-cols-2 gap-6 mb-6">
+        <Leaderboard />
+        <AIKnowledgeBase currentContext={allowedTabs[0]?.value} />
+      </div>
 
       {allowedTabs.length === 0 ? (
         <Card>
