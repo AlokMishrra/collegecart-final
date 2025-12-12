@@ -9,10 +9,8 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
-import { Search, Filter, Edit, Ban, RefreshCw, Truck, Calendar, Package, Tag, MapPin } from "lucide-react";
+import { Search, Filter, Edit, Ban, RefreshCw, Truck, Calendar, Package } from "lucide-react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { generateShippingLabel } from "@/functions/generateShippingLabel";
-import { getTrackingInfo } from "@/functions/getTrackingInfo";
 
 export default function EnhancedOrderManagement() {
   const [orders, setOrders] = useState([]);
@@ -30,8 +28,6 @@ export default function EnhancedOrderManagement() {
   const [cancelDialog, setCancelDialog] = useState({ open: false, order: null });
   const [refundDialog, setRefundDialog] = useState({ open: false, order: null, reason: "" });
   const [deliveryPersons, setDeliveryPersons] = useState([]);
-  const [shippingDialog, setShippingDialog] = useState({ open: false, order: null, courier: "Local Delivery" });
-  const [trackingDialog, setTrackingDialog] = useState({ open: false, trackingInfo: null, loading: false });
 
   useEffect(() => {
     loadOrders();
@@ -174,47 +170,6 @@ export default function EnhancedOrderManagement() {
     }
   };
 
-  const generateLabel = async () => {
-    try {
-      const response = await generateShippingLabel({
-        order_id: shippingDialog.order.id,
-        courier_name: shippingDialog.courier
-      });
-
-      if (response.data.success) {
-        alert(`Shipping label generated! Tracking: ${response.data.tracking_number}`);
-        setShippingDialog({ open: false, order: null, courier: "Local Delivery" });
-        loadOrders();
-      }
-    } catch (error) {
-      console.error("Error generating label:", error);
-      alert("Failed to generate shipping label");
-    }
-  };
-
-  const viewTracking = async (order) => {
-    if (!order.tracking_number) {
-      alert("No tracking number available for this order");
-      return;
-    }
-
-    setTrackingDialog({ open: true, trackingInfo: null, loading: true });
-
-    try {
-      const response = await getTrackingInfo({
-        tracking_number: order.tracking_number
-      });
-
-      if (response.data.success) {
-        setTrackingDialog({ open: true, trackingInfo: response.data.tracking_info, loading: false });
-      }
-    } catch (error) {
-      console.error("Error fetching tracking:", error);
-      setTrackingDialog({ open: false, trackingInfo: null, loading: false });
-      alert("Failed to fetch tracking information");
-    }
-  };
-
   const getStatusColor = (status) => {
     const colors = {
       pending: "bg-yellow-100 text-yellow-800",
@@ -345,16 +300,9 @@ export default function EnhancedOrderManagement() {
                   <TableCell className="text-sm">{order.items?.length || 0} items</TableCell>
                   <TableCell className="font-medium">₹{order.total_amount.toFixed(2)}</TableCell>
                   <TableCell>
-                    <div className="space-y-1">
-                      <Badge className={getStatusColor(order.status)}>
-                        {order.status.replace('_', ' ')}
-                      </Badge>
-                      {order.tracking_number && (
-                        <div className="text-xs text-gray-600">
-                          Track: {order.tracking_number}
-                        </div>
-                      )}
-                    </div>
+                    <Badge className={getStatusColor(order.status)}>
+                      {order.status.replace('_', ' ')}
+                    </Badge>
                   </TableCell>
                   <TableCell>
                     <div className="flex gap-2">
@@ -383,26 +331,6 @@ export default function EnhancedOrderManagement() {
                           className="text-orange-600"
                         >
                           <RefreshCw className="w-4 h-4" />
-                        </Button>
-                      )}
-                      {!order.shipping_label_generated && order.status !== 'cancelled' && order.status !== 'delivered' && (
-                        <Button
-                          size="icon"
-                          variant="outline"
-                          onClick={() => setShippingDialog({ open: true, order, courier: "Local Delivery" })}
-                          className="text-blue-600"
-                        >
-                          <Tag className="w-4 h-4" />
-                        </Button>
-                      )}
-                      {order.tracking_number && (
-                        <Button
-                          size="icon"
-                          variant="outline"
-                          onClick={() => viewTracking(order)}
-                          className="text-green-600"
-                        >
-                          <MapPin className="w-4 h-4" />
                         </Button>
                       )}
                     </div>
@@ -533,104 +461,6 @@ export default function EnhancedOrderManagement() {
               <Button onClick={processRefund} className="bg-orange-600 hover:bg-orange-700">Process Refund</Button>
             </div>
           </div>
-        </DialogContent>
-      </Dialog>
-
-      {/* Generate Shipping Label Dialog */}
-      <Dialog open={shippingDialog.open} onOpenChange={(open) => setShippingDialog({ ...shippingDialog, open })}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Generate Shipping Label</DialogTitle>
-          </DialogHeader>
-          <div className="space-y-4">
-            <Alert>
-              <AlertDescription>
-                Generate shipping label for order {shippingDialog.order?.order_number}
-              </AlertDescription>
-            </Alert>
-            <div>
-              <Label>Courier Service</Label>
-              <Select
-                value={shippingDialog.courier}
-                onValueChange={(value) => setShippingDialog({...shippingDialog, courier: value})}
-              >
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="Local Delivery">Local Delivery</SelectItem>
-                  <SelectItem value="Shiprocket">Shiprocket</SelectItem>
-                  <SelectItem value="Delhivery">Delhivery</SelectItem>
-                  <SelectItem value="Blue Dart">Blue Dart</SelectItem>
-                  <SelectItem value="DTDC">DTDC</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-            <div className="bg-blue-50 border border-blue-200 rounded p-3">
-              <p className="text-sm text-blue-900">
-                <strong>Order Details:</strong>
-              </p>
-              <p className="text-sm text-gray-700 mt-1">Customer: {shippingDialog.order?.customer_name}</p>
-              <p className="text-sm text-gray-700">Address: {shippingDialog.order?.delivery_address}</p>
-              <p className="text-sm text-gray-700">Phone: {shippingDialog.order?.phone_number}</p>
-            </div>
-            <div className="flex justify-end gap-3">
-              <Button variant="outline" onClick={() => setShippingDialog({ open: false, order: null, courier: "Local Delivery" })}>Cancel</Button>
-              <Button onClick={generateLabel} className="bg-blue-600 hover:bg-blue-700">
-                <Tag className="w-4 h-4 mr-2" />
-                Generate Label
-              </Button>
-            </div>
-          </div>
-        </DialogContent>
-      </Dialog>
-
-      {/* Tracking Info Dialog */}
-      <Dialog open={trackingDialog.open} onOpenChange={(open) => setTrackingDialog({ ...trackingDialog, open })}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Shipment Tracking</DialogTitle>
-          </DialogHeader>
-          {trackingDialog.loading ? (
-            <div className="text-center py-8">Loading tracking information...</div>
-          ) : trackingDialog.trackingInfo ? (
-            <div className="space-y-4">
-              <div className="bg-emerald-50 border border-emerald-200 rounded-lg p-4">
-                <div className="flex items-center justify-between mb-2">
-                  <span className="text-sm font-medium">Tracking Number:</span>
-                  <Badge className="font-mono">{trackingDialog.trackingInfo.tracking_number}</Badge>
-                </div>
-                <div className="flex items-center justify-between mb-2">
-                  <span className="text-sm font-medium">Current Status:</span>
-                  <Badge className="bg-blue-600">{trackingDialog.trackingInfo.status}</Badge>
-                </div>
-                <div className="flex items-center justify-between mb-2">
-                  <span className="text-sm font-medium">Location:</span>
-                  <span className="text-sm">{trackingDialog.trackingInfo.current_location}</span>
-                </div>
-                <div className="flex items-center justify-between">
-                  <span className="text-sm font-medium">Est. Delivery:</span>
-                  <span className="text-sm">{trackingDialog.trackingInfo.estimated_delivery}</span>
-                </div>
-              </div>
-
-              <div>
-                <h4 className="font-medium mb-3">Tracking History</h4>
-                <div className="space-y-3">
-                  {trackingDialog.trackingInfo.tracking_history?.map((event, idx) => (
-                    <div key={idx} className="flex gap-3 items-start">
-                      <div className="w-2 h-2 bg-emerald-600 rounded-full mt-2"></div>
-                      <div className="flex-1">
-                        <p className="font-medium text-sm">{event.status}</p>
-                        <p className="text-xs text-gray-600">{event.location}</p>
-                        <p className="text-xs text-gray-500">{new Date(event.timestamp).toLocaleString()}</p>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            </div>
-          ) : null}
         </DialogContent>
       </Dialog>
     </div>
