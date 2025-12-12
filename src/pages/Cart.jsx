@@ -9,6 +9,7 @@ import { base44 } from "@/api/base44Client";
 import { Trash2, Plus, Minus, ShoppingBag } from "lucide-react";
 import DeliveryProgressBar from "../components/cart/DeliveryProgressBar";
 import RecommendedProducts from "../components/cart/RecommendedProducts";
+import RecommendationEngine from "../components/shop/RecommendationEngine";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -466,6 +467,16 @@ export default function Cart() {
                 : 0
             }
           />
+
+          {/* Personalized Recommendations at Checkout */}
+          {user && (
+            <RecommendationEngine
+              user={user}
+              onAddToCart={addToCartFromRecommendation}
+              getCartQuantity={getCartQuantity}
+              context="checkout"
+            />
+          )}
         </div>
 
         {/* Order Summary */}
