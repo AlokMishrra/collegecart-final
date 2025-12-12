@@ -16,6 +16,7 @@ const AVAILABLE_PERMISSIONS = [
   { id: "products_manage", label: "Manage Products" },
   { id: "categories_view", label: "View Categories" },
   { id: "categories_manage", label: "Manage Categories" },
+  { id: "campaigns_manage", label: "Manage Campaigns" },
   { id: "orders_view", label: "View Orders" },
   { id: "orders_manage", label: "Manage Orders" },
   { id: "delivery_view", label: "View Delivery" },
