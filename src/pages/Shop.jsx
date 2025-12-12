@@ -20,6 +20,7 @@ import QuickAddToCart from "../components/shop/QuickAddToCart";
   import CategoryFilter from "../components/shop/CategoryFilter";
   import ProductCard from "../components/shop/ProductCard";
   import HostelSelector from "../components/shop/HostelSelector";
+  import RecommendationEngine from "../components/shop/RecommendationEngine";
 
 export default function Shop() {
   const [products, setProducts] = useState([]);
@@ -218,6 +219,16 @@ export default function Shop() {
         selectedCategory={selectedCategory}
         onSelectCategory={setSelectedCategory}
       />
+
+      {/* Personalized Recommendations */}
+      {!searchQuery.trim() && !selectedCategory && user && (
+        <RecommendationEngine 
+          user={user} 
+          onAddToCart={addToCart}
+          getCartQuantity={getCartQuantity}
+          context="shop"
+        />
+      )}
 
       {/* Category Sections */}
       {isLoading ? (

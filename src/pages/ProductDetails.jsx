@@ -7,6 +7,7 @@ import { Notification } from "@/entities/Notification";
 import { base44 } from "@/api/base44Client";
 import { ArrowLeft, ShoppingCart, Plus, Minus, Star } from "lucide-react";
 import ReviewSection from "../components/product/ReviewSection";
+import ProductViewTracker from "../components/shop/ProductViewTracker";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
