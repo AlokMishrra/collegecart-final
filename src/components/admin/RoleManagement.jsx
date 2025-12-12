@@ -12,9 +12,6 @@ import { Plus, Edit, Trash2, Shield } from "lucide-react";
 import ConfirmDialog from "../shared/ConfirmDialog";
 
 const AVAILABLE_PERMISSIONS = [
-  { id: "view_dashboard", label: "View Dashboard" },
-  { id: "view_summary", label: "View Daily Summary" },
-  { id: "manage_customers", label: "Manage CRM" },
   { id: "products_view", label: "View Products" },
   { id: "products_manage", label: "Manage Products" },
   { id: "categories_view", label: "View Categories" },
