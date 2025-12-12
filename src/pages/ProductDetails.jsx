@@ -317,8 +317,42 @@ export default function ProductDetails() {
         </div>
       </div>
 
+      {/* Personalized Recommendations */}
+      {user && (
+        <RecommendationEngine
+          user={user}
+          onAddToCart={async (recommendedProduct) => {
+            const cartItems = await CartItem.filter({ 
+              user_id: user.id, 
+              product_id: recommendedProduct.id 
+            });
+            if (cartItems.length > 0) {
+              await CartItem.update(cartItems[0].id, {
+                quantity: cartItems[0].quantity + 1
+              });
+            } else {
+              await CartItem.create({
+                product_id: recommendedProduct.id,
+                user_id: user.id,
+                quantity: 1
+              });
+            }
+            await Notification.create({
+              user_id: user.id,
+              title: "Added to Cart",
+              message: `${recommendedProduct.name} has been added to your cart`,
+              type: "success"
+            });
+          }}
+          getCartQuantity={(productId) => {
+            return productId === product.id ? cartQuantity : 0;
+          }}
+          context="product_detail"
+        />
+      )}
+
       {/* Reviews Section */}
-      <ReviewSection productId={product.id} user={user} />
+      <ReviewSection productId={product.id} product={product} />
     </div>
   );
 }

@@ -13,6 +13,8 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 
 import ProductForm from "./ProductForm";
 import ConfirmDialog from "../shared/ConfirmDialog";
+import BulkProductImport from "./BulkProductImport";
+import InventoryAlerts from "./InventoryAlerts";
 
 export default function ProductManagement() {
   const [products, setProducts] = useState([]);
@@ -151,6 +153,12 @@ export default function ProductManagement() {
 
   return (
     <div className="space-y-6">
+      {/* Bulk Import/Export */}
+      <BulkProductImport />
+
+      {/* Inventory Alerts */}
+      <InventoryAlerts />
+
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
         <div>
           <h2 className="text-2xl font-bold text-gray-900">Products</h2>
