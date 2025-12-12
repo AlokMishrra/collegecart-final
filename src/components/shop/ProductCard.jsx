@@ -111,25 +111,27 @@ export default function ProductCard({ product, cartQuantity, onAddToCart }) {
           </h3>
         </Link>
         
-        <div className="flex items-center gap-2 mb-2">
-          <div className="flex items-baseline gap-2">
-            <span className="text-2xl font-bold text-emerald-600">₹{product.price}</span>
-            {product.original_price && (
-              <span className="text-sm text-gray-400 line-through">₹{product.original_price}</span>
-            )}
-          </div>
-          {reviewCount > 0 && (
-            <div className="flex items-center gap-1 bg-emerald-50 px-2 py-1 rounded-md">
-              <Star className="w-4 h-4 text-yellow-500 fill-yellow-500" />
-              <span className="text-sm font-bold text-gray-900">{avgRating.toFixed(1)}</span>
-            </div>
+        <div className="flex items-baseline gap-2 mb-2">
+          <span className="text-2xl font-bold text-emerald-600">₹{product.price}</span>
+          {product.original_price && (
+            <span className="text-sm text-gray-400 line-through">₹{product.original_price}</span>
           )}
+          <span className="text-xs text-gray-500">/{product.unit}</span>
         </div>
 
         <div className="space-y-2 mb-3">
-          <div className="flex items-center gap-1">
-            <Clock className="w-4 h-4 text-gray-500" />
-            <span className="text-sm text-gray-600">{product.delivery_time || "40 mins"}</span>
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-1">
+              <Clock className="w-4 h-4 text-gray-500" />
+              <span className="text-sm text-gray-600">{product.delivery_time || "40 mins"}</span>
+            </div>
+            {reviewCount > 0 && (
+              <div className="flex items-center gap-1">
+                <Star className="w-4 h-4 text-yellow-400 fill-yellow-400" />
+                <span className="text-sm font-medium">{avgRating.toFixed(1)}</span>
+                <span className="text-xs text-gray-500">({reviewCount})</span>
+              </div>
+            )}
           </div>
           {product.available_from && product.available_to && (
             <div className="text-xs text-emerald-600 font-medium">
