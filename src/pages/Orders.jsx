@@ -1,11 +1,17 @@
-
 import React, { useState, useEffect, useCallback } from "react";
 import { Order } from "@/entities/Order";
 import { User } from "@/entities/User";
-import { Package, Clock, Truck, CheckCircle, XCircle } from "lucide-react";
+import { Notification } from "@/entities/Notification";
+import { Package, Clock, Truck, CheckCircle, XCircle, Edit } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Button } from "@/components/ui/button";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { motion } from "framer-motion";
 import { useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/utils";
@@ -15,6 +21,14 @@ export default function Orders() {
   const [orders, setOrders] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [user, setUser] = useState(null);
+  const [editingOrder, setEditingOrder] = useState(null);
+  const [showEditDialog, setShowEditDialog] = useState(false);
+  const [editForm, setEditForm] = useState({
+    customer_name: "",
+    phone_number: "",
+    delivery_address: "",
+    delivery_notes: ""
+  });
 
   const loadOrders = useCallback(async (userId) => {
     setIsLoading(true);
@@ -63,6 +77,45 @@ export default function Orders() {
       cancelled: "bg-red-100 text-red-800"
     };
     return colorMap[status] || "bg-gray-100 text-gray-800";
+  };
+
+  const canEditOrder = (order) => {
+    return order.status !== "out_for_delivery" && order.status !== "delivered" && order.status !== "cancelled";
+  };
+
+  const handleEditClick = (order) => {
+    setEditingOrder(order);
+    setEditForm({
+      customer_name: order.customer_name,
+      phone_number: order.phone_number,
+      delivery_address: order.delivery_address,
+      delivery_notes: order.delivery_notes || ""
+    });
+    setShowEditDialog(true);
+  };
+
+  const handleSaveEdit = async () => {
+    try {
+      await Order.update(editingOrder.id, editForm);
+      
+      await Notification.create({
+        user_id: user.id,
+        title: "Order Updated",
+        message: `Your order ${editingOrder.order_number} has been updated successfully`,
+        type: "success"
+      });
+
+      setShowEditDialog(false);
+      loadOrders(user.id);
+    } catch (error) {
+      console.error("Error updating order:", error);
+      await Notification.create({
+        user_id: user.id,
+        title: "Update Failed",
+        message: "Failed to update order. Please try again.",
+        type: "error"
+      });
+    }
   };
 
   if (isLoading) {
@@ -161,15 +214,28 @@ export default function Orders() {
                   </div>
                   
                   <div className="border-t pt-4">
-                    <div className="grid md:grid-cols-2 gap-4 text-sm">
-                      <div>
-                        <h4 className="font-medium text-gray-900">Delivery Address</h4>
-                        <p className="text-gray-600 mt-1">{order.delivery_address}</p>
+                    <div className="flex items-start justify-between">
+                      <div className="flex-1 grid md:grid-cols-2 gap-4 text-sm">
+                        <div>
+                          <h4 className="font-medium text-gray-900">Delivery Address</h4>
+                          <p className="text-gray-600 mt-1">{order.delivery_address}</p>
+                        </div>
+                        <div>
+                          <h4 className="font-medium text-gray-900">Contact</h4>
+                          <p className="text-gray-600 mt-1">{order.phone_number}</p>
+                        </div>
                       </div>
-                      <div>
-                        <h4 className="font-medium text-gray-900">Contact</h4>
-                        <p className="text-gray-600 mt-1">{order.phone_number}</p>
-                      </div>
+                      {canEditOrder(order) && (
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() => handleEditClick(order)}
+                          className="ml-4"
+                        >
+                          <Edit className="w-4 h-4 mr-1" />
+                          Edit
+                        </Button>
+                      )}
                     </div>
                     {order.delivery_notes && (
                       <div className="mt-4">

@@ -4,7 +4,7 @@ import { Category } from "@/entities/Category";
 import { CartItem } from "@/entities/CartItem";
 import { User } from "@/entities/User";
 import { Notification } from "@/entities/Notification";
-import { Search, Filter, ShoppingCart, Plus, Minus } from "lucide-react";
+import { Search, Filter, ShoppingCart, Plus, Minus, Building2 } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -161,6 +161,26 @@ export default function Shop() {
       
       {/* Enhanced Header */}
       <EnhancedShopHero />
+
+      {/* Change Hostel Button */}
+      {user?.selected_hostel && (
+        <div className="flex items-center justify-between bg-emerald-50 border border-emerald-200 rounded-lg p-4">
+          <div className="flex items-center gap-2">
+            <Building2 className="w-5 h-5 text-emerald-600" />
+            <span className="text-sm font-medium text-gray-900">
+              Showing products for: <span className="text-emerald-600">{user.selected_hostel} Hostel</span>
+            </span>
+          </div>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => setShowHostelSelector(true)}
+            className="border-emerald-300 text-emerald-700 hover:bg-emerald-100"
+          >
+            Change Hostel
+          </Button>
+        </div>
+      )}
 
       {/* Search */}
       <div className="relative">
