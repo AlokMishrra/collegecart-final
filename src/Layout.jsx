@@ -59,10 +59,14 @@ export default function Layout({ children, currentPageName }) {
       // Check if user has any assigned roles
       if (currentUser.assigned_role_ids && currentUser.assigned_role_ids.length > 0) {
         setUserHasRole(true);
-        // Load the first role details to check permissions
-        const roles = await base44.entities.Role.filter({ id: currentUser.assigned_role_ids[0] });
-        if (roles.length > 0) {
-          setUserRole(roles[0]);
+        // Load all assigned roles to check permissions
+        const rolePromises = currentUser.assigned_role_ids.map(roleId => 
+          base44.entities.Role.filter({ id: roleId })
+        );
+        const roleResults = await Promise.all(rolePromises);
+        const allRoles = roleResults.flat();
+        if (allRoles.length > 0) {
+          setUserRole(allRoles[0]); // Set first role as primary
         }
       }
     } catch (error) {
@@ -79,6 +83,9 @@ export default function Layout({ children, currentPageName }) {
     await User.logout();
     setUser(null);
   };
+
+  // Check if user has multiple roles
+  const hasMultipleRoles = user?.assigned_role_ids && user.assigned_role_ids.length > 1;
 
   // Check if user is a delivery person
   const isDeliveryRole = userRole && (
@@ -110,7 +117,7 @@ export default function Layout({ children, currentPageName }) {
       title: "Admin Panel",
       url: createPageUrl("Admin"),
       icon: Settings,
-      showCondition: () => !isDeliveryRole && (user?.role === "admin" || userHasRole)
+      showCondition: () => hasMultipleRoles || (!isDeliveryRole && (user?.role === "admin" || userHasRole))
     },
     {
       title: "Delivery Portal",
@@ -122,7 +129,7 @@ export default function Layout({ children, currentPageName }) {
           "manangirigoswaim011@gmail.com", 
           "info@apnafreelancer.in"
         ];
-        return allowedEmails.includes(user?.email) || isDeliveryRole;
+        return hasMultipleRoles || allowedEmails.includes(user?.email) || isDeliveryRole;
       }
     }
   ];
