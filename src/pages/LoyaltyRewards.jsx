@@ -8,10 +8,69 @@ import { Award, Star, Gift, TrendingUp, Crown } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 
 const LOYALTY_TIERS = [
-  { name: "Bronze", minSpending: 0, color: "bg-amber-700", icon: "🥉", benefits: ["1% cashback", "Early access to sales"] },
-  { name: "Silver", minSpending: 2000, color: "bg-gray-400", icon: "🥈", benefits: ["2% cashback", "Free shipping on orders above ₹300", "Birthday bonus"] },
-  { name: "Gold", minSpending: 5000, color: "bg-yellow-500", icon: "🥇", benefits: ["3% cashback", "Free shipping on all orders", "Exclusive deals", "Priority support"] },
-  { name: "Platinum", minSpending: 10000, color: "bg-purple-600", icon: "💎", benefits: ["5% cashback", "Free express delivery", "Early product access", "Dedicated account manager"] }
+  { 
+    name: "Bronze", 
+    minSpending: 0, 
+    color: "bg-amber-700", 
+    icon: "🥉", 
+    cashback: "1%",
+    benefits: [
+      "Earn 1% cashback on all orders",
+      "Early access to sales and promotions",
+      "Monthly exclusive coupons",
+      "Special welcome bonus"
+    ],
+    description: "Start your journey with CollegeCart"
+  },
+  { 
+    name: "Silver", 
+    minSpending: 2000, 
+    color: "bg-gray-400", 
+    icon: "🥈", 
+    cashback: "2%",
+    benefits: [
+      "Earn 2% cashback on all orders",
+      "Free shipping on orders above ₹300",
+      "Birthday month special discount",
+      "Priority customer support",
+      "Extended return window (14 days)"
+    ],
+    description: "Unlock more rewards and exclusive perks"
+  },
+  { 
+    name: "Gold", 
+    minSpending: 5000, 
+    color: "bg-yellow-500", 
+    icon: "🥇", 
+    cashback: "3%",
+    benefits: [
+      "Earn 3% cashback on all orders",
+      "Free shipping on all orders",
+      "Exclusive VIP deals and discounts",
+      "Priority support with dedicated line",
+      "Early access to new products",
+      "Quarterly bonus points"
+    ],
+    description: "Premium benefits for loyal customers"
+  },
+  { 
+    name: "Platinum", 
+    minSpending: 10000, 
+    color: "bg-purple-600", 
+    icon: "💎", 
+    cashback: "5%",
+    benefits: [
+      "Earn 5% cashback on all orders",
+      "Free express delivery (1-2 hours)",
+      "Exclusive platinum-only products",
+      "Dedicated account manager",
+      "VIP events and tastings invitation",
+      "Personal shopping assistance",
+      "30-day return policy",
+      "Double points on special occasions"
+    ],
+    description: "The ultimate CollegeCart experience"
+  }
 ];
 
 export default function LoyaltyRewards() {
@@ -118,19 +177,21 @@ export default function LoyaltyRewards() {
         {LOYALTY_TIERS.map((tier, index) => (
           <Card key={tier.name} className={currentTier.name === tier.name ? "border-2 border-purple-600" : ""}>
             <CardHeader className="pb-3">
-              <div className="flex items-center justify-between">
+              <div className="flex items-center justify-between mb-2">
                 <div className="flex items-center gap-2">
                   <span className="text-2xl">{tier.icon}</span>
                   <CardTitle className="text-lg">{tier.name}</CardTitle>
                 </div>
                 {currentTier.name === tier.name && <Crown className="w-5 h-5 text-purple-600" />}
               </div>
-              <p className="text-sm text-gray-600">₹{tier.minSpending}+ spent</p>
+              <p className="text-xs text-gray-500 mb-1">{tier.description}</p>
+              <p className="text-sm font-semibold text-gray-900">₹{tier.minSpending}+ total spending</p>
+              <Badge className={`mt-2 ${tier.color}`}>{tier.cashback} Cashback</Badge>
             </CardHeader>
             <CardContent>
-              <ul className="space-y-1">
+              <ul className="space-y-1.5">
                 {tier.benefits.map((benefit, i) => (
-                  <li key={i} className="text-sm text-gray-700 flex items-start gap-2">
+                  <li key={i} className="text-xs text-gray-700 flex items-start gap-2">
                     <Star className="w-3 h-3 text-yellow-500 mt-0.5 flex-shrink-0" />
                     <span>{benefit}</span>
                   </li>

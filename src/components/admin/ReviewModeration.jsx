@@ -6,6 +6,7 @@ import { Badge } from "@/components/ui/badge";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Star, Check, X, Clock } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
+import ReviewAnalytics from "./ReviewAnalytics";
 
 export default function ReviewModeration() {
   const [reviews, setReviews] = useState([]);
@@ -168,6 +169,9 @@ export default function ReviewModeration() {
 
   return (
     <div className="space-y-6">
+      {/* AI Analytics */}
+      <ReviewAnalytics />
+
       {/* Pending Reviews */}
       <Card>
         <CardHeader>
