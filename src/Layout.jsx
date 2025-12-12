@@ -56,11 +56,11 @@ export default function Layout({ children, currentPageName }) {
       const currentUser = await User.me();
       setUser(currentUser);
       
-      // Check if user has any assigned role
-      if (currentUser.assigned_role_id) {
+      // Check if user has any assigned roles
+      if (currentUser.assigned_role_ids && currentUser.assigned_role_ids.length > 0) {
         setUserHasRole(true);
-        // Load the role details to check permissions
-        const roles = await base44.entities.Role.filter({ id: currentUser.assigned_role_id });
+        // Load the first role details to check permissions
+        const roles = await base44.entities.Role.filter({ id: currentUser.assigned_role_ids[0] });
         if (roles.length > 0) {
           setUserRole(roles[0]);
         }

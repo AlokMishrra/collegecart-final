@@ -25,15 +25,15 @@ export default function Admin() {
   const checkAdminAccess = useCallback(async () => {
     try {
       const currentUser = await User.me();
-      if (currentUser.role !== 'admin' && !currentUser.assigned_role_id) {
+      if (currentUser.role !== 'admin' && (!currentUser.assigned_role_ids || currentUser.assigned_role_ids.length === 0)) {
         navigate(createPageUrl('Shop'));
         return;
       }
       setUser(currentUser);
       
       // Load user permissions - give full access to anyone with a role
-      if (currentUser.role === 'admin' || currentUser.assigned_role_id) {
-        // Admin or any user with assigned role has all permissions
+      if (currentUser.role === 'admin' || (currentUser.assigned_role_ids && currentUser.assigned_role_ids.length > 0)) {
+        // Admin or any user with assigned roles has all permissions
         setUserPermissions(['all']);
       }
     } catch (error) {

@@ -91,13 +91,21 @@ export default function RoleManagement() {
     setIsFormOpen(true);
   };
 
-  const handleAssignRole = async (userId, roleId) => {
+  const handleAssignRole = async (userId, roleIds) => {
     try {
-      await base44.entities.User.update(userId, { assigned_role_id: roleId });
+      await base44.entities.User.update(userId, { assigned_role_ids: roleIds });
       await loadData();
     } catch (error) {
       console.error("Error assigning role:", error);
     }
+  };
+
+  const toggleUserRole = (user, roleId) => {
+    const currentRoles = user.assigned_role_ids || [];
+    const newRoles = currentRoles.includes(roleId)
+      ? currentRoles.filter(id => id !== roleId)
+      : [...currentRoles, roleId];
+    handleAssignRole(user.id, newRoles);
   };
 
   const togglePermission = (permissionId) => {
@@ -209,7 +217,7 @@ export default function RoleManagement() {
                     </div>
                   </TableCell>
                   <TableCell>
-                    {users.filter(u => u.assigned_role_id === role.id).length} users
+                    {users.filter(u => u.assigned_role_ids?.includes(role.id)).length} users
                   </TableCell>
                   <TableCell>
                     <div className="flex gap-2">
@@ -244,8 +252,7 @@ export default function RoleManagement() {
               <TableRow>
                 <TableHead>User Name</TableHead>
                 <TableHead>Email</TableHead>
-                <TableHead>Current Role</TableHead>
-                <TableHead>Assign Role</TableHead>
+                <TableHead>Assigned Roles</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -254,21 +261,23 @@ export default function RoleManagement() {
                   <TableCell>{user.full_name}</TableCell>
                   <TableCell>{user.email}</TableCell>
                   <TableCell>
-                    {user.assigned_role_id 
-                      ? roles.find(r => r.id === user.assigned_role_id)?.name || "Unknown"
-                      : "No role assigned"}
-                  </TableCell>
-                  <TableCell>
-                    <select
-                      className="border rounded px-3 py-1"
-                      value={user.assigned_role_id || ""}
-                      onChange={(e) => handleAssignRole(user.id, e.target.value)}
-                    >
-                      <option value="">No Role</option>
+                    <div className="flex flex-wrap gap-2">
                       {roles.map(role => (
-                        <option key={role.id} value={role.id}>{role.name}</option>
+                        <div key={role.id} className="flex items-center gap-2">
+                          <Checkbox
+                            id={`${user.id}-${role.id}`}
+                            checked={user.assigned_role_ids?.includes(role.id) || false}
+                            onCheckedChange={() => toggleUserRole(user, role.id)}
+                          />
+                          <label htmlFor={`${user.id}-${role.id}`} className="text-sm cursor-pointer">
+                            {role.name}
+                          </label>
+                        </div>
                       ))}
-                    </select>
+                      {(!user.assigned_role_ids || user.assigned_role_ids.length === 0) && (
+                        <span className="text-sm text-gray-500">No roles assigned</span>
+                      )}
+                    </div>
                   </TableCell>
                 </TableRow>
               ))}
