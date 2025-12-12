@@ -54,14 +54,43 @@ export default function DailyOrderSummary() {
       const deliveryStats = deliveryPersons.map(person => {
         const personOrders = deliveredOrders.filter(order => order.delivery_person_id === person.id);
         const earnings = personOrders.reduce((sum, order) => sum + (order.total_amount * 0.10), 0);
+        const revenue = personOrders.reduce((sum, order) => sum + order.total_amount, 0);
+        const totalProducts = personOrders.reduce((sum, order) => {
+          return sum + (order.items?.reduce((itemSum, item) => itemSum + item.quantity, 0) || 0);
+        }, 0);
+        
+        // Calculate daily breakdown for this delivery person
+        const dailyStats = Array.from({ length: 7 }, (_, i) => {
+          const day = new Date(startOfWeek);
+          day.setDate(day.getDate() + i);
+          const dayEnd = new Date(day);
+          dayEnd.setHours(23, 59, 59, 999);
+          
+          const dayOrders = personOrders.filter(order => {
+            const orderDate = new Date(order.created_date);
+            return orderDate >= day && orderDate <= dayEnd;
+          });
+          
+          return {
+            date: day.toLocaleDateString('en-IN', { weekday: 'short', month: 'short', day: 'numeric' }),
+            deliveries: dayOrders.length,
+            revenue: dayOrders.reduce((sum, order) => sum + order.total_amount, 0),
+            products: dayOrders.reduce((sum, order) => {
+              return sum + (order.items?.reduce((itemSum, item) => itemSum + item.quantity, 0) || 0);
+            }, 0)
+          };
+        });
+        
         return {
           name: person.name,
           deliveries: personOrders.length,
-          earnings: earnings
+          earnings: earnings,
+          revenue: revenue,
+          products: totalProducts,
+          dailyBreakdown: dailyStats.filter(d => d.deliveries > 0)
         };
       }).filter(stat => stat.deliveries > 0)
-        .sort((a, b) => b.deliveries - a.deliveries)
-        .slice(0, 5);
+        .sort((a, b) => b.deliveries - a.deliveries);
 
       // Daily breakdown for the week
       const dailyBreakdown = Array.from({ length: 7 }, (_, i) => {
@@ -75,10 +104,16 @@ export default function DailyOrderSummary() {
           return orderDate >= day && orderDate <= dayEnd;
         });
         
+        const deliveredDayOrders = dayOrders.filter(o => o.status === 'delivered');
+        const totalProducts = deliveredDayOrders.reduce((sum, order) => {
+          return sum + (order.items?.reduce((itemSum, item) => itemSum + item.quantity, 0) || 0);
+        }, 0);
+        
         return {
           date: day.toLocaleDateString('en-IN', { weekday: 'short', day: 'numeric', month: 'short' }),
           orders: dayOrders.length,
-          revenue: dayOrders.reduce((sum, order) => sum + order.total_amount, 0)
+          revenue: dayOrders.reduce((sum, order) => sum + order.total_amount, 0),
+          products: totalProducts
         };
       });
 
@@ -117,21 +152,27 @@ export default function DailyOrderSummary() {
         return acc;
       }, {});
 
-      // Get delivery person performance
+      // Get delivery person performance with detailed stats
       const deliveryPersons = await DeliveryPerson.list();
       const deliveredOrders = dayOrders.filter(order => order.status === 'delivered');
       
       const deliveryStats = deliveryPersons.map(person => {
         const personOrders = deliveredOrders.filter(order => order.delivery_person_id === person.id);
         const earnings = personOrders.reduce((sum, order) => sum + (order.total_amount * 0.10), 0);
+        const revenue = personOrders.reduce((sum, order) => sum + order.total_amount, 0);
+        const totalProducts = personOrders.reduce((sum, order) => {
+          return sum + (order.items?.reduce((itemSum, item) => itemSum + item.quantity, 0) || 0);
+        }, 0);
+        
         return {
           name: person.name,
           deliveries: personOrders.length,
-          earnings: earnings
+          earnings: earnings,
+          revenue: revenue,
+          products: totalProducts
         };
       }).filter(stat => stat.deliveries > 0)
-        .sort((a, b) => b.deliveries - a.deliveries)
-        .slice(0, 5);
+        .sort((a, b) => b.deliveries - a.deliveries);
 
       // Hourly breakdown
       const hourlyBreakdown = Array.from({ length: 24 }, (_, hour) => {
@@ -292,24 +333,39 @@ export default function DailyOrderSummary() {
           </CardContent>
         </Card>
 
-        {/* Top Delivery Persons */}
+        {/* Delivery Performance Summary */}
         <Card>
           <CardHeader>
-            <CardTitle>Top Delivery Partners</CardTitle>
+            <CardTitle>Delivery Partners Overview</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="space-y-4">
+            <div className="space-y-4 max-h-96 overflow-y-auto">
               {currentSummary.topDeliveryPersons.map((person, index) => (
-                <div key={index} className="flex items-center justify-between">
-                  <div className="flex items-center gap-3">
-                    <div className="w-8 h-8 bg-emerald-100 rounded-full flex items-center justify-center">
-                      <Truck className="w-4 h-4 text-emerald-600" />
+                <div key={index} className="border-b pb-3 last:border-b-0">
+                  <div className="flex items-center justify-between mb-2">
+                    <div className="flex items-center gap-3">
+                      <div className="w-8 h-8 bg-emerald-100 rounded-full flex items-center justify-center">
+                        <Truck className="w-4 h-4 text-emerald-600" />
+                      </div>
+                      <span className="font-medium">{person.name}</span>
                     </div>
-                    <span className="font-medium">{person.name}</span>
+                    <Badge className="bg-emerald-100 text-emerald-800">
+                      {person.deliveries} orders
+                    </Badge>
                   </div>
-                  <div className="text-right">
-                    <p className="font-semibold">{person.deliveries} deliveries</p>
-                    <p className="text-sm text-gray-600">₹{person.earnings.toFixed(2)} earned</p>
+                  <div className="grid grid-cols-3 gap-2 text-sm ml-11">
+                    <div>
+                      <p className="text-gray-600">Products</p>
+                      <p className="font-semibold">{person.products}</p>
+                    </div>
+                    <div>
+                      <p className="text-gray-600">Revenue</p>
+                      <p className="font-semibold">₹{person.revenue.toFixed(2)}</p>
+                    </div>
+                    <div>
+                      <p className="text-gray-600">Earned</p>
+                      <p className="font-semibold text-emerald-600">₹{person.earnings.toFixed(2)}</p>
+                    </div>
                   </div>
                 </div>
               ))}
@@ -351,31 +407,89 @@ export default function DailyOrderSummary() {
       )}
 
       {viewMode === 'weekly' && weeklySummary.dailyBreakdown.length > 0 && (
-        <Card>
-          <CardHeader>
-            <CardTitle>Daily Breakdown (Last 7 Days)</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Date</TableHead>
-                  <TableHead>Orders</TableHead>
-                  <TableHead>Revenue</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {weeklySummary.dailyBreakdown.map((dayData, index) => (
-                  <TableRow key={index}>
-                    <TableCell className="font-medium">{dayData.date}</TableCell>
-                    <TableCell>{dayData.orders}</TableCell>
-                    <TableCell>₹{dayData.revenue.toFixed(2)}</TableCell>
+        <>
+          <Card>
+            <CardHeader>
+              <CardTitle>Daily Breakdown (Last 7 Days)</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Date</TableHead>
+                    <TableHead>Orders</TableHead>
+                    <TableHead>Products</TableHead>
+                    <TableHead>Revenue</TableHead>
                   </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          </CardContent>
-        </Card>
+                </TableHeader>
+                <TableBody>
+                  {weeklySummary.dailyBreakdown.map((dayData, index) => (
+                    <TableRow key={index}>
+                      <TableCell className="font-medium">{dayData.date}</TableCell>
+                      <TableCell>{dayData.orders}</TableCell>
+                      <TableCell>{dayData.products}</TableCell>
+                      <TableCell>₹{dayData.revenue.toFixed(2)}</TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </CardContent>
+          </Card>
+
+          {/* Detailed Delivery Partner Day-wise Breakdown */}
+          {weeklySummary.topDeliveryPersons.map((person, personIndex) => (
+            person.dailyBreakdown.length > 0 && (
+              <Card key={personIndex}>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <Truck className="w-5 h-5 text-emerald-600" />
+                    {person.name} - Day-wise Performance
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="mb-4 grid grid-cols-4 gap-4 p-4 bg-gray-50 rounded-lg">
+                    <div>
+                      <p className="text-sm text-gray-600">Total Deliveries</p>
+                      <p className="text-xl font-bold">{person.deliveries}</p>
+                    </div>
+                    <div>
+                      <p className="text-sm text-gray-600">Total Products</p>
+                      <p className="text-xl font-bold">{person.products}</p>
+                    </div>
+                    <div>
+                      <p className="text-sm text-gray-600">Total Revenue</p>
+                      <p className="text-xl font-bold">₹{person.revenue.toFixed(2)}</p>
+                    </div>
+                    <div>
+                      <p className="text-sm text-gray-600">Earnings (10%)</p>
+                      <p className="text-xl font-bold text-emerald-600">₹{person.earnings.toFixed(2)}</p>
+                    </div>
+                  </div>
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>Date</TableHead>
+                        <TableHead>Deliveries</TableHead>
+                        <TableHead>Products</TableHead>
+                        <TableHead>Revenue</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {person.dailyBreakdown.map((dayData, index) => (
+                        <TableRow key={index}>
+                          <TableCell className="font-medium">{dayData.date}</TableCell>
+                          <TableCell>{dayData.deliveries}</TableCell>
+                          <TableCell>{dayData.products}</TableCell>
+                          <TableCell>₹{dayData.revenue.toFixed(2)}</TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                </CardContent>
+              </Card>
+            )
+          ))}
+        </>
       )}
     </div>
   );
