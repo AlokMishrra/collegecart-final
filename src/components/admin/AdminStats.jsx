@@ -25,10 +25,8 @@ export default function AdminStats() {
         DeliveryPerson.list()
       ]);
 
-      // Calculate total revenue from delivered orders only
-      const totalRevenue = orders
-        .filter(order => order.status === "delivered")
-        .reduce((sum, order) => sum + (parseFloat(order.total_amount) || 0), 0);
+      // Calculate total revenue from all orders (matching DailyOrderSummary logic)
+      const totalRevenue = orders.reduce((sum, order) => sum + (parseFloat(order.total_amount) || 0), 0);
 
       setStats({
         totalProducts: products.length,
