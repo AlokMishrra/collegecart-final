@@ -3,7 +3,7 @@ import { ShoppingBag } from "lucide-react";
 
 export default function EnhancedShopHero() {
   return (
-    <div className="bg-white border-b border-gray-200 sticky top-0 z-40 -mx-4 lg:-mx-6 px-4 lg:px-6 py-3 shadow-sm">
+    <div className="bg-white border-b border-gray-200 -mx-4 lg:-mx-6 px-4 lg:px-6 py-3 shadow-sm">
       <div className="max-w-7xl mx-auto">
         <div className="flex items-center justify-between gap-2 lg:gap-4">
           {/* Logo */}
