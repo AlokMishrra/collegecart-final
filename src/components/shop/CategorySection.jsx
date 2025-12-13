@@ -26,10 +26,11 @@ export default function CategorySection({ category, products, onAddToCart, onUpd
     if (!user?.selected_hostel || user.selected_hostel === 'Other') {
       return product.stock_quantity || 0;
     }
-    // Check if hostel_stock exists and has a value for this hostel (even if 0)
-    if (product.hostel_stock && product.hostel_stock.hasOwnProperty(user.selected_hostel)) {
+    // Check if hostel_stock exists and has a value for this hostel
+    if (product.hostel_stock && typeof product.hostel_stock[user.selected_hostel] === 'number') {
       return product.hostel_stock[user.selected_hostel];
     }
+    // If no hostel-specific stock defined, fall back to total stock
     return product.stock_quantity || 0;
   };
   
