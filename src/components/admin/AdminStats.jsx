@@ -28,7 +28,7 @@ export default function AdminStats() {
       // Calculate total revenue from delivered orders only
       const totalRevenue = orders
         .filter(order => order.status === "delivered")
-        .reduce((sum, order) => sum + (order.total_amount || 0), 0);
+        .reduce((sum, order) => sum + (parseFloat(order.total_amount) || 0), 0);
 
       setStats({
         totalProducts: products.length,
@@ -62,7 +62,7 @@ export default function AdminStats() {
     },
     {
       title: "Total Revenue",
-      value: `₹${stats.totalRevenue.toFixed(2)}`,
+      value: `₹${stats.totalRevenue.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`,
       icon: DollarSign,
       color: "bg-orange-500"
     }
