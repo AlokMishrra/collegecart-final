@@ -80,7 +80,8 @@ export default function Orders() {
       preparing: Package,
       out_for_delivery: Truck,
       delivered: CheckCircle,
-      cancelled: XCircle
+      cancelled: XCircle,
+      refunded: DollarSign
     };
     return iconMap[status] || Clock;
   };
@@ -92,7 +93,8 @@ export default function Orders() {
       preparing: "bg-purple-100 text-purple-800",
       out_for_delivery: "bg-orange-100 text-orange-800",
       delivered: "bg-green-100 text-green-800",
-      cancelled: "bg-red-100 text-red-800"
+      cancelled: "bg-red-100 text-red-800",
+      refunded: "bg-purple-100 text-purple-800"
     };
     return colorMap[status] || "bg-gray-100 text-gray-800";
   };
@@ -283,7 +285,7 @@ export default function Orders() {
     ['pending', 'confirmed', 'preparing', 'out_for_delivery'].includes(order.status)
   );
   const completedOrders = orders.filter(order => 
-    ['delivered', 'cancelled'].includes(order.status)
+    ['delivered', 'cancelled', 'refunded'].includes(order.status)
   );
 
   if (orders.length === 0) {
@@ -395,7 +397,7 @@ export default function Orders() {
                             Add Items
                           </Button>
                         )}
-                        {(order.status === "delivered" || order.status === "cancelled") && (
+                        {(order.status === "delivered" || order.status === "cancelled") && order.status !== "refunded" && (
                           <Button
                             size="sm"
                             variant="outline"
@@ -405,6 +407,11 @@ export default function Orders() {
                             <DollarSign className="w-4 h-4 mr-1" />
                             Request Refund
                           </Button>
+                        )}
+                        {order.status === "refunded" && (
+                          <Badge className="bg-purple-100 text-purple-800">
+                            Refunded
+                          </Badge>
                         )}
                       </div>
                     </div>

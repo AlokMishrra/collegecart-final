@@ -205,7 +205,8 @@ export default function OrderManagement() {
       preparing: Package,
       out_for_delivery: Truck,
       delivered: CheckCircle,
-      cancelled: XCircle
+      cancelled: XCircle,
+      refunded: DollarSign
     };
     return iconMap[status] || Clock;
   };
@@ -217,7 +218,8 @@ export default function OrderManagement() {
       preparing: "bg-purple-100 text-purple-800",
       out_for_delivery: "bg-orange-100 text-orange-800",
       delivered: "bg-green-100 text-green-800",
-      cancelled: "bg-red-100 text-red-800"
+      cancelled: "bg-red-100 text-red-800",
+      refunded: "bg-purple-100 text-purple-800"
     };
     return colorMap[status] || "bg-gray-100 text-gray-800";
   };
@@ -267,6 +269,9 @@ export default function OrderManagement() {
     try {
       const order = orders.find(o => o.id === orderId);
       if (!order) return;
+
+      // Update order status to refunded
+      await Order.update(orderId, { status: "refunded" });
 
       // Create refund record
       await base44.entities.Refund.create({
@@ -487,27 +492,28 @@ export default function OrderManagement() {
                           </Button>
                         )}
 
-                        {(order.status === "delivered" || order.status === "cancelled") && (
-                          <>
-                            <Button
-                              size="sm"
-                              variant="outline"
-                              onClick={() => refundOrder(order.id)}
-                              className="text-orange-600 hover:text-orange-700"
-                            >
-                              <DollarSign className="w-4 h-4 mr-1" />
-                              Refund
-                            </Button>
-                            <Button
-                              size="sm"
-                              variant="outline"
-                              onClick={() => deleteOrder(order.id)}
-                              className="text-red-600 hover:text-red-700"
-                            >
-                              <Trash2 className="w-4 h-4 mr-1" />
-                              Delete
-                            </Button>
-                          </>
+                        {(order.status === "delivered" || order.status === "cancelled") && order.status !== "refunded" && (
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={() => refundOrder(order.id)}
+                            className="text-orange-600 hover:text-orange-700"
+                          >
+                            <DollarSign className="w-4 h-4 mr-1" />
+                            Refund
+                          </Button>
+                        )}
+
+                        {(order.status === "delivered" || order.status === "cancelled" || order.status === "refunded") && (
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={() => deleteOrder(order.id)}
+                            className="text-red-600 hover:text-red-700"
+                          >
+                            <Trash2 className="w-4 h-4 mr-1" />
+                            Delete
+                          </Button>
                         )}
                       </div>
                     </TableCell>

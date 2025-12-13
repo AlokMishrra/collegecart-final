@@ -2,7 +2,7 @@ import React, { useState, useEffect } from "react";
 import { DeliveryPerson } from "@/entities/DeliveryPerson";
 import { Notification } from "@/entities/Notification";
 import { User } from "@/entities/User";
-import { Plus, Edit, Trash2, User as UserIcon } from "lucide-react";
+import { Plus, Edit, Trash2, User as UserIcon, Ban, CheckCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -133,6 +133,32 @@ export default function DeliveryPersonManagement() {
     }
   };
 
+  const toggleBlockStatus = async (person) => {
+    const action = person.is_blocked ? "unblock" : "block";
+    if (!window.confirm(`Are you sure you want to ${action} ${person.name}?`)) {
+      return;
+    }
+
+    try {
+      await DeliveryPerson.update(person.id, {
+        is_blocked: !person.is_blocked
+      });
+      await showNotification(
+        `Delivery Person ${person.is_blocked ? 'Unblocked' : 'Blocked'}`,
+        `${person.name} has been ${!person.is_blocked ? 'blocked' : 'unblocked'}. ${!person.is_blocked ? 'They can no longer accept or see orders.' : 'They can now accept orders again.'}`,
+        "info"
+      );
+      loadDeliveryPersons();
+    } catch (error) {
+      console.error("Error updating block status:", error);
+      await showNotification(
+        "Update Failed",
+        "Failed to update block status",
+        "error"
+      );
+    }
+  };
+
   return (
     <div className="space-y-6">
       <div className="flex justify-between items-center">
@@ -175,6 +201,7 @@ export default function DeliveryPersonManagement() {
                 <TableHead>Phone</TableHead>
                 <TableHead>Vehicle</TableHead>
                 <TableHead>Status</TableHead>
+                <TableHead>Access</TableHead>
                 <TableHead>Current Orders</TableHead>
                 <TableHead>Actions</TableHead>
               </TableRow>
@@ -203,10 +230,27 @@ export default function DeliveryPersonManagement() {
                     </Badge>
                   </TableCell>
                   <TableCell>
+                    <Badge
+                      variant={person.is_blocked ? "destructive" : "default"}
+                      className={person.is_blocked ? "bg-red-500" : "bg-green-500"}
+                    >
+                      {person.is_blocked ? "Blocked" : "Active"}
+                    </Badge>
+                  </TableCell>
+                  <TableCell>
                     {person.current_orders?.length || 0} orders
                   </TableCell>
                   <TableCell>
                     <div className="flex items-center gap-2">
+                      <Button
+                        variant="outline"
+                        size="icon"
+                        onClick={() => toggleBlockStatus(person)}
+                        className={person.is_blocked ? "text-green-600 hover:text-green-700" : "text-red-600 hover:text-red-700"}
+                        title={person.is_blocked ? "Unblock" : "Block"}
+                      >
+                        {person.is_blocked ? <CheckCircle className="w-4 h-4" /> : <Ban className="w-4 h-4" />}
+                      </Button>
                       <Button
                         variant="outline"
                         size="icon"
