@@ -104,44 +104,45 @@ export default function Layout({ children, currentPageName }) {
       title: "Shop",
       url: createPageUrl("Shop"),
       icon: Home,
-      showCondition: () => !isDeliveryRole
+      showCondition: () => true
     },
     {
       title: "Cart",
       url: createPageUrl("Cart"),
       icon: ShoppingCart,
       badge: cartCount > 0 ? cartCount : null,
-      showCondition: () => !isDeliveryRole
+      showCondition: () => true
     },
     {
       title: "My Profile",
       url: createPageUrl("Profile"),
       icon: UserIcon,
-      showCondition: () => !isDeliveryRole
+      showCondition: () => true
     },
     {
       title: "Admin Panel",
       url: createPageUrl("Admin"),
       icon: Settings,
-      showCondition: () => hasMultipleRoles || (!isDeliveryRole && (user?.role === "admin" || userHasRole))
+      showCondition: () => {
+        // Show Admin Panel if user has any role that is NOT delivery
+        if (!userHasRole && user?.role !== "admin") return false;
+        if (hasMultipleRoles) return true; // Multiple roles get both panels
+        return !isDeliveryRole && (user?.role === "admin" || userHasRole);
+      }
     },
     {
       title: "User Management",
       url: createPageUrl("UserManagement"),
       icon: UserIcon,
-      showCondition: () => user?.role === "admin" || userHasRole
+      showCondition: () => !isDeliveryRole && (user?.role === "admin" || userHasRole)
     },
     {
       title: "Delivery Portal",
       url: createPageUrl("Delivery"),
       icon: Truck,
       showCondition: () => {
-        const allowedEmails = [
-          "tanmaygupta1285@gmail.com",
-          "manangirigoswaim011@gmail.com", 
-          "info@apnafreelancer.in"
-        ];
-        return hasMultipleRoles || allowedEmails.includes(user?.email) || isDeliveryRole;
+        if (hasMultipleRoles) return true; // Multiple roles get both panels
+        return isDeliveryRole;
       }
     }
   ];
