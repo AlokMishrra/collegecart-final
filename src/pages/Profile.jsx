@@ -8,8 +8,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Award, Star, TrendingUp, Gift, History, Trophy, Package, MapPin, Heart, User as UserIcon, Edit2, Plus, Trash2, Building2, Camera } from "lucide-react";
-import ImageUploader from "../components/shared/ImageUploader";
+import { Award, Star, TrendingUp, Gift, History, Trophy, Package, MapPin, Heart, User as UserIcon, Edit2, Plus, Trash2, Building2 } from "lucide-react";
 import { motion } from "framer-motion";
 import { useNavigate, Link } from "react-router-dom";
 import { createPageUrl } from "@/utils";
@@ -41,8 +40,7 @@ export default function Profile() {
   const [showEditProfile, setShowEditProfile] = useState(false);
   const [profileForm, setProfileForm] = useState({
     full_name: "",
-    phone_number: "",
-    profile_photo: ""
+    phone_number: ""
   });
 
   useEffect(() => {
@@ -56,8 +54,7 @@ export default function Profile() {
       setUser(currentUser);
       setProfileForm({
         full_name: currentUser.full_name || "",
-        phone_number: currentUser.phone_number || "",
-        profile_photo: currentUser.profile_photo || ""
+        phone_number: currentUser.phone_number || ""
       });
 
       // Load addresses
@@ -117,16 +114,6 @@ export default function Profile() {
   };
 
   const handleSaveProfile = async () => {
-    if (!profileForm.phone_number.trim()) {
-      await base44.entities.Notification.create({
-        user_id: user.id,
-        title: "Phone Number Required",
-        message: "Please enter your phone number",
-        type: "error"
-      });
-      return;
-    }
-
     try {
       await base44.auth.updateMe(profileForm);
       await base44.entities.Notification.create({
@@ -263,19 +250,11 @@ export default function Profile() {
         <CardContent className="p-6">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-4">
-              {user?.profile_photo ? (
-                <img
-                  src={user.profile_photo}
-                  alt={user.full_name}
-                  className="w-20 h-20 rounded-full object-cover border-4 border-white/30"
-                />
-              ) : (
-                <div className="w-20 h-20 bg-white/20 rounded-full flex items-center justify-center">
-                  <span className="text-3xl font-bold">
-                    {user?.full_name?.charAt(0)?.toUpperCase() || 'U'}
-                  </span>
-                </div>
-              )}
+              <div className="w-20 h-20 bg-white/20 rounded-full flex items-center justify-center">
+                <span className="text-3xl font-bold">
+                  {user?.full_name?.charAt(0)?.toUpperCase() || 'U'}
+                </span>
+              </div>
               <div className="flex-1">
                 <h1 className="text-2xl font-bold">{user?.full_name || 'User'}</h1>
                 <p className="text-emerald-100">{user?.email}</p>
@@ -720,14 +699,6 @@ export default function Profile() {
           </DialogHeader>
           <div className="space-y-4">
             <div>
-              <Label className="mb-2 block">Profile Photo</Label>
-              <ImageUploader
-                currentImage={profileForm.profile_photo}
-                onImageSelect={(url) => setProfileForm({ ...profileForm, profile_photo: url })}
-                placeholder="https://via.placeholder.com/300x300?text=Profile+Photo"
-              />
-            </div>
-            <div>
               <Label htmlFor="full_name">Full Name</Label>
               <Input
                 id="full_name"
@@ -736,14 +707,11 @@ export default function Profile() {
               />
             </div>
             <div>
-              <Label htmlFor="phone_number">Phone Number *</Label>
+              <Label htmlFor="phone_number">Phone Number</Label>
               <Input
                 id="phone_number"
-                type="tel"
                 value={profileForm.phone_number}
                 onChange={(e) => setProfileForm({ ...profileForm, phone_number: e.target.value })}
-                required
-                placeholder="Enter your phone number"
               />
             </div>
           </div>

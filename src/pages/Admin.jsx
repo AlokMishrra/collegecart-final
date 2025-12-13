@@ -36,7 +36,6 @@ import ProductManagement from "../components/admin/ProductManagement";
   import BulkProductUpdate from "../components/admin/BulkProductUpdate";
   import NotificationConfigManager from "../components/admin/NotificationConfigManager";
   import ProductScheduler from "../components/admin/ProductScheduler";
-  import HostelPromotionManagement from "../components/admin/HostelPromotionManagement";
 
 export default function Admin() {
   const navigate = useNavigate();
@@ -101,7 +100,6 @@ export default function Admin() {
     { value: "dynamic-pricing", label: "Dynamic Pricing", permission: "manage_products", component: <DynamicPricing /> },
     { value: "categories", label: "Categories", permission: "manage_categories", component: <CategoryManagement /> },
     { value: "campaigns", label: "Campaigns", permission: "manage_campaigns", component: <CampaignManagement /> },
-    { value: "hostel-promotions", label: "Hostel Promotions", permission: "manage_campaigns", component: <HostelPromotionManagement /> },
     { value: "recommendations", label: "AI Recommendations", permission: "manage_settings", component: <RecommendationConfig /> },
     { value: "reviews", label: "Reviews", permission: "manage_reviews", component: <ReviewModeration /> },
     { value: "delivery", label: "Delivery", permission: "manage_delivery", component: <DeliveryPersonManagement /> },

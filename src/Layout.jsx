@@ -32,6 +32,8 @@ export default function Layout({ children, currentPageName }) {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [cartCount, setCartCount] = useState(0);
   const [isDeliveryPartner, setIsDeliveryPartner] = useState(false);
+  const [userHasRole, setUserHasRole] = useState(false);
+  const [userRole, setUserRole] = useState(null);
   const [cartItemCount, setCartItemCount] = useState(0);
 
   useEffect(() => {
@@ -60,19 +62,19 @@ export default function Layout({ children, currentPageName }) {
       const currentUser = await User.me();
       setUser(currentUser);
       
-      // Load user roles
+      // Check if user has any assigned roles
       if (currentUser.assigned_role_ids && currentUser.assigned_role_ids.length > 0) {
-        const roles = await Promise.all(
-          currentUser.assigned_role_ids.map(roleId => 
-            base44.entities.Role.filter({ id: roleId })
-          )
+        setUserHasRole(true);
+        // Load all assigned roles to check permissions
+        const rolePromises = currentUser.assigned_role_ids.map(roleId => 
+          base44.entities.Role.filter({ id: roleId })
         );
-        currentUser.roles = roles.flat();
-      } else {
-        currentUser.roles = [];
+        const roleResults = await Promise.all(rolePromises);
+        const allRoles = roleResults.flat();
+        if (allRoles.length > 0) {
+          setUserRole(allRoles[0]); // Set first role as primary
+        }
       }
-      
-      setUser(currentUser);
     } catch (error) {
       // User not logged in
     }
@@ -88,51 +90,46 @@ export default function Layout({ children, currentPageName }) {
     setUser(null);
   };
 
-  const hasRole = (roleName) => {
-    if (user?.role === "admin") return true;
-    return user?.roles?.some(r => 
-      r.name.toLowerCase().includes(roleName.toLowerCase())
-    );
-  };
+  // Check if user has multiple roles
+  const hasMultipleRoles = user?.assigned_role_ids && user.assigned_role_ids.length > 1;
 
-  const hasPermission = (permission) => {
-    if (user?.role === "admin") return true;
-    return user?.roles?.some(r => 
-      r.permissions?.includes(permission)
-    );
-  };
+  // Check if user is a delivery person
+  const isDeliveryRole = userRole && (
+    userRole.name.toLowerCase().includes("delivery") ||
+    userRole.permissions?.includes("view_delivery_portal")
+  );
 
   const navigationItems = [
     {
       title: "Shop",
       url: createPageUrl("Shop"),
       icon: Home,
-      showCondition: () => true
+      showCondition: () => !isDeliveryRole
     },
     {
       title: "Cart",
       url: createPageUrl("Cart"),
       icon: ShoppingCart,
       badge: cartCount > 0 ? cartCount : null,
-      showCondition: () => true
+      showCondition: () => !isDeliveryRole
     },
     {
       title: "My Profile",
       url: createPageUrl("Profile"),
       icon: UserIcon,
-      showCondition: () => true
+      showCondition: () => !isDeliveryRole
     },
     {
       title: "Admin Panel",
       url: createPageUrl("Admin"),
       icon: Settings,
-      showCondition: () => user?.role === "admin" || hasPermission("manage_admin")
+      showCondition: () => hasMultipleRoles || (!isDeliveryRole && (user?.role === "admin" || userHasRole))
     },
     {
       title: "User Management",
       url: createPageUrl("UserManagement"),
       icon: UserIcon,
-      showCondition: () => user?.role === "admin" || hasPermission("manage_users")
+      showCondition: () => user?.role === "admin" || userHasRole
     },
     {
       title: "Delivery Portal",
@@ -144,7 +141,7 @@ export default function Layout({ children, currentPageName }) {
           "manangirigoswaim011@gmail.com", 
           "info@apnafreelancer.in"
         ];
-        return allowedEmails.includes(user?.email) || hasRole("delivery");
+        return hasMultipleRoles || allowedEmails.includes(user?.email) || isDeliveryRole;
       }
     }
   ];
@@ -175,7 +172,7 @@ export default function Layout({ children, currentPageName }) {
           </div>
           <div className="flex items-center gap-2">
             <NotificationCenter />
-            {user && (
+            {user && !isDeliveryRole && (
               <Link to={createPageUrl("Cart")}>
                 <Button variant="ghost" size="icon" className="relative">
                   <ShoppingCart className="w-5 h-5" />
@@ -311,7 +308,7 @@ export default function Layout({ children, currentPageName }) {
             <div className="flex items-center gap-4">
               {user && <InAppChat currentUser={user} />}
               <NotificationCenter />
-              {user && (
+              {user && !isDeliveryRole && (
                 <Link to={createPageUrl("Cart")}>
                   <Button variant="ghost" size="icon" className="relative">
                     <ShoppingCart className="w-5 h-5" />
@@ -340,7 +337,7 @@ export default function Layout({ children, currentPageName }) {
       </div>
 
       {/* Feedback Popup */}
-      {user && <FeedbackPopup user={user} />}
+      {user && !isDeliveryRole && <FeedbackPopup user={user} />}
 
       {/* AI Customer Support Chatbot */}
       <CustomerSupportChatbot user={user} />
