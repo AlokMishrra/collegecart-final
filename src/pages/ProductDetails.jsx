@@ -5,7 +5,7 @@ import { CartItem } from "@/entities/CartItem";
 import { User } from "@/entities/User";
 import { Notification } from "@/entities/Notification";
 import { base44 } from "@/api/base44Client";
-import { ArrowLeft, ShoppingCart, Plus, Minus, Star } from "lucide-react";
+import { ArrowLeft, ShoppingCart, Plus, Minus, Star, Heart } from "lucide-react";
 import ReviewSection from "../components/product/ReviewSection";
 import ProductViewTracker from "../components/shop/ProductViewTracker";
 import RecommendationEngine from "../components/shop/RecommendationEngine";
@@ -25,6 +25,7 @@ export default function ProductDetails() {
   const [cartQuantity, setCartQuantity] = useState(0);
   const [averageRating, setAverageRating] = useState(0);
   const [reviewCount, setReviewCount] = useState(0);
+  const [isInWishlist, setIsInWishlist] = useState(false);
 
   useEffect(() => {
     checkUser();
@@ -37,6 +38,58 @@ export default function ProductDetails() {
       setUser(currentUser);
     } catch (error) {
       // User not logged in
+    }
+  };
+
+  const checkWishlistStatus = async (userId, productId) => {
+    try {
+      const wishlistItems = await base44.entities.Wishlist.filter({
+        user_id: userId,
+        product_id: productId
+      });
+      setIsInWishlist(wishlistItems.length > 0);
+    } catch (error) {
+      console.error("Error checking wishlist:", error);
+    }
+  };
+
+  const toggleWishlist = async () => {
+    try {
+      if (!user) {
+        await User.login();
+        return;
+      }
+
+      if (isInWishlist) {
+        const wishlistItems = await base44.entities.Wishlist.filter({
+          user_id: user.id,
+          product_id: product.id
+        });
+        if (wishlistItems[0]) {
+          await base44.entities.Wishlist.delete(wishlistItems[0].id);
+          setIsInWishlist(false);
+          await base44.entities.Notification.create({
+            user_id: user.id,
+            title: "Removed from Wishlist",
+            message: `${product.name} removed from wishlist`,
+            type: "info"
+          });
+        }
+      } else {
+        await base44.entities.Wishlist.create({
+          user_id: user.id,
+          product_id: product.id
+        });
+        setIsInWishlist(true);
+        await base44.entities.Notification.create({
+          user_id: user.id,
+          title: "Added to Wishlist",
+          message: `${product.name} added to wishlist`,
+          type: "success"
+        });
+      }
+    } catch (error) {
+      console.error("Error toggling wishlist:", error);
     }
   };
 
@@ -76,6 +129,7 @@ export default function ProductDetails() {
         if (cartItems.length > 0) {
           setCartQuantity(cartItems[0].quantity);
         }
+        checkWishlistStatus(user.id, prod.id);
       }
 
       // Load reviews
@@ -289,15 +343,24 @@ export default function ProductDetails() {
                     Go to Cart
                   </Button>
                 </div>
-              ) : (
-                <Button
-                  onClick={addToCart}
-                  className="w-full h-12 bg-emerald-600 hover:bg-emerald-700"
-                >
-                  <ShoppingCart className="w-5 h-5 mr-2" />
-                  Add to Cart
-                </Button>
-              )}
+                ) : (
+                <div className="flex gap-2">
+                 <Button
+                   onClick={toggleWishlist}
+                   variant="outline"
+                   className="h-12 px-4"
+                 >
+                   <Heart className={`w-5 h-5 ${isInWishlist ? 'fill-red-500 text-red-500' : ''}`} />
+                 </Button>
+                 <Button
+                   onClick={addToCart}
+                   className="flex-1 h-12 bg-emerald-600 hover:bg-emerald-700"
+                 >
+                   <ShoppingCart className="w-5 h-5 mr-2" />
+                   Add to Cart
+                 </Button>
+                </div>
+                )}
             </CardContent>
           </Card>
 
