@@ -6,19 +6,6 @@ export default function EnhancedShopHero() {
     <div className="bg-white border-b border-gray-200 -mx-4 lg:-mx-6 px-4 lg:px-6 py-3 shadow-sm">
       <div className="max-w-7xl mx-auto">
         <div className="flex items-center justify-between gap-2 lg:gap-4">
-          {/* Logo */}
-          <div className="flex items-center gap-2 flex-shrink-0">
-            <img 
-              src="https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/6885ba54fc40d82179646aca/56f3d15ef_WhatsAppImage2025-12-13at111830AM.jpeg"
-              alt="CollegeCart Logo"
-              className="w-9 h-9 lg:w-12 lg:h-12 object-contain"
-            />
-            <div>
-              <h1 className="text-base lg:text-xl font-bold text-emerald-600 leading-tight">CollegeCart</h1>
-              <p className="text-[10px] lg:text-xs text-gray-500 leading-tight">Grocery Delivery</p>
-            </div>
-          </div>
-
           {/* Delivery Info - Desktop & Tablet */}
           <div className="hidden md:flex items-center flex-shrink-0">
             <div className="text-left">
