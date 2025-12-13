@@ -3,13 +3,16 @@ import { Product } from "@/entities/Product";
 import { Category } from "@/entities/Category";
 import { Notification } from "@/entities/Notification";
 import { User } from "@/entities/User";
-import { Plus, Edit, Trash2, Search } from "lucide-react";
+import { Plus, Edit, Trash2, Search, Clock, RotateCcw } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Label } from "@/components/ui/label";
 
 import ProductForm from "./ProductForm";
 import ConfirmDialog from "../shared/ConfirmDialog";
@@ -25,6 +28,13 @@ export default function ProductManagement() {
   const [isLoading, setIsLoading] = useState(true);
   const [deleteDialog, setDeleteDialog] = useState({ open: false, product: null });
   const [user, setUser] = useState(null);
+  const [selectedProducts, setSelectedProducts] = useState([]);
+  const [isTimingDialogOpen, setIsTimingDialogOpen] = useState(false);
+  const [categoryFilter, setCategoryFilter] = useState("all");
+  const [bulkTimingData, setBulkTimingData] = useState({
+    available_from: "",
+    available_to: ""
+  });
 
   useEffect(() => {
     loadData();
@@ -146,10 +156,83 @@ export default function ProductManagement() {
     return category ? category.name : "Unknown";
   };
 
-  const filteredProducts = products.filter(product =>
-    product.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    product.description?.toLowerCase().includes(searchQuery.toLowerCase())
-  );
+  const filteredProducts = products.filter(product => {
+    const matchesSearch = product.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      product.description?.toLowerCase().includes(searchQuery.toLowerCase());
+    const matchesCategory = categoryFilter === "all" || product.category_id === categoryFilter;
+    return matchesSearch && matchesCategory;
+  });
+
+  const handleSelectAll = (checked) => {
+    if (checked) {
+      setSelectedProducts(filteredProducts.map(p => p.id));
+    } else {
+      setSelectedProducts([]);
+    }
+  };
+
+  const handleSelectProduct = (productId, checked) => {
+    if (checked) {
+      setSelectedProducts([...selectedProducts, productId]);
+    } else {
+      setSelectedProducts(selectedProducts.filter(id => id !== productId));
+    }
+  };
+
+  const handleBulkTimingUpdate = async () => {
+    try {
+      const updatePromises = selectedProducts.map(productId =>
+        Product.update(productId, bulkTimingData)
+      );
+      await Promise.all(updatePromises);
+      
+      await showNotification(
+        "Timing Updated",
+        `Successfully updated timing for ${selectedProducts.length} product(s)`,
+        "success"
+      );
+      
+      setIsTimingDialogOpen(false);
+      setBulkTimingData({ available_from: "", available_to: "" });
+      setSelectedProducts([]);
+      loadData();
+    } catch (error) {
+      console.error("Error updating timing:", error);
+      await showNotification(
+        "Update Failed",
+        "Failed to update product timing. Please try again.",
+        "error"
+      );
+    }
+  };
+
+  const handleResetTiming = async () => {
+    try {
+      const updatePromises = selectedProducts.map(productId =>
+        Product.update(productId, {
+          available_from: null,
+          available_to: null
+        })
+      );
+      await Promise.all(updatePromises);
+      
+      await showNotification(
+        "Timing Reset",
+        `Successfully reset timing for ${selectedProducts.length} product(s)`,
+        "success"
+      );
+      
+      setSelectedProducts([]);
+      loadData();
+    } catch (error) {
+      console.error("Error resetting timing:", error);
+      await showNotification(
+        "Reset Failed",
+        "Failed to reset product timing. Please try again.",
+        "error"
+      );
+    }
+  };
 
   return (
     <div className="space-y-6">
@@ -192,7 +275,7 @@ export default function ProductManagement() {
         </Dialog>
       </div>
 
-      <div className="flex items-center gap-4">
+      <div className="flex flex-col md:flex-row items-start md:items-center gap-4">
         <div className="relative flex-1 max-w-md">
           <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
           <Input
@@ -202,6 +285,84 @@ export default function ProductManagement() {
             className="pl-10"
           />
         </div>
+        
+        <Select value={categoryFilter} onValueChange={setCategoryFilter}>
+          <SelectTrigger className="w-48">
+            <SelectValue placeholder="Filter by category" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">All Categories</SelectItem>
+            {categories.map(cat => (
+              <SelectItem key={cat.id} value={cat.id}>{cat.name}</SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+
+        {selectedProducts.length > 0 && (
+          <>
+            <Dialog open={isTimingDialogOpen} onOpenChange={setIsTimingDialogOpen}>
+              <DialogTrigger asChild>
+                <Button variant="outline" className="gap-2">
+                  <Clock className="w-4 h-4" />
+                  Update Timing ({selectedProducts.length})
+                </Button>
+              </DialogTrigger>
+              <DialogContent>
+                <DialogHeader>
+                  <DialogTitle>Update Product Timing</DialogTitle>
+                </DialogHeader>
+                <div className="space-y-4 py-4">
+                  <div className="space-y-2">
+                    <Label>Available From (24-hour format)</Label>
+                    <Input
+                      type="time"
+                      value={bulkTimingData.available_from}
+                      onChange={(e) => setBulkTimingData({
+                        ...bulkTimingData,
+                        available_from: e.target.value
+                      })}
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label>Available To (24-hour format)</Label>
+                    <Input
+                      type="time"
+                      value={bulkTimingData.available_to}
+                      onChange={(e) => setBulkTimingData({
+                        ...bulkTimingData,
+                        available_to: e.target.value
+                      })}
+                    />
+                  </div>
+                  <div className="flex justify-end gap-2 pt-4">
+                    <Button
+                      variant="outline"
+                      onClick={() => setIsTimingDialogOpen(false)}
+                    >
+                      Cancel
+                    </Button>
+                    <Button
+                      onClick={handleBulkTimingUpdate}
+                      disabled={!bulkTimingData.available_from || !bulkTimingData.available_to}
+                      className="bg-emerald-600 hover:bg-emerald-700"
+                    >
+                      Update Timing
+                    </Button>
+                  </div>
+                </div>
+              </DialogContent>
+            </Dialog>
+
+            <Button
+              variant="outline"
+              onClick={handleResetTiming}
+              className="gap-2 text-orange-600 hover:text-orange-700"
+            >
+              <RotateCcw className="w-4 h-4" />
+              Reset Timing ({selectedProducts.length})
+            </Button>
+          </>
+        )}
       </div>
 
       <Card>
@@ -210,6 +371,12 @@ export default function ProductManagement() {
             <Table>
               <TableHeader>
                 <TableRow>
+                  <TableHead className="w-12">
+                    <Checkbox
+                      checked={selectedProducts.length === filteredProducts.length && filteredProducts.length > 0}
+                      onCheckedChange={handleSelectAll}
+                    />
+                  </TableHead>
                   <TableHead>Image</TableHead>
                   <TableHead>Name</TableHead>
                   <TableHead>Category</TableHead>
@@ -222,6 +389,12 @@ export default function ProductManagement() {
               <TableBody>
                 {filteredProducts.map((product) => (
                   <TableRow key={product.id}>
+                    <TableCell>
+                      <Checkbox
+                        checked={selectedProducts.includes(product.id)}
+                        onCheckedChange={(checked) => handleSelectProduct(product.id, checked)}
+                      />
+                    </TableCell>
                     <TableCell>
                       <img
                         src={product.image_url || "https://images.unsplash.com/photo-1542838132-92c53300491e?w=100"}
