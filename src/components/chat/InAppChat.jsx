@@ -17,21 +17,21 @@ export default function InAppChat({ currentUser }) {
   const messagesEndRef = useRef(null);
 
   useEffect(() => {
-    if (currentUser) {
+    if (currentUser && isOpen) {
       loadConversations();
       loadUsers();
-      const interval = setInterval(loadConversations, 3000); // Poll every 3s
+      const interval = setInterval(loadConversations, 10000); // Poll every 10s
       return () => clearInterval(interval);
     }
-  }, [currentUser]);
+  }, [currentUser, isOpen]);
 
   useEffect(() => {
-    if (selectedConversation) {
+    if (selectedConversation && isOpen) {
       loadMessages(selectedConversation);
-      const interval = setInterval(() => loadMessages(selectedConversation), 2000);
+      const interval = setInterval(() => loadMessages(selectedConversation), 5000); // Poll every 5s
       return () => clearInterval(interval);
     }
-  }, [selectedConversation]);
+  }, [selectedConversation, isOpen]);
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
