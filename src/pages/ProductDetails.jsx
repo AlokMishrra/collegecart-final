@@ -32,6 +32,50 @@ export default function ProductDetails() {
     loadProduct();
   }, []);
 
+  const isProductAvailableNow = (product) => {
+    if (!product.available_from || !product.available_to) return true;
+    
+    try {
+      const now = new Date();
+      const currentHours = now.getHours();
+      const currentMinutes = now.getMinutes();
+      const currentTime = currentHours * 60 + currentMinutes;
+      
+      const fromParts = product.available_from.split(':');
+      const fromHour = parseInt(fromParts[0], 10);
+      const fromMin = parseInt(fromParts[1] || '0', 10);
+      const fromTime = fromHour * 60 + fromMin;
+      
+      const toParts = product.available_to.split(':');
+      const toHour = parseInt(toParts[0], 10);
+      const toMin = parseInt(toParts[1] || '0', 10);
+      const toTime = toHour * 60 + toMin;
+      
+      return currentTime >= fromTime && currentTime <= toTime;
+    } catch (error) {
+      console.error("Error checking product availability time:", error, product);
+      return true;
+    }
+  };
+
+  const getHostelStock = (product) => {
+    if (!user?.selected_hostel || user.selected_hostel === 'Other') {
+      return product.stock_quantity || 0;
+    }
+    if (product.hostel_stock && typeof product.hostel_stock[user.selected_hostel] === 'number') {
+      return product.hostel_stock[user.selected_hostel];
+    }
+    return product.stock_quantity || 0;
+  };
+
+  const isProductInStock = (product) => {
+    if (!isProductAvailableNow(product)) {
+      return false;
+    }
+    const hostelStock = getHostelStock(product);
+    return hostelStock > 0;
+  };
+
   const checkUser = async () => {
     try {
       const currentUser = await User.me();
@@ -152,6 +196,16 @@ export default function ProductDetails() {
       return;
     }
 
+    if (!isProductInStock(product)) {
+      await Notification.create({
+        user_id: user.id,
+        title: "Out of Stock",
+        message: `${product.name} is currently out of stock`,
+        type: "error"
+      });
+      return;
+    }
+
     try {
       const existingItems = await CartItem.filter({ 
         user_id: user.id, 
@@ -186,6 +240,27 @@ export default function ProductDetails() {
 
   const updateQuantity = async (newQuantity) => {
     if (!user || newQuantity < 0) return;
+
+    if (newQuantity > 0 && !isProductInStock(product)) {
+      await Notification.create({
+        user_id: user.id,
+        title: "Out of Stock",
+        message: `${product.name} is currently out of stock`,
+        type: "error"
+      });
+      return;
+    }
+
+    const hostelStock = getHostelStock(product);
+    if (newQuantity > hostelStock) {
+      await Notification.create({
+        user_id: user.id,
+        title: "Stock Limit Reached",
+        message: `Only ${hostelStock} units available`,
+        type: "warning"
+      });
+      return;
+    }
 
     try {
       const existingItems = await CartItem.filter({ 
@@ -298,9 +373,9 @@ export default function ProductDetails() {
               )}
               <span className="text-lg text-gray-500">/{product.unit}</span>
             </div>
-            {product.stock_quantity < 10 && product.stock_quantity > 0 && (
+            {user && isProductInStock(product) && getHostelStock(product) < 10 && (
               <p className="text-orange-600 font-medium">
-                Only {product.stock_quantity} left in stock!
+                Only {getHostelStock(product)} left in stock!
               </p>
             )}
           </div>
@@ -312,9 +387,9 @@ export default function ProductDetails() {
           {/* Add to Cart Section */}
           <Card>
             <CardContent className="p-6">
-              {product.stock_quantity === 0 ? (
-                <Button disabled className="w-full h-12">
-                  Out of Stock
+              {!isProductInStock(product) ? (
+                <Button disabled className="w-full h-12 bg-red-500 text-white cursor-not-allowed">
+                  OUT OF STOCK
                 </Button>
               ) : cartQuantity > 0 ? (
                 <div className="space-y-4">
