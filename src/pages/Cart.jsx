@@ -442,11 +442,43 @@ export default function Cart() {
         phone_number: phoneNumber
       });
 
+      // Award loyalty points with tier-based multiplier
+      const tierMultipliers = {
+        Bronze: 1,
+        Silver: 1.5,
+        Gold: 2,
+        Platinum: 3
+      };
+      
+      const userTier = user.loyalty_tier || "Bronze";
+      const basePoints = Math.floor(finalAmount * 0.05);
+      const multiplier = tierMultipliers[userTier];
+      const pointsEarned = Math.floor(basePoints * multiplier);
+      
+      // Bonus points for orders above certain amounts
+      let bonusPoints = 0;
+      if (finalAmount >= 1000) bonusPoints += 50;
+      if (finalAmount >= 2000) bonusPoints += 100;
+      if (finalAmount >= 3000) bonusPoints += 200;
+      
+      const totalPointsEarned = pointsEarned + bonusPoints;
+      
+      await base44.entities.LoyaltyTransaction.create({
+        user_id: user.id,
+        points: totalPointsEarned,
+        transaction_type: "earned",
+        order_id: newOrder.id,
+        description: bonusPoints > 0 
+          ? `Earned ${totalPointsEarned} points (${pointsEarned} base + ${bonusPoints} bonus) from order ${orderNumber}`
+          : `Earned ${totalPointsEarned} points from order ${orderNumber} (${multiplier}x ${userTier} multiplier)`,
+        balance_after: (loyaltyPoints - pointsToRedeem) + totalPointsEarned
+      });
+
       // Create success notification with sound
       await Notification.create({
         user_id: user.id,
         title: "Order Placed Successfully!",
-        message: `Your order ${orderNumber} has been placed and will be delivered soon.`,
+        message: `Your order ${orderNumber} has been placed! You earned ${totalPointsEarned} loyalty points!`,
         type: "success"
       });
 
