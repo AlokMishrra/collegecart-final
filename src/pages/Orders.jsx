@@ -12,6 +12,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { DollarSign } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { motion } from "framer-motion";
 import { useNavigate } from "react-router-dom";
@@ -34,6 +35,9 @@ export default function Orders() {
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedProducts, setSelectedProducts] = useState([]);
   const [activeTab, setActiveTab] = useState("active");
+  const [showRefundDialog, setShowRefundDialog] = useState(false);
+  const [refundingOrder, setRefundingOrder] = useState(null);
+  const [refundReason, setRefundReason] = useState("");
 
   useEffect(() => {
     // Check URL for tab parameter
@@ -183,6 +187,53 @@ export default function Orders() {
     }
   };
 
+  const handleRefundClick = (order) => {
+    setRefundingOrder(order);
+    setRefundReason("");
+    setShowRefundDialog(true);
+  };
+
+  const handleSubmitRefund = async () => {
+    if (!refundReason.trim()) {
+      await Notification.create({
+        user_id: user.id,
+        title: "Refund Failed",
+        message: "Please provide a reason for the refund",
+        type: "error"
+      });
+      return;
+    }
+
+    try {
+      await base44.entities.Refund.create({
+        order_id: refundingOrder.id,
+        user_id: user.id,
+        reason: refundReason,
+        amount: refundingOrder.total_amount,
+        status: "pending"
+      });
+
+      await Notification.create({
+        user_id: user.id,
+        title: "Refund Requested",
+        message: `Refund request submitted for order ${refundingOrder.order_number}. We'll review it soon.`,
+        type: "success"
+      });
+
+      setShowRefundDialog(false);
+      setRefundingOrder(null);
+      setRefundReason("");
+    } catch (error) {
+      console.error("Error requesting refund:", error);
+      await Notification.create({
+        user_id: user.id,
+        title: "Refund Failed",
+        message: "Failed to submit refund request. Please try again.",
+        type: "error"
+      });
+    }
+  };
+
   const handleSaveEdit = async () => {
     try {
       await Order.update(editingOrder.id, editForm);
@@ -322,7 +373,7 @@ export default function Orders() {
                           <p className="text-gray-600 mt-1">{order.phone_number}</p>
                         </div>
                       </div>
-                      <div className="flex gap-2 ml-4">
+                      <div className="flex flex-wrap gap-2 ml-4">
                         {canEditOrder(order) && (
                           <Button
                             size="sm"
@@ -342,6 +393,17 @@ export default function Orders() {
                           >
                             <Plus className="w-4 h-4 mr-1" />
                             Add Items
+                          </Button>
+                        )}
+                        {(order.status === "delivered" || order.status === "cancelled") && (
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={() => handleRefundClick(order)}
+                            className="text-orange-600 border-orange-300 hover:bg-orange-50"
+                          >
+                            <DollarSign className="w-4 h-4 mr-1" />
+                            Request Refund
                           </Button>
                         )}
                       </div>
@@ -451,6 +513,43 @@ export default function Orders() {
               </Button>
               <Button onClick={handleSaveEdit} className="bg-emerald-600 hover:bg-emerald-700">
                 Save Changes
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Refund Dialog */}
+      <Dialog open={showRefundDialog} onOpenChange={setShowRefundDialog}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Request Refund</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div>
+              <p className="text-sm text-gray-600 mb-2">
+                Order: <span className="font-semibold">{refundingOrder?.order_number}</span>
+              </p>
+              <p className="text-sm text-gray-600">
+                Amount: <span className="font-semibold text-emerald-600">₹{refundingOrder?.total_amount.toFixed(2)}</span>
+              </p>
+            </div>
+            <div>
+              <Label htmlFor="refund_reason">Reason for Refund *</Label>
+              <Textarea
+                id="refund_reason"
+                value={refundReason}
+                onChange={(e) => setRefundReason(e.target.value)}
+                placeholder="Please explain why you're requesting a refund..."
+                rows={4}
+              />
+            </div>
+            <div className="flex justify-end gap-3">
+              <Button variant="outline" onClick={() => setShowRefundDialog(false)}>
+                Cancel
+              </Button>
+              <Button onClick={handleSubmitRefund} className="bg-orange-600 hover:bg-orange-700">
+                Submit Refund Request
               </Button>
             </div>
           </div>
