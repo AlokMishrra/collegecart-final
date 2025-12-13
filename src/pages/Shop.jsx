@@ -77,27 +77,37 @@ export default function Shop() {
   };
 
   const isProductAvailableNow = (product) => {
+    // If no time restrictions, product is always available
     if (!product.available_from || !product.available_to) return true;
     
     try {
       const now = new Date();
-      const currentTime = now.getHours() * 60 + now.getMinutes();
+      const currentHours = now.getHours();
+      const currentMinutes = now.getMinutes();
+      const currentTime = currentHours * 60 + currentMinutes;
       
-      // Handle both "HH:MM" and "HH:MM:SS" formats
+      // Parse available_from
       const fromParts = product.available_from.split(':');
-      const toParts = product.available_to.split(':');
-      
-      const fromHour = parseInt(fromParts[0]);
-      const fromMin = parseInt(fromParts[1]);
-      const toHour = parseInt(toParts[0]);
-      const toMin = parseInt(toParts[1]);
-      
+      const fromHour = parseInt(fromParts[0], 10);
+      const fromMin = parseInt(fromParts[1] || '0', 10);
       const fromTime = fromHour * 60 + fromMin;
+      
+      // Parse available_to
+      const toParts = product.available_to.split(':');
+      const toHour = parseInt(toParts[0], 10);
+      const toMin = parseInt(toParts[1] || '0', 10);
       const toTime = toHour * 60 + toMin;
+      
+      // Debug logging
+      console.log(`Product: ${product.name}`);
+      console.log(`Current time: ${currentHours}:${currentMinutes} (${currentTime} mins)`);
+      console.log(`Available from: ${product.available_from} (${fromTime} mins)`);
+      console.log(`Available to: ${product.available_to} (${toTime} mins)`);
+      console.log(`Is available: ${currentTime >= fromTime && currentTime <= toTime}`);
       
       return currentTime >= fromTime && currentTime <= toTime;
     } catch (error) {
-      console.error("Error checking product availability time:", error);
+      console.error("Error checking product availability time:", error, product);
       return true; // If error, assume available
     }
   };

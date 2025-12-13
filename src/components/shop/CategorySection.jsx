@@ -22,16 +22,45 @@ export default function CategorySection({ category, products, onAddToCart, onUpd
     }
   };
 
+  const isProductAvailableNow = (product) => {
+    if (!product.available_from || !product.available_to) return true;
+    
+    try {
+      const now = new Date();
+      const currentTime = now.getHours() * 60 + now.getMinutes();
+      
+      const fromParts = product.available_from.split(':');
+      const fromHour = parseInt(fromParts[0], 10);
+      const fromMin = parseInt(fromParts[1] || '0', 10);
+      const fromTime = fromHour * 60 + fromMin;
+      
+      const toParts = product.available_to.split(':');
+      const toHour = parseInt(toParts[0], 10);
+      const toMin = parseInt(toParts[1] || '0', 10);
+      const toTime = toHour * 60 + toMin;
+      
+      return currentTime >= fromTime && currentTime <= toTime;
+    } catch (error) {
+      return true;
+    }
+  };
+
   const getHostelStock = (product) => {
     if (!user?.selected_hostel || user.selected_hostel === 'Other') {
       return product.stock_quantity || 0;
     }
-    // Check if hostel_stock exists and has a value for this hostel
     if (product.hostel_stock && typeof product.hostel_stock[user.selected_hostel] === 'number') {
       return product.hostel_stock[user.selected_hostel];
     }
-    // If no hostel-specific stock defined, fall back to total stock
     return product.stock_quantity || 0;
+  };
+  
+  const isProductInStock = (product) => {
+    if (!isProductAvailableNow(product)) {
+      return false;
+    }
+    const hostelStock = getHostelStock(product);
+    return hostelStock > 0;
   };
   
   // Show all categories even if empty
@@ -67,7 +96,8 @@ export default function CategorySection({ category, products, onAddToCart, onUpd
             const cartQty = getCartQuantity(product.id);
             const hasDiscount = product.original_price && product.original_price > product.price;
             const hostelStock = getHostelStock(product);
-            const isOutOfStock = hostelStock === 0;
+            const inStock = isProductInStock(product);
+            const isOutOfStock = !inStock;
             
             return (
               <motion.div
