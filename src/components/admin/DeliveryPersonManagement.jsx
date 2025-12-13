@@ -18,6 +18,7 @@ export default function DeliveryPersonManagement() {
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [deleteDialog, setDeleteDialog] = useState({ open: false, person: null });
+  const [blockDialog, setBlockDialog] = useState({ open: false, person: null });
   const [user, setUser] = useState(null);
 
   useEffect(() => {
@@ -133,19 +134,16 @@ export default function DeliveryPersonManagement() {
     }
   };
 
-  const toggleBlockStatus = async (person) => {
-    const action = person.is_blocked ? "unblock" : "block";
-    if (!window.confirm(`Are you sure you want to ${action} ${person.name}?`)) {
-      return;
-    }
+  const toggleBlockStatus = async () => {
+    if (!blockDialog.person) return;
 
     try {
-      await DeliveryPerson.update(person.id, {
-        is_blocked: !person.is_blocked
+      await DeliveryPerson.update(blockDialog.person.id, {
+        is_blocked: !blockDialog.person.is_blocked
       });
       await showNotification(
-        `Delivery Person ${person.is_blocked ? 'Unblocked' : 'Blocked'}`,
-        `${person.name} has been ${!person.is_blocked ? 'blocked' : 'unblocked'}. ${!person.is_blocked ? 'They can no longer accept or see orders.' : 'They can now accept orders again.'}`,
+        `Delivery Person ${blockDialog.person.is_blocked ? 'Unblocked' : 'Blocked'}`,
+        `${blockDialog.person.name} has been ${!blockDialog.person.is_blocked ? 'blocked' : 'unblocked'}. ${!blockDialog.person.is_blocked ? 'They can no longer accept or see orders.' : 'They can now accept orders again.'}`,
         "info"
       );
       loadDeliveryPersons();
@@ -157,6 +155,7 @@ export default function DeliveryPersonManagement() {
         "error"
       );
     }
+    setBlockDialog({ open: false, person: null });
   };
 
   return (
@@ -245,7 +244,7 @@ export default function DeliveryPersonManagement() {
                       <Button
                         variant="outline"
                         size="icon"
-                        onClick={() => toggleBlockStatus(person)}
+                        onClick={() => setBlockDialog({ open: true, person })}
                         className={person.is_blocked ? "text-green-600 hover:text-green-700" : "text-red-600 hover:text-red-700"}
                         title={person.is_blocked ? "Unblock" : "Block"}
                       >
@@ -286,6 +285,21 @@ export default function DeliveryPersonManagement() {
         onConfirm={handleDeletePerson}
         onCancel={() => setDeleteDialog({ open: false, person: null })}
         confirmText="Remove"
+        cancelText="Cancel"
+      />
+
+      <ConfirmDialog
+        open={blockDialog.open}
+        onOpenChange={(open) => setBlockDialog({ ...blockDialog, open })}
+        title={blockDialog.person?.is_blocked ? "Unblock Delivery Person" : "Block Delivery Person"}
+        description={
+          blockDialog.person?.is_blocked 
+            ? `Are you sure you want to unblock "${blockDialog.person?.name}"? They will be able to accept orders again.`
+            : `Are you sure you want to block "${blockDialog.person?.name}"? They will no longer be able to accept or see any orders.`
+        }
+        onConfirm={toggleBlockStatus}
+        onCancel={() => setBlockDialog({ open: false, person: null })}
+        confirmText={blockDialog.person?.is_blocked ? "Unblock" : "Block"}
         cancelText="Cancel"
       />
     </div>
