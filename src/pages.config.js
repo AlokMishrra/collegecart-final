@@ -8,6 +8,7 @@ import CategoryProducts from './pages/CategoryProducts';
 import Profile from './pages/Profile';
 import LoyaltyRewards from './pages/LoyaltyRewards';
 import Wishlist from './pages/Wishlist';
+import UserManagement from './pages/UserManagement';
 import __Layout from './Layout.jsx';
 
 
@@ -22,6 +23,7 @@ export const PAGES = {
     "Profile": Profile,
     "LoyaltyRewards": LoyaltyRewards,
     "Wishlist": Wishlist,
+    "UserManagement": UserManagement,
 }
 
 export const pagesConfig = {

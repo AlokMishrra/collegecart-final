@@ -113,34 +113,22 @@ export default function Layout({ children, currentPageName }) {
       showCondition: () => !isDeliveryRole
     },
     {
-      title: "Wishlist",
-      url: createPageUrl("Wishlist"),
-      icon: Heart,
+      title: "My Profile",
+      url: createPageUrl("Profile"),
+      icon: User,
       showCondition: () => !isDeliveryRole
     },
-    {
-      title: "My Orders",
-      url: createPageUrl("Orders"),
-      icon: Package,
-      showCondition: () => !isDeliveryRole
-    },
-    {
-      title: "Order History",
-      url: createPageUrl("Orders") + "?tab=history",
-      icon: Package,
-      showCondition: () => !isDeliveryRole
-    },
-    {
-      title: "Loyalty Rewards",
-      url: createPageUrl("LoyaltyRewards"),
-      icon: Award,
-      showCondition: () => !isDeliveryRole
-      },
     {
       title: "Admin Panel",
       url: createPageUrl("Admin"),
       icon: Settings,
       showCondition: () => hasMultipleRoles || (!isDeliveryRole && (user?.role === "admin" || userHasRole))
+    },
+    {
+      title: "User Management",
+      url: createPageUrl("UserManagement"),
+      icon: User,
+      showCondition: () => user?.role === "admin" || userHasRole
     },
     {
       title: "Delivery Portal",
