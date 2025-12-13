@@ -79,16 +79,27 @@ export default function Shop() {
   const isProductAvailableNow = (product) => {
     if (!product.available_from || !product.available_to) return true;
     
-    const now = new Date();
-    const currentTime = now.getHours() * 60 + now.getMinutes();
-    
-    const [fromHour, fromMin] = product.available_from.split(':').map(Number);
-    const [toHour, toMin] = product.available_to.split(':').map(Number);
-    
-    const fromTime = fromHour * 60 + fromMin;
-    const toTime = toHour * 60 + toMin;
-    
-    return currentTime >= fromTime && currentTime <= toTime;
+    try {
+      const now = new Date();
+      const currentTime = now.getHours() * 60 + now.getMinutes();
+      
+      // Handle both "HH:MM" and "HH:MM:SS" formats
+      const fromParts = product.available_from.split(':');
+      const toParts = product.available_to.split(':');
+      
+      const fromHour = parseInt(fromParts[0]);
+      const fromMin = parseInt(fromParts[1]);
+      const toHour = parseInt(toParts[0]);
+      const toMin = parseInt(toParts[1]);
+      
+      const fromTime = fromHour * 60 + fromMin;
+      const toTime = toHour * 60 + toMin;
+      
+      return currentTime >= fromTime && currentTime <= toTime;
+    } catch (error) {
+      console.error("Error checking product availability time:", error);
+      return true; // If error, assume available
+    }
   };
 
   const getHostelStock = (product) => {
