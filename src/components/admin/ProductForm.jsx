@@ -90,10 +90,11 @@ export default function ProductForm({ product, categories, onSave, onCancel }) {
               <SelectTrigger>
                 <SelectValue placeholder="Select category" />
               </SelectTrigger>
-              <SelectContent>
+              <SelectContent className="max-h-60 overflow-y-auto">
                 {categories.map((category) => (
                   <SelectItem key={category.id} value={category.id}>
                     {category.name}
+                    {!category.is_active && <span className="ml-2 text-xs text-red-500">(Inactive)</span>}
                   </SelectItem>
                 ))}
               </SelectContent>

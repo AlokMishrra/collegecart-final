@@ -143,8 +143,15 @@ export default function Shop() {
         User.me().catch(() => null)
       ]);
 
-      // Show all available products (time-based availability will be handled in stock check)
-      setProducts(productsData);
+      // Get active category IDs
+      const activeCategoryIds = categoriesData.map(cat => cat.id);
+      
+      // Filter products to only show those with active categories
+      const productsWithActiveCategories = productsData.filter(product => 
+        activeCategoryIds.includes(product.category_id)
+      );
+
+      setProducts(productsWithActiveCategories);
       setCategories(categoriesData);
     } catch (error) {
       console.error("Error loading data:", error);
