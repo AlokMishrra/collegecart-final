@@ -403,7 +403,7 @@ export default function Shop() {
         </motion.div>
       ) : (
         <div className="space-y-12">
-          {categories.map((category, idx) => (
+          {categories.filter(category => (categorizedProducts[category.id] || []).length > 0).map((category, idx) => (
             <motion.div
               key={category.id}
               initial={{ opacity: 0, y: 30 }}

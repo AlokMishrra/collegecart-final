@@ -29,7 +29,19 @@ export default function CategorySection({ category, products, onAddToCart, onUpd
     return product.hostel_stock?.[user.selected_hostel] || product.stock_quantity || 0;
   };
   
-  if (!products || products.length === 0) return null;
+  // Show all categories even if empty
+  if (!products || products.length === 0) {
+    return (
+      <div className="mb-8">
+        <div className="flex items-center justify-between mb-4">
+          <h2 className="text-xl font-bold text-gray-900">{category.name}</h2>
+        </div>
+        <div className="bg-gray-50 rounded-xl p-8 text-center">
+          <p className="text-gray-500">No products available in this category</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="mb-8">
