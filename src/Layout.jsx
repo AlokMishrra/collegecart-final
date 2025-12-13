@@ -32,8 +32,6 @@ export default function Layout({ children, currentPageName }) {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [cartCount, setCartCount] = useState(0);
   const [isDeliveryPartner, setIsDeliveryPartner] = useState(false);
-  const [userHasRole, setUserHasRole] = useState(false);
-  const [userRole, setUserRole] = useState(null);
   const [cartItemCount, setCartItemCount] = useState(0);
 
   useEffect(() => {
@@ -61,20 +59,6 @@ export default function Layout({ children, currentPageName }) {
     try {
       const currentUser = await User.me();
       setUser(currentUser);
-      
-      // Check if user has any assigned roles
-      if (currentUser.assigned_role_ids && currentUser.assigned_role_ids.length > 0) {
-        setUserHasRole(true);
-        // Load all assigned roles to check permissions
-        const rolePromises = currentUser.assigned_role_ids.map(roleId => 
-          base44.entities.Role.filter({ id: roleId })
-        );
-        const roleResults = await Promise.all(rolePromises);
-        const allRoles = roleResults.flat();
-        if (allRoles.length > 0) {
-          setUserRole(allRoles[0]); // Set first role as primary
-        }
-      }
     } catch (error) {
       // User not logged in
     }
@@ -90,46 +74,37 @@ export default function Layout({ children, currentPageName }) {
     setUser(null);
   };
 
-  // Check if user has multiple roles
-  const hasMultipleRoles = user?.assigned_role_ids && user.assigned_role_ids.length > 1;
-
-  // Check if user is a delivery person
-  const isDeliveryRole = userRole && (
-    userRole.name.toLowerCase().includes("delivery") ||
-    userRole.permissions?.includes("view_delivery_portal")
-  );
-
   const navigationItems = [
     {
       title: "Shop",
       url: createPageUrl("Shop"),
       icon: Home,
-      showCondition: () => !isDeliveryRole
+      showCondition: () => true
     },
     {
       title: "Cart",
       url: createPageUrl("Cart"),
       icon: ShoppingCart,
       badge: cartCount > 0 ? cartCount : null,
-      showCondition: () => !isDeliveryRole
+      showCondition: () => true
     },
     {
       title: "My Profile",
       url: createPageUrl("Profile"),
       icon: UserIcon,
-      showCondition: () => !isDeliveryRole
+      showCondition: () => true
     },
     {
       title: "Admin Panel",
       url: createPageUrl("Admin"),
       icon: Settings,
-      showCondition: () => hasMultipleRoles || (!isDeliveryRole && (user?.role === "admin" || userHasRole))
+      showCondition: () => user?.role === "admin"
     },
     {
       title: "User Management",
       url: createPageUrl("UserManagement"),
       icon: UserIcon,
-      showCondition: () => user?.role === "admin" || userHasRole
+      showCondition: () => user?.role === "admin"
     },
     {
       title: "Delivery Portal",
@@ -141,7 +116,7 @@ export default function Layout({ children, currentPageName }) {
           "manangirigoswaim011@gmail.com", 
           "info@apnafreelancer.in"
         ];
-        return hasMultipleRoles || allowedEmails.includes(user?.email) || isDeliveryRole;
+        return allowedEmails.includes(user?.email);
       }
     }
   ];
@@ -172,7 +147,7 @@ export default function Layout({ children, currentPageName }) {
           </div>
           <div className="flex items-center gap-2">
             <NotificationCenter />
-            {user && !isDeliveryRole && (
+            {user && (
               <Link to={createPageUrl("Cart")}>
                 <Button variant="ghost" size="icon" className="relative">
                   <ShoppingCart className="w-5 h-5" />
@@ -308,7 +283,7 @@ export default function Layout({ children, currentPageName }) {
             <div className="flex items-center gap-4">
               {user && <InAppChat currentUser={user} />}
               <NotificationCenter />
-              {user && !isDeliveryRole && (
+              {user && (
                 <Link to={createPageUrl("Cart")}>
                   <Button variant="ghost" size="icon" className="relative">
                     <ShoppingCart className="w-5 h-5" />
@@ -337,7 +312,7 @@ export default function Layout({ children, currentPageName }) {
       </div>
 
       {/* Feedback Popup */}
-      {user && !isDeliveryRole && <FeedbackPopup user={user} />}
+      {user && <FeedbackPopup user={user} />}
 
       {/* AI Customer Support Chatbot */}
       <CustomerSupportChatbot user={user} />
