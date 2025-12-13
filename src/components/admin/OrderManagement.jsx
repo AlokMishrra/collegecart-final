@@ -327,7 +327,6 @@ export default function OrderManagement() {
                         <div>
                           <p className="text-sm font-medium">
                             {new Date(order.created_date).toLocaleDateString('en-IN', { 
-                              timeZone: 'Asia/Kolkata',
                               day: '2-digit',
                               month: 'short',
                               year: 'numeric'
@@ -335,7 +334,6 @@ export default function OrderManagement() {
                           </p>
                           <p className="text-xs text-gray-500">
                             {new Date(order.created_date).toLocaleTimeString('en-IN', { 
-                              timeZone: 'Asia/Kolkata',
                               hour: '2-digit',
                               minute: '2-digit',
                               hour12: true

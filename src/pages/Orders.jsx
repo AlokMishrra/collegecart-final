@@ -273,7 +273,6 @@ export default function Orders() {
                       </p>
                       <p className="text-sm text-gray-500 mt-1">
                         {new Date(order.created_date).toLocaleDateString('en-IN', {
-                          timeZone: 'Asia/Kolkata',
                           year: 'numeric',
                           month: 'long',
                           day: 'numeric',
