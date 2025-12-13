@@ -100,18 +100,18 @@ export default function Admin() {
     // Check if user has the exact permission
     if (userPermissions.includes(permission)) return true;
     
-    // Map general permissions to specific features
+    // Map tab permissions to specific role permissions
     const permissionMaps = {
-      'manage_products': ['view_products', 'edit_products', 'manage_inventory'],
-      'manage_delivery': ['view_delivery_portal', 'manage_delivery_persons'],
-      'manage_orders': ['view_orders', 'edit_orders'],
-      'manage_categories': ['view_categories', 'edit_categories'],
-      'manage_campaigns': ['view_campaigns', 'edit_campaigns'],
-      'manage_reviews': ['view_reviews', 'edit_reviews'],
-      'manage_crm': ['view_crm'],
-      'manage_settings': ['view_settings', 'edit_settings'],
-      'manage_roles': ['view_roles', 'edit_roles'],
-      'view_summary': ['view_dashboard', 'view_analytics']
+      'manage_products': ['view_products', 'edit_products', 'manage_inventory', 'manage_products'],
+      'manage_delivery': ['view_delivery_portal', 'manage_delivery_persons', 'manage_delivery'],
+      'manage_orders': ['view_orders', 'edit_orders', 'manage_orders'],
+      'manage_categories': ['view_categories', 'edit_categories', 'manage_categories'],
+      'manage_campaigns': ['view_campaigns', 'edit_campaigns', 'manage_campaigns'],
+      'manage_reviews': ['view_reviews', 'edit_reviews', 'manage_reviews'],
+      'manage_crm': ['view_crm', 'manage_crm'],
+      'manage_settings': ['view_settings', 'edit_settings', 'manage_settings'],
+      'manage_roles': ['view_roles', 'edit_roles', 'manage_roles'],
+      'view_summary': ['view_dashboard', 'view_analytics', 'view_summary']
     };
     
     // Check if user has any related permission
@@ -122,33 +122,46 @@ export default function Admin() {
     return false;
   };
 
-  // Define tabs with their required permissions
+  // Define tabs with their required permissions - specific tabs for specific permissions
   const adminTabs = [
-    { value: "dashboard", label: "Dashboard", permission: "view_summary", component: <EnhancedDashboard /> },
-    { value: "ai-insights", label: "AI Intelligence", permission: "view_summary", component: <UnifiedAIDashboard /> },
-    { value: "summary", label: "Daily Summary", permission: "view_summary", component: <DailyOrderSummary /> },
-    { value: "crm", label: "CRM", permission: "manage_crm", component: <CRMModule /> },
-    { value: "retention", label: "Customer Retention", permission: "manage_crm", component: <CustomerRetention /> },
-    { value: "marketing", label: "Marketing Automation", permission: "manage_campaigns", component: <MarketingAutomation /> },
-    { value: "feedback", label: "Feedback Analysis", permission: "manage_reviews", component: <FeedbackAnalysis /> },
-    { value: "ai-orders", label: "AI Order Management", permission: "manage_orders", component: <AIOrderManagement /> },
-    { value: "support-ai", label: "AI Support Assistant", permission: "manage_orders", component: <AISupportAssistant /> },
+    // Product Manager specific tabs
     { value: "products", label: "Products", permission: "manage_products", component: <ProductManagement /> },
     { value: "bulk-update", label: "Bulk Update", permission: "manage_products", component: <BulkProductUpdate /> },
-    { value: "scheduler", label: "Product Scheduler", permission: "manage_products", component: <ProductScheduler /> },
-    { value: "product-insights", label: "AI Product Insights", permission: "manage_products", component: <AIProductInsights /> },
-    { value: "inventory-forecast", label: "Inventory Forecasting", permission: "manage_products", component: <AIInventoryForecasting /> },
-    { value: "dynamic-pricing", label: "Dynamic Pricing", permission: "manage_products", component: <DynamicPricing /> },
     { value: "categories", label: "Categories", permission: "manage_categories", component: <CategoryManagement /> },
-    { value: "campaigns", label: "Campaigns", permission: "manage_campaigns", component: <CampaignManagement /> },
-    { value: "recommendations", label: "AI Recommendations", permission: "manage_settings", component: <RecommendationConfig /> },
-    { value: "reviews", label: "Reviews", permission: "manage_reviews", component: <ReviewModeration /> },
-    { value: "delivery", label: "Delivery", permission: "manage_delivery", component: <DeliveryPersonManagement /> },
+    { value: "scheduler", label: "Product Scheduler", permission: "manage_products", component: <ProductScheduler /> },
+    { value: "inventory-forecast", label: "Inventory Forecasting", permission: "manage_products", component: <AIInventoryForecasting /> },
+    
+    // Delivery Person specific tabs
+    { value: "delivery", label: "Delivery Management", permission: "manage_delivery", component: <DeliveryPersonManagement /> },
     { value: "orders", label: "Orders", permission: "manage_orders", component: <OrderManagement /> },
+    
+    // Dashboard and analytics (available to most roles)
+    { value: "dashboard", label: "Dashboard", permission: "view_summary", component: <EnhancedDashboard /> },
+    { value: "summary", label: "Daily Summary", permission: "view_summary", component: <DailyOrderSummary /> },
+    
+    // Marketing and CRM
+    { value: "crm", label: "CRM", permission: "manage_crm", component: <CRMModule /> },
+    { value: "marketing", label: "Marketing Automation", permission: "manage_campaigns", component: <MarketingAutomation /> },
+    { value: "campaigns", label: "Campaigns", permission: "manage_campaigns", component: <CampaignManagement /> },
+    
+    // AI Features
+    { value: "ai-insights", label: "AI Intelligence", permission: "view_summary", component: <UnifiedAIDashboard /> },
+    { value: "product-insights", label: "AI Product Insights", permission: "manage_products", component: <AIProductInsights /> },
+    { value: "dynamic-pricing", label: "Dynamic Pricing", permission: "manage_products", component: <DynamicPricing /> },
+    { value: "ai-orders", label: "AI Order Management", permission: "manage_orders", component: <AIOrderManagement /> },
+    { value: "support-ai", label: "AI Support Assistant", permission: "manage_orders", component: <AISupportAssistant /> },
+    
+    // Reviews and Feedback
+    { value: "reviews", label: "Reviews", permission: "manage_reviews", component: <ReviewModeration /> },
+    { value: "feedback", label: "Feedback Analysis", permission: "manage_reviews", component: <FeedbackAnalysis /> },
+    { value: "retention", label: "Customer Retention", permission: "manage_crm", component: <CustomerRetention /> },
+    
+    // Settings (admin only)
+    { value: "recommendations", label: "AI Recommendations", permission: "manage_settings", component: <RecommendationConfig /> },
     { value: "notifications", label: "Notification Config", permission: "manage_settings", component: <NotificationConfigManager /> },
     { value: "gamification", label: "Gamification", permission: "manage_settings", component: <GamificationConfig /> },
     { value: "settings", label: "Settings", permission: "manage_settings", component: <SettingsManagement /> },
-    { value: "roles", label: "Roles", permission: "manage_roles", component: <RoleManagement /> }
+    { value: "roles", label: "Roles & Permissions", permission: "manage_roles", component: <RoleManagement /> }
   ];
 
   // Filter tabs based on permissions
