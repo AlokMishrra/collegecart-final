@@ -272,14 +272,18 @@ export default function Orders() {
                         Placed for <span className="font-medium">{order.customer_name}</span>
                       </p>
                       <p className="text-sm text-gray-500 mt-1">
-                        {new Date(order.created_date).toLocaleDateString('en-IN', {
-                          year: 'numeric',
-                          month: 'long',
-                          day: 'numeric',
-                          hour: '2-digit',
-                          minute: '2-digit',
-                          hour12: true
-                        })}
+                        {(() => {
+                          const date = new Date(order.created_date);
+                          return date.toLocaleString('en-IN', {
+                            year: 'numeric',
+                            month: 'long',
+                            day: 'numeric',
+                            hour: '2-digit',
+                            minute: '2-digit',
+                            second: '2-digit',
+                            hour12: true
+                          });
+                        })()}
                       </p>
                     </div>
                     <div className="flex items-center gap-4">
