@@ -95,7 +95,31 @@ export default function Admin() {
   if (!user) return null;
 
   const hasPermission = (permission) => {
-    return userPermissions.includes('all') || userPermissions.includes(permission);
+    if (userPermissions.includes('all')) return true;
+    
+    // Check if user has the exact permission
+    if (userPermissions.includes(permission)) return true;
+    
+    // Map general permissions to specific features
+    const permissionMaps = {
+      'manage_products': ['view_products', 'edit_products', 'manage_inventory'],
+      'manage_delivery': ['view_delivery_portal', 'manage_delivery_persons'],
+      'manage_orders': ['view_orders', 'edit_orders'],
+      'manage_categories': ['view_categories', 'edit_categories'],
+      'manage_campaigns': ['view_campaigns', 'edit_campaigns'],
+      'manage_reviews': ['view_reviews', 'edit_reviews'],
+      'manage_crm': ['view_crm'],
+      'manage_settings': ['view_settings', 'edit_settings'],
+      'manage_roles': ['view_roles', 'edit_roles'],
+      'view_summary': ['view_dashboard', 'view_analytics']
+    };
+    
+    // Check if user has any related permission
+    if (permissionMaps[permission]) {
+      return permissionMaps[permission].some(p => userPermissions.includes(p));
+    }
+    
+    return false;
   };
 
   // Define tabs with their required permissions
