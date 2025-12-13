@@ -44,11 +44,11 @@ export default function ProductForm({ product, categories, onSave, onCancel }) {
       original_price: formData.original_price ? parseFloat(formData.original_price) : null,
       stock_quantity: totalStock,
       hostel_stock: {
-        Mithali: parseInt(formData.hostel_stock.Mithali) || totalStock,
-        Gavaskar: parseInt(formData.hostel_stock.Gavaskar) || totalStock,
-        Virat: parseInt(formData.hostel_stock.Virat) || totalStock,
-        Tendulkar: parseInt(formData.hostel_stock.Tendulkar) || totalStock,
-        Other: parseInt(formData.hostel_stock.Other) || totalStock
+        Mithali: formData.hostel_stock.Mithali !== "" ? parseInt(formData.hostel_stock.Mithali) : 0,
+        Gavaskar: formData.hostel_stock.Gavaskar !== "" ? parseInt(formData.hostel_stock.Gavaskar) : 0,
+        Virat: formData.hostel_stock.Virat !== "" ? parseInt(formData.hostel_stock.Virat) : 0,
+        Tendulkar: formData.hostel_stock.Tendulkar !== "" ? parseInt(formData.hostel_stock.Tendulkar) : 0,
+        Other: formData.hostel_stock.Other !== "" ? parseInt(formData.hostel_stock.Other) : 0
       },
       delivery_charge: parseFloat(formData.delivery_charge) || 0,
       profit_margin: parseFloat(formData.profit_margin) || 0,
