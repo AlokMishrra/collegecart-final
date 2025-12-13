@@ -1,53 +1,50 @@
 import React from "react";
-import { motion } from "framer-motion";
-import { Truck, Clock, Shield, Tag } from "lucide-react";
+import { ShoppingBag } from "lucide-react";
 
 export default function EnhancedShopHero() {
-  const features = [
-    { icon: Truck, text: "Free Delivery on ₹500+", color: "text-emerald-600" },
-    { icon: Clock, text: "Delivered in 30 mins", color: "text-blue-600" },
-    { icon: Shield, text: "100% Fresh Products", color: "text-purple-600" },
-    { icon: Tag, text: "Best Prices Guaranteed", color: "text-orange-600" }
-  ];
-
   return (
-    <div className="relative overflow-hidden bg-gradient-to-br from-emerald-500 via-emerald-600 to-green-700 rounded-3xl p-8 text-white mb-6">
-      {/* Background Pattern */}
-      <div className="absolute inset-0 opacity-10">
-        <div className="absolute inset-0" style={{
-          backgroundImage: `url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23ffffff' fill-opacity='1'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E")`
-        }}></div>
-      </div>
+    <div className="bg-white border-b border-gray-200 -mx-4 lg:-mx-6 px-4 lg:px-6 py-4 mb-6">
+      <div className="max-w-7xl mx-auto flex items-center justify-between gap-4">
+        {/* Logo */}
+        <div className="flex items-center gap-2 flex-shrink-0">
+          <div className="w-10 h-10 bg-gradient-to-r from-emerald-500 to-emerald-600 rounded-xl flex items-center justify-center">
+            <ShoppingBag className="w-6 h-6 text-white" />
+          </div>
+          <div className="hidden md:block">
+            <h1 className="text-xl font-bold text-gray-900">CollegeCart</h1>
+            <p className="text-xs text-gray-500">Grocery Delivery</p>
+          </div>
+        </div>
 
-      <div className="relative z-10">
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.6 }}
-        >
-          <h1 className="text-4xl md:text-5xl font-bold mb-3">
-            Fresh Groceries, Delivered Fast ⚡
-          </h1>
-          <p className="text-emerald-50 text-lg mb-6">
-            Get your daily essentials delivered in minutes, right to your doorstep
-          </p>
-        </motion.div>
+        {/* Delivery Info - Hidden on mobile */}
+        <div className="hidden lg:block flex-shrink-0">
+          <div className="text-left">
+            <p className="text-sm font-bold text-gray-900">Delivery in 30 minutes</p>
+            <p className="text-xs text-gray-600">Fast & Fresh to your hostel</p>
+          </div>
+        </div>
 
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-          {features.map((feature, index) => (
-            <motion.div
-              key={index}
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.5, delay: index * 0.1 }}
-              className="flex items-center gap-2 bg-white/20 backdrop-blur-sm rounded-xl p-3"
-            >
-              <div className="bg-white rounded-lg p-2">
-                <feature.icon className={`w-5 h-5 ${feature.color}`} />
-              </div>
-              <span className="text-sm font-medium">{feature.text}</span>
-            </motion.div>
-          ))}
+        {/* Features - Centered badges */}
+        <div className="hidden md:flex items-center gap-3 flex-1 justify-center">
+          <div className="bg-emerald-50 border border-emerald-200 rounded-full px-4 py-1.5">
+            <span className="text-xs font-semibold text-emerald-700">🚚 Free Delivery ₹500+</span>
+          </div>
+          <div className="bg-blue-50 border border-blue-200 rounded-full px-4 py-1.5">
+            <span className="text-xs font-semibold text-blue-700">⚡ 30 Min Delivery</span>
+          </div>
+          <div className="bg-purple-50 border border-purple-200 rounded-full px-4 py-1.5">
+            <span className="text-xs font-semibold text-purple-700">✨ 100% Fresh</span>
+          </div>
+        </div>
+
+        {/* Mobile features */}
+        <div className="flex md:hidden items-center gap-2">
+          <div className="bg-emerald-50 border border-emerald-200 rounded-full px-3 py-1">
+            <span className="text-xs font-semibold text-emerald-700">🚚 Free ₹500+</span>
+          </div>
+          <div className="bg-blue-50 border border-blue-200 rounded-full px-3 py-1">
+            <span className="text-xs font-semibold text-blue-700">⚡ 30 Min</span>
+          </div>
         </div>
       </div>
     </div>
