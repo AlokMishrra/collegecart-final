@@ -7,6 +7,7 @@ import Delivery from './pages/Delivery';
 import CategoryProducts from './pages/CategoryProducts';
 import Profile from './pages/Profile';
 import LoyaltyRewards from './pages/LoyaltyRewards';
+import Wishlist from './pages/Wishlist';
 import __Layout from './Layout.jsx';
 
 
@@ -20,6 +21,7 @@ export const PAGES = {
     "CategoryProducts": CategoryProducts,
     "Profile": Profile,
     "LoyaltyRewards": LoyaltyRewards,
+    "Wishlist": Wishlist,
 }
 
 export const pagesConfig = {

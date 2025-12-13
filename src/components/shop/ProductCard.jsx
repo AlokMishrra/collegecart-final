@@ -4,7 +4,7 @@ import { User } from "@/entities/User";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Star, Clock, Truck } from "lucide-react";
+import { Star, Clock, Truck, Heart } from "lucide-react";
 import { Link } from "react-router-dom";
 import { createPageUrl } from "@/utils";
 
@@ -12,12 +12,73 @@ export default function ProductCard({ product, cartQuantity, onAddToCart, onUpda
   const [reviews, setReviews] = useState([]);
   const [avgRating, setAvgRating] = useState(0);
   const [reviewCount, setReviewCount] = useState(0);
+  const [isInWishlist, setIsInWishlist] = useState(false);
+  const [isAddingToWishlist, setIsAddingToWishlist] = useState(false);
   
   const hostelStock = propHostelStock !== undefined ? propHostelStock : product.stock_quantity || 0;
 
   useEffect(() => {
     loadReviews();
+    checkWishlistStatus();
   }, [product.id]);
+
+  const checkWishlistStatus = async () => {
+    try {
+      const currentUser = await User.me();
+      const wishlistItems = await base44.entities.Wishlist.filter({
+        user_id: currentUser.id,
+        product_id: product.id
+      });
+      setIsInWishlist(wishlistItems.length > 0);
+    } catch (error) {
+      // User not logged in
+    }
+  };
+
+  const toggleWishlist = async (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    
+    setIsAddingToWishlist(true);
+    try {
+      const currentUser = await User.me();
+      
+      if (isInWishlist) {
+        const wishlistItems = await base44.entities.Wishlist.filter({
+          user_id: currentUser.id,
+          product_id: product.id
+        });
+        if (wishlistItems[0]) {
+          await base44.entities.Wishlist.delete(wishlistItems[0].id);
+          setIsInWishlist(false);
+          await base44.entities.Notification.create({
+            user_id: currentUser.id,
+            title: "Removed from Wishlist",
+            message: `${product.name} removed from wishlist`,
+            type: "info"
+          });
+        }
+      } else {
+        await base44.entities.Wishlist.create({
+          user_id: currentUser.id,
+          product_id: product.id
+        });
+        setIsInWishlist(true);
+        await base44.entities.Notification.create({
+          user_id: currentUser.id,
+          title: "Added to Wishlist",
+          message: `${product.name} added to wishlist`,
+          type: "success"
+        });
+      }
+    } catch (error) {
+      if (error.message?.includes("not authenticated")) {
+        await User.login();
+      }
+    } finally {
+      setIsAddingToWishlist(false);
+    }
+  };
 
   const loadReviews = async () => {
     try {
@@ -86,6 +147,15 @@ export default function ProductCard({ product, cartQuantity, onAddToCart, onUpda
               Only {hostelStock} left
             </Badge>
           )}
+          <Button
+            size="icon"
+            variant="ghost"
+            onClick={toggleWishlist}
+            disabled={isAddingToWishlist}
+            className="absolute top-3 right-3 bg-white/90 backdrop-blur-sm hover:bg-white rounded-full w-8 h-8"
+          >
+            <Heart className={`w-4 h-4 ${isInWishlist ? 'fill-red-500 text-red-500' : 'text-gray-600'}`} />
+          </Button>
           {reviewCount > 0 && avgRating >= 4 && (
             <div className="absolute bottom-3 right-3 bg-white/95 backdrop-blur-sm rounded-full px-2 py-1 flex items-center gap-1 shadow-lg">
               <Star className="w-3 h-3 text-yellow-400 fill-yellow-400" />

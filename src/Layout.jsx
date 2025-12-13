@@ -15,7 +15,8 @@ import {
   X,
   LogOut,
   Building2,
-  Award
+  Award,
+  Heart
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -112,6 +113,12 @@ export default function Layout({ children, currentPageName }) {
       showCondition: () => !isDeliveryRole
     },
     {
+      title: "Wishlist",
+      url: createPageUrl("Wishlist"),
+      icon: Heart,
+      showCondition: () => !isDeliveryRole
+    },
+    {
       title: "My Orders",
       url: createPageUrl("Orders"),
       icon: Package,
@@ -166,10 +173,12 @@ export default function Layout({ children, currentPageName }) {
               <Menu className="w-5 h-5" />
             </Button>
             <div className="flex items-center gap-2">
-              <div className="w-8 h-8 bg-gradient-to-r from-emerald-500 to-emerald-600 rounded-lg flex items-center justify-center">
-                <ShoppingBag className="w-5 h-5 text-white" />
-              </div>
-              <h1 className="text-xl font-bold text-gray-900">CollegeCart</h1>
+              <img 
+                src="https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/6885ba54fc40d82179646aca/56f3d15ef_WhatsAppImage2025-12-13at111830AM.jpeg"
+                alt="CollegeCart Logo"
+                className="w-9 h-9 object-contain"
+              />
+              <h1 className="text-xl font-bold text-emerald-600">CollegeCart</h1>
             </div>
           </div>
           <div className="flex items-center gap-2">
