@@ -117,16 +117,8 @@ export default function Shop() {
         User.me().catch(() => null)
       ]);
 
-      // Filter products based on time availability only
-      let filteredProducts = productsData.filter(product => {
-        // Check time availability
-        if (!isProductAvailableNow(product)) return false;
-
-        // Show all products regardless of hostel
-        return true;
-      });
-
-      setProducts(filteredProducts);
+      // Show all available products regardless of time restrictions
+      setProducts(productsData);
       setCategories(categoriesData);
     } catch (error) {
       console.error("Error loading data:", error);
