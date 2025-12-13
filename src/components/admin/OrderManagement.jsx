@@ -284,6 +284,7 @@ export default function OrderManagement() {
                 <TableHead>Customer</TableHead>
                 <TableHead>Items</TableHead>
                 <TableHead>Amount</TableHead>
+                <TableHead>Order Time</TableHead>
                 <TableHead>Status</TableHead>
                 <TableHead>Delivery Person</TableHead>
                 <TableHead>Actions</TableHead>
@@ -296,12 +297,7 @@ export default function OrderManagement() {
                 return (
                   <TableRow key={order.id}>
                     <TableCell>
-                      <div>
-                        <p className="font-medium">{order.order_number}</p>
-                        <p className="text-sm text-gray-500">
-                          {new Date(order.created_date).toLocaleDateString()}
-                        </p>
-                      </div>
+                      <p className="font-medium">{order.order_number}</p>
                     </TableCell>
                     <TableCell>
                       <div>
@@ -325,6 +321,19 @@ export default function OrderManagement() {
                       </div>
                     </TableCell>
                     <TableCell>₹{order.total_amount.toFixed(2)}</TableCell>
+                    <TableCell>
+                      <div className="flex items-center gap-2">
+                        <Clock className="w-4 h-4 text-gray-400" />
+                        <div>
+                          <p className="text-sm font-medium">
+                            {new Date(order.created_date).toLocaleDateString()}
+                          </p>
+                          <p className="text-xs text-gray-500">
+                            {new Date(order.created_date).toLocaleTimeString()}
+                          </p>
+                        </div>
+                      </div>
+                    </TableCell>
                     <TableCell>
                       <Badge className={getStatusColor(order.status)}>
                         <StatusIcon className="w-4 h-4 mr-1" />
