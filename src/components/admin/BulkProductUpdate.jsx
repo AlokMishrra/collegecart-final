@@ -31,7 +31,8 @@ export default function BulkProductUpdate() {
     available_to: "",
     is_available: "",
     category_id: "",
-    unit: ""
+    unit: "",
+    tags: ""
   });
 
   useEffect(() => {
@@ -97,6 +98,10 @@ export default function BulkProductUpdate() {
       if (updateData.is_available !== "") updates.is_available = updateData.is_available === "true";
       if (updateData.category_id) updates.category_id = updateData.category_id;
       if (updateData.unit) updates.unit = updateData.unit;
+      if (updateData.tags) {
+        // Split tags by comma and trim whitespace
+        updates.tags = updateData.tags.split(',').map(tag => tag.trim()).filter(tag => tag);
+      }
 
       // Handle hostel stock updates
       if (updateData.hostel_stock_mithali || updateData.hostel_stock_gavaskar || 
@@ -150,7 +155,8 @@ export default function BulkProductUpdate() {
         available_to: "",
         is_available: "",
         category_id: "",
-        unit: ""
+        unit: "",
+        tags: ""
       });
       await loadData();
     } catch (error) {
@@ -395,6 +401,16 @@ export default function BulkProductUpdate() {
                   <SelectItem value="false">Unavailable</SelectItem>
                 </SelectContent>
               </Select>
+            </div>
+
+            <div>
+              <Label>Tags</Label>
+              <Input
+                placeholder="e.g., organic, fresh, vegan (comma-separated)"
+                value={updateData.tags}
+                onChange={(e) => setUpdateData({...updateData, tags: e.target.value})}
+              />
+              <p className="text-xs text-gray-500 mt-1">Separate multiple tags with commas</p>
             </div>
 
             <Button
