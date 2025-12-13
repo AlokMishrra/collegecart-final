@@ -92,10 +92,14 @@ export default function Shop() {
   };
 
   const getHostelStock = (product) => {
-    if (!user?.selected_hostel) {
+    if (!user?.selected_hostel || user.selected_hostel === 'Other') {
       return product.stock_quantity || 0;
     }
-    return product.hostel_stock?.[user.selected_hostel] || product.stock_quantity || 0;
+    // Check if hostel_stock exists and has a value for this hostel (even if 0)
+    if (product.hostel_stock && product.hostel_stock.hasOwnProperty(user.selected_hostel)) {
+      return product.hostel_stock[user.selected_hostel];
+    }
+    return product.stock_quantity || 0;
   };
 
   const isProductInStock = (product) => {
