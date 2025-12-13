@@ -16,7 +16,8 @@ import {
   LogOut,
   Building2,
   Award,
-  Heart
+  Heart,
+  User as UserIcon
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -115,7 +116,7 @@ export default function Layout({ children, currentPageName }) {
     {
       title: "My Profile",
       url: createPageUrl("Profile"),
-      icon: User,
+      icon: UserIcon,
       showCondition: () => !isDeliveryRole
     },
     {
@@ -127,7 +128,7 @@ export default function Layout({ children, currentPageName }) {
     {
       title: "User Management",
       url: createPageUrl("UserManagement"),
-      icon: User,
+      icon: UserIcon,
       showCondition: () => user?.role === "admin" || userHasRole
     },
     {
