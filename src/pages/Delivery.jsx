@@ -29,6 +29,17 @@ export default function Delivery() {
 
   const loadAssignedOrders = useCallback(async (deliveryPersonId) => {
     try {
+      // Verify delivery person is not blocked before loading orders
+      const persons = await DeliveryPerson.filter({ id: deliveryPersonId });
+      if (persons.length > 0 && persons[0].is_blocked) {
+        // Person is blocked, clear everything and logout
+        localStorage.removeItem('deliveryPerson');
+        setDeliveryPerson(null);
+        setAssignedOrders([]);
+        setAvailableOrders([]);
+        return;
+      }
+
       // Load both preparing and out_for_delivery orders
       const [preparingOrders, outForDeliveryOrders] = await Promise.all([
         Order.filter({ delivery_person_id: deliveryPersonId, status: "preparing" }),
@@ -123,15 +134,9 @@ export default function Delivery() {
       // Get all delivery persons and find matching email
       const allDeliveryPersons = await DeliveryPerson.list();
       
-      // Debug: Log all delivery persons to see what's in the database
-      console.log("All delivery persons:", allDeliveryPersons);
-      console.log("Looking for email:", loginForm.email.toLowerCase().trim());
-      
       const deliveryPerson = allDeliveryPersons.find(person => 
         person.email && person.email.toLowerCase().trim() === loginForm.email.toLowerCase().trim()
       );
-
-      console.log("Found delivery person:", deliveryPerson);
 
       if (!deliveryPerson) {
         setLoginError("No delivery person found with this email");
@@ -139,12 +144,7 @@ export default function Delivery() {
         return;
       }
 
-      // Debug: Log password comparison
-      console.log("Stored password:", deliveryPerson.password);
-      console.log("Entered password:", loginForm.password);
-      console.log("Password match:", deliveryPerson.password === loginForm.password);
-
-      // Check password - trim whitespace and compare
+      // Check password
       const storedPassword = String(deliveryPerson.password || '').trim();
       const enteredPassword = String(loginForm.password || '').trim();
       
@@ -154,7 +154,14 @@ export default function Delivery() {
         return;
       }
 
-      // Check if delivery person is active (if field exists)
+      // Check if delivery person is blocked
+      if (deliveryPerson.is_blocked) {
+        setLoginError("Your account has been blocked by the administrator. Please contact support.");
+        setIsLoggingIn(false);
+        return;
+      }
+
+      // Check if delivery person is active
       if (deliveryPerson.hasOwnProperty('is_available') && !deliveryPerson.is_available) {
         setLoginError("Your account is currently inactive. Please contact admin.");
         setIsLoggingIn(false);
