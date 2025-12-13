@@ -276,7 +276,7 @@ export default function Shop() {
   const filteredProducts = applyFiltersAndSort(products);
 
   return (
-    <div className="max-w-7xl mx-auto space-y-6">
+    <div className="max-w-7xl mx-auto space-y-8 pb-8">
       {/* Hostel Selector Modal */}
       {showHostelSelector && <HostelSelector onHostelSelected={handleHostelSelected} />}
       
@@ -285,22 +285,31 @@ export default function Shop() {
 
       {/* Change Hostel Button */}
       {user?.selected_hostel && (
-        <div className="flex items-center justify-between bg-emerald-50 border border-emerald-200 rounded-lg p-4">
-          <div className="flex items-center gap-2">
-            <Building2 className="w-5 h-5 text-emerald-600" />
-            <span className="text-sm font-medium text-gray-900">
-              Showing products for: <span className="text-emerald-600">{user.selected_hostel} Hostel</span>
-            </span>
+        <motion.div 
+          initial={{ opacity: 0, y: -10 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="flex items-center justify-between bg-gradient-to-r from-emerald-50 to-green-50 border border-emerald-200 rounded-2xl p-4 shadow-sm"
+        >
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 bg-emerald-100 rounded-full flex items-center justify-center">
+              <Building2 className="w-5 h-5 text-emerald-600" />
+            </div>
+            <div>
+              <p className="text-xs text-gray-600">Delivering to</p>
+              <p className="text-sm font-semibold text-gray-900">
+                {user.selected_hostel} Hostel
+              </p>
+            </div>
           </div>
           <Button
             variant="outline"
             size="sm"
             onClick={() => setShowHostelSelector(true)}
-            className="border-emerald-300 text-emerald-700 hover:bg-emerald-100"
+            className="border-emerald-300 text-emerald-700 hover:bg-emerald-100 rounded-full px-4"
           >
-            Change Hostel
+            Change
           </Button>
-        </div>
+        </motion.div>
       )}
 
       {/* Enhanced Search */}
@@ -322,57 +331,99 @@ export default function Shop() {
 
       {/* Personalized Recommendations */}
       {!searchQuery.trim() && !selectedCategory && filters.availability === "all" && filters.rating === "all" && user && (
-        <RecommendationEngine 
-          user={user} 
-          onAddToCart={addToCart}
-          getCartQuantity={getCartQuantity}
-          context="shop"
-        />
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.2 }}
+        >
+          <RecommendationEngine 
+            user={user} 
+            onAddToCart={addToCart}
+            getCartQuantity={getCartQuantity}
+            context="shop"
+          />
+        </motion.div>
       )}
 
       {/* Category Sections */}
       {isLoading ? (
-        <div className="space-y-8">
+        <div className="space-y-10">
           {Array(3).fill(0).map((_, i) => (
-            <div key={i}>
-              <Skeleton className="h-8 w-48 mb-4" />
-              <div className="flex gap-4 overflow-hidden">
+            <div key={i} className="space-y-4">
+              <Skeleton className="h-10 w-64 mb-6 rounded-xl" />
+              <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
                 {Array(5).fill(0).map((_, j) => (
-                  <Skeleton key={j} className="h-64 w-40 flex-shrink-0" />
+                  <Skeleton key={j} className="h-80 rounded-2xl" />
                 ))}
               </div>
             </div>
           ))}
         </div>
       ) : searchQuery.trim() || selectedCategory || filters.availability !== "all" || filters.rating !== "all" || sortBy !== "relevance" ? (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-          <AnimatePresence>
-            {filteredProducts.map((product) => (
-                <ProductCard
-                  key={product.id}
-                  product={product}
-                  cartQuantity={getCartQuantity(product.id)}
-                  onAddToCart={addToCart}
-                  onUpdateQuantity={updateCartQuantity}
-                  hostelStock={getHostelStock(product)}
-                  isInStock={isProductInStock(product)}
-                />
-              ))}
-          </AnimatePresence>
-        </div>
+        <motion.div 
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          className="space-y-4"
+        >
+          {filteredProducts.length === 0 ? (
+            <Card className="p-12 text-center">
+              <div className="w-20 h-20 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                <ShoppingBag className="w-10 h-10 text-gray-400" />
+              </div>
+              <h3 className="text-xl font-semibold text-gray-900 mb-2">No products found</h3>
+              <p className="text-gray-600">Try adjusting your filters or search terms</p>
+            </Card>
+          ) : (
+            <>
+              <div className="flex items-center justify-between mb-4">
+                <p className="text-sm text-gray-600">
+                  Found <span className="font-semibold text-gray-900">{filteredProducts.length}</span> products
+                </p>
+              </div>
+              <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
+                <AnimatePresence>
+                  {filteredProducts.map((product, index) => (
+                    <motion.div
+                      key={product.id}
+                      initial={{ opacity: 0, scale: 0.9 }}
+                      animate={{ opacity: 1, scale: 1 }}
+                      exit={{ opacity: 0, scale: 0.9 }}
+                      transition={{ delay: index * 0.05 }}
+                    >
+                      <ProductCard
+                        product={product}
+                        cartQuantity={getCartQuantity(product.id)}
+                        onAddToCart={addToCart}
+                        onUpdateQuantity={updateCartQuantity}
+                        hostelStock={getHostelStock(product)}
+                        isInStock={isProductInStock(product)}
+                      />
+                    </motion.div>
+                  ))}
+                </AnimatePresence>
+              </div>
+            </>
+          )}
+        </motion.div>
       ) : (
-        <div className="space-y-8">
-          {categories.map(category => (
-            <CategorySection
+        <div className="space-y-12">
+          {categories.map((category, idx) => (
+            <motion.div
               key={category.id}
-              category={category}
-              products={categorizedProducts[category.id] || []}
-              onAddToCart={addToCart}
-              onUpdateQuantity={updateCartQuantity}
-              getCartQuantity={getCartQuantity}
-              getHostelStock={getHostelStock}
-              isProductInStock={isProductInStock}
+              initial={{ opacity: 0, y: 30 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: idx * 0.1 }}
+            >
+              <CategorySection
+                category={category}
+                products={categorizedProducts[category.id] || []}
+                onAddToCart={addToCart}
+                onUpdateQuantity={updateCartQuantity}
+                getCartQuantity={getCartQuantity}
+                getHostelStock={getHostelStock}
+                isProductInStock={isProductInStock}
               />
+            </motion.div>
           ))}
         </div>
       )}
