@@ -326,10 +326,20 @@ export default function OrderManagement() {
                         <Clock className="w-4 h-4 text-gray-400" />
                         <div>
                           <p className="text-sm font-medium">
-                            {new Date(order.created_date).toLocaleDateString()}
+                            {new Date(order.created_date).toLocaleDateString('en-IN', { 
+                              timeZone: 'Asia/Kolkata',
+                              day: '2-digit',
+                              month: 'short',
+                              year: 'numeric'
+                            })}
                           </p>
                           <p className="text-xs text-gray-500">
-                            {new Date(order.created_date).toLocaleTimeString()}
+                            {new Date(order.created_date).toLocaleTimeString('en-IN', { 
+                              timeZone: 'Asia/Kolkata',
+                              hour: '2-digit',
+                              minute: '2-digit',
+                              hour12: true
+                            })}
                           </p>
                         </div>
                       </div>
