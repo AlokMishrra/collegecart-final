@@ -260,6 +260,10 @@ export default function OrderManagement() {
   };
 
   const refundOrder = async (orderId) => {
+    if (!window.confirm("Are you sure you want to process refund for this order?")) {
+      return;
+    }
+
     try {
       const order = orders.find(o => o.id === orderId);
       if (!order) return;
@@ -277,22 +281,39 @@ export default function OrderManagement() {
       await Notification.create({
         user_id: order.user_id,
         title: "Refund Processed",
-        message: `Refund of ₹${order.total_amount.toFixed(2)} has been processed for order ${order.order_number}`,
+        message: `Refund of ₹${order.total_amount.toFixed(2)} has been processed for order ${order.order_number}. Amount will be credited within 5-7 business days.`,
         type: "success"
       });
 
       // Notify admin
-      const currentUser = await User.me();
-      await Notification.create({
-        user_id: currentUser.id,
-        title: "Refund Successful",
-        message: `Refund of ₹${order.total_amount.toFixed(2)} processed for order ${order.order_number}`,
-        type: "success"
-      });
+      try {
+        const currentUser = await User.me();
+        await Notification.create({
+          user_id: currentUser.id,
+          title: "Refund Successful",
+          message: `Refund of ₹${order.total_amount.toFixed(2)} processed for order ${order.order_number}`,
+          type: "success"
+        });
+      } catch (err) {
+        console.error("Error creating admin notification:", err);
+      }
 
       loadData();
     } catch (error) {
       console.error("Error processing refund:", error);
+      
+      // Show error notification to admin
+      try {
+        const currentUser = await User.me();
+        await Notification.create({
+          user_id: currentUser.id,
+          title: "Refund Failed",
+          message: "Failed to process refund. Please try again.",
+          type: "error"
+        });
+      } catch (err) {
+        console.error("Error creating admin error notification:", err);
+      }
     }
   };
 
