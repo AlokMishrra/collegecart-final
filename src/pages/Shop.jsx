@@ -104,6 +104,11 @@ export default function Shop() {
   };
 
   const isProductInStock = (product) => {
+    // First check time availability
+    if (!isProductAvailableNow(product)) {
+      return false; // Out of stock if outside time window
+    }
+    
     const hostelStock = getHostelStock(product);
     return hostelStock > 0;
   };
@@ -117,7 +122,7 @@ export default function Shop() {
         User.me().catch(() => null)
       ]);
 
-      // Show all available products regardless of time restrictions
+      // Show all available products (time-based availability will be handled in stock check)
       setProducts(productsData);
       setCategories(categoriesData);
     } catch (error) {
