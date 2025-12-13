@@ -57,65 +57,89 @@ export default function ProductCard({ product, cartQuantity, onAddToCart, onUpda
   const isOutOfStock = isInStock !== undefined ? !isInStock : hostelStock === 0;
 
   return (
-    <Card className="overflow-hidden hover:shadow-xl transition-all duration-300">
+    <Card className="group overflow-hidden hover:shadow-2xl transition-all duration-300 border-0 bg-white rounded-2xl">
       <Link to={createPageUrl(`ProductDetails?id=${product.id}`)}>
-        <div className="relative">
+        <div className="relative overflow-hidden">
+          <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 z-10" />
           <img
             src={product.image_url || "https://images.unsplash.com/photo-1542838132-92c53300491e?w=300"}
             alt={product.name}
-            className="w-full h-48 object-cover"
+            className="w-full h-48 object-cover group-hover:scale-110 transition-transform duration-500"
             onError={(e) => {
               e.target.src = "https://images.unsplash.com/photo-1542838132-92c53300491e?w=300";
             }}
           />
           {isOutOfStock && (
-            <Badge className="absolute top-2 left-2 bg-red-500 text-white">
-              OUT OF STOCK
-            </Badge>
+            <div className="absolute inset-0 bg-gray-900/80 backdrop-blur-sm flex items-center justify-center z-20">
+              <Badge className="bg-red-500 text-white text-sm px-4 py-2">
+                OUT OF STOCK
+              </Badge>
+            </div>
           )}
           {!isOutOfStock && discount > 0 && (
-            <Badge className="absolute top-2 left-2 bg-red-500 text-white">
+            <Badge className="absolute top-3 left-3 bg-gradient-to-r from-red-500 to-red-600 text-white shadow-lg text-xs px-3 py-1">
               {discount}% OFF
             </Badge>
           )}
           {!isOutOfStock && hostelStock < 5 && hostelStock > 0 && (
-            <Badge className="absolute top-2 right-2 bg-orange-500 text-white">
+            <Badge className="absolute top-3 right-3 bg-orange-500 text-white shadow-lg text-xs px-3 py-1 animate-pulse">
               Only {hostelStock} left
             </Badge>
+          )}
+          {reviewCount > 0 && avgRating >= 4 && (
+            <div className="absolute bottom-3 right-3 bg-white/95 backdrop-blur-sm rounded-full px-2 py-1 flex items-center gap-1 shadow-lg">
+              <Star className="w-3 h-3 text-yellow-400 fill-yellow-400" />
+              <span className="text-xs font-bold text-gray-900">{avgRating.toFixed(1)}</span>
+            </div>
           )}
         </div>
       </Link>
 
-      <CardContent className="p-4">
+      <CardContent className="p-4 space-y-3">
         <Link to={createPageUrl(`ProductDetails?id=${product.id}`)}>
-          <h3 className="font-semibold text-lg mb-2 line-clamp-2 hover:text-emerald-600">
+          <h3 className="font-bold text-base mb-1 line-clamp-2 hover:text-emerald-600 transition-colors leading-tight min-h-[2.5rem]">
             {product.name}
           </h3>
         </Link>
         
-        <div className="flex items-baseline gap-2 mb-2">
-          <span className="text-2xl font-bold text-emerald-600">₹{product.price}</span>
-          {product.original_price && (
-            <span className="text-sm text-gray-400 line-through">₹{product.original_price}</span>
-          )}
-          <span className="text-xs text-gray-500">/{product.unit}</span>
-          {reviewCount > 0 && (
-            <div className="flex items-center gap-1 ml-2">
-              <Star className="w-4 h-4 text-yellow-400 fill-yellow-400" />
-              <span className="text-sm font-semibold text-gray-700">{avgRating.toFixed(1)}</span>
-              <span className="text-xs text-gray-500">({reviewCount})</span>
-            </div>
-          )}
+        <div className="flex items-center justify-between">
+          <div className="flex items-baseline gap-1.5">
+            <span className="text-2xl font-bold text-gray-900">₹{product.price}</span>
+            {product.original_price && (
+              <span className="text-sm text-gray-400 line-through">₹{product.original_price}</span>
+            )}
+          </div>
+          <span className="text-xs text-gray-500 font-medium bg-gray-100 px-2 py-1 rounded-full">/{product.unit}</span>
         </div>
 
-        <div className="space-y-2 mb-3">
-          <div className="flex items-center gap-1">
-            <Clock className="w-4 h-4 text-gray-500" />
-            <span className="text-sm text-gray-600">{product.delivery_time || "40 mins"}</span>
+        {reviewCount > 0 && (
+          <div className="flex items-center gap-1.5 text-xs">
+            <div className="flex items-center gap-0.5">
+              {[...Array(5)].map((_, i) => (
+                <Star
+                  key={i}
+                  className={`w-3 h-3 ${
+                    i < Math.floor(avgRating)
+                      ? 'text-yellow-400 fill-yellow-400'
+                      : 'text-gray-300'
+                  }`}
+                />
+              ))}
+            </div>
+            <span className="text-gray-600">({reviewCount})</span>
+          </div>
+        )}
+
+        <div className="flex items-center justify-between text-xs">
+          <div className="flex items-center gap-1.5 text-gray-600">
+            <div className="w-5 h-5 bg-emerald-100 rounded-full flex items-center justify-center">
+              <Clock className="w-3 h-3 text-emerald-600" />
+            </div>
+            <span className="font-medium">{product.delivery_time || "40 mins"}</span>
           </div>
           {product.available_from && product.available_to && (
-            <div className="text-xs text-emerald-600 font-medium">
-              Available: {product.available_from} - {product.available_to}
+            <div className="text-emerald-600 font-semibold">
+              {product.available_from}-{product.available_to}
             </div>
           )}
         </div>
@@ -124,26 +148,28 @@ export default function ProductCard({ product, cartQuantity, onAddToCart, onUpda
           <Button
             size="sm"
             disabled
-            className="w-full bg-red-500 text-white cursor-not-allowed"
+            className="w-full bg-gray-400 text-white cursor-not-allowed rounded-xl h-10 font-semibold"
           >
             OUT OF STOCK
           </Button>
         ) : cartQuantity > 0 ? (
-          <div className="flex items-center justify-between gap-2">
+          <div className="flex items-center gap-2 bg-emerald-50 rounded-xl p-1">
             <Button
               size="sm"
-              variant="outline"
+              variant="ghost"
               onClick={(e) => {
                 e.preventDefault();
                 if (onUpdateQuantity) {
                   onUpdateQuantity(product, -1);
                 }
               }}
-              className="flex-1"
+              className="flex-1 hover:bg-emerald-100 rounded-lg h-9 font-bold text-emerald-700"
             >
-              -
+              −
             </Button>
-            <span className="font-semibold px-3">{cartQuantity}</span>
+            <div className="flex items-center justify-center min-w-[2.5rem]">
+              <span className="font-bold text-emerald-700">{cartQuantity}</span>
+            </div>
             <Button
               size="sm"
               onClick={(e) => {
@@ -154,7 +180,7 @@ export default function ProductCard({ product, cartQuantity, onAddToCart, onUpda
                   onAddToCart(product);
                 }
               }}
-              className="flex-1 bg-emerald-600 hover:bg-emerald-700"
+              className="flex-1 bg-emerald-600 hover:bg-emerald-700 rounded-lg h-9 font-bold"
             >
               +
             </Button>
@@ -166,9 +192,9 @@ export default function ProductCard({ product, cartQuantity, onAddToCart, onUpda
               e.preventDefault();
               onAddToCart(product);
             }}
-            className="w-full bg-emerald-600 hover:bg-emerald-700"
+            className="w-full bg-gradient-to-r from-emerald-600 to-emerald-700 hover:from-emerald-700 hover:to-emerald-800 rounded-xl h-10 font-semibold shadow-md hover:shadow-lg transition-all"
           >
-            ADD
+            ADD TO CART
           </Button>
         )}
       </CardContent>

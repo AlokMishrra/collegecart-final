@@ -4,7 +4,7 @@ import { Category } from "@/entities/Category";
 import { CartItem } from "@/entities/CartItem";
 import { User } from "@/entities/User";
 import { Notification } from "@/entities/Notification";
-import { Search, Filter, ShoppingCart, Plus, Minus, Building2 } from "lucide-react";
+import { Search, Filter, ShoppingCart, Plus, Minus, Building2, ShoppingBag } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
