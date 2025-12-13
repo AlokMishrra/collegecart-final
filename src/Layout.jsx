@@ -59,6 +59,20 @@ export default function Layout({ children, currentPageName }) {
     try {
       const currentUser = await User.me();
       setUser(currentUser);
+      
+      // Load user roles
+      if (currentUser.assigned_role_ids && currentUser.assigned_role_ids.length > 0) {
+        const roles = await Promise.all(
+          currentUser.assigned_role_ids.map(roleId => 
+            base44.entities.Role.filter({ id: roleId })
+          )
+        );
+        currentUser.roles = roles.flat();
+      } else {
+        currentUser.roles = [];
+      }
+      
+      setUser(currentUser);
     } catch (error) {
       // User not logged in
     }
@@ -72,6 +86,20 @@ export default function Layout({ children, currentPageName }) {
   const handleLogout = async () => {
     await User.logout();
     setUser(null);
+  };
+
+  const hasRole = (roleName) => {
+    if (user?.role === "admin") return true;
+    return user?.roles?.some(r => 
+      r.name.toLowerCase().includes(roleName.toLowerCase())
+    );
+  };
+
+  const hasPermission = (permission) => {
+    if (user?.role === "admin") return true;
+    return user?.roles?.some(r => 
+      r.permissions?.includes(permission)
+    );
   };
 
   const navigationItems = [
@@ -98,13 +126,13 @@ export default function Layout({ children, currentPageName }) {
       title: "Admin Panel",
       url: createPageUrl("Admin"),
       icon: Settings,
-      showCondition: () => user?.role === "admin"
+      showCondition: () => user?.role === "admin" || hasPermission("manage_admin")
     },
     {
       title: "User Management",
       url: createPageUrl("UserManagement"),
       icon: UserIcon,
-      showCondition: () => user?.role === "admin"
+      showCondition: () => user?.role === "admin" || hasPermission("manage_users")
     },
     {
       title: "Delivery Portal",
@@ -116,7 +144,7 @@ export default function Layout({ children, currentPageName }) {
           "manangirigoswaim011@gmail.com", 
           "info@apnafreelancer.in"
         ];
-        return allowedEmails.includes(user?.email);
+        return allowedEmails.includes(user?.email) || hasRole("delivery");
       }
     }
   ];

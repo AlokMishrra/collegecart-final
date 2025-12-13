@@ -22,6 +22,7 @@ import QuickAddToCart from "../components/shop/QuickAddToCart";
   import HostelSelector from "../components/shop/HostelSelector";
   import RecommendationEngine from "../components/shop/RecommendationEngine";
   import EnhancedSearch from "../components/shop/EnhancedSearch";
+  import HostelPromotionBanner from "../components/shop/HostelPromotionBanner";
 
 export default function Shop() {
   const [products, setProducts] = useState([]);
@@ -282,6 +283,9 @@ export default function Shop() {
       
       {/* Enhanced Header */}
       <EnhancedShopHero />
+
+      {/* Hostel-Specific Promotion Banner */}
+      {user && <HostelPromotionBanner user={user} />}
 
       {/* Change Hostel Button */}
       {user?.selected_hostel && (
