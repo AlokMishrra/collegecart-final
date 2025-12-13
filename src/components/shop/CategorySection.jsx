@@ -23,11 +23,12 @@ export default function CategorySection({ category, products, onAddToCart, onUpd
   };
 
   const getHostelStock = (product) => {
-    if (user?.selected_hostel && user.selected_hostel !== 'Other') {
-      return product.hostel_stock?.[user.selected_hostel] || 0;
+    if (!user?.selected_hostel) {
+      return product.stock_quantity || 0;
     }
-    return product.stock_quantity || 0;
+    return product.hostel_stock?.[user.selected_hostel] || product.stock_quantity || 0;
   };
+  
   if (!products || products.length === 0) return null;
 
   return (

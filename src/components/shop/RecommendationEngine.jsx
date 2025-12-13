@@ -119,14 +119,6 @@ Return ONLY a JSON array of product names: ["Product Name 1", "Product Name 2", 
       const recommendedProducts = recommendedNames
         .map(name => allProducts.find(p => p.name === name))
         .filter(Boolean)
-        .filter(p => {
-          // Check hostel stock
-          if (user.selected_hostel && user.selected_hostel !== 'Other') {
-            const hostelStock = p.hostel_stock?.[user.selected_hostel] || 0;
-            return hostelStock > 0;
-          }
-          return true;
-        })
         .slice(0, context === "checkout" ? 4 : (config?.max_recommendations || 8));
 
       setRecommendations(recommendedProducts);
@@ -172,11 +164,6 @@ Return ONLY a JSON array of product names: ["Product Name 1", "Product Name 2", 
         if (product.rating >= 4) score += 15;
         if (config?.boost_high_margin && product.profit_margin > 20) score += 10;
         if (product.original_price && product.original_price > product.price) score += 8;
-        
-        if (user.selected_hostel && user.selected_hostel !== 'Other') {
-          const hostelStock = product.hostel_stock?.[user.selected_hostel] || 0;
-          if (hostelStock === 0) score -= 50;
-        }
 
         return { ...product, score };
       });
@@ -222,19 +209,18 @@ Return ONLY a JSON array of product names: ["Product Name 1", "Product Name 2", 
               ? "Personalized by AI based on your preferences and shopping patterns"
               : "Based on your preferences and purchase history"}
           </p>
-          <div className={`grid gap-4 ${
-            context === "checkout" 
-              ? "grid-cols-2 lg:grid-cols-4" 
-              : "grid-cols-2 sm:grid-cols-3 lg:grid-cols-4"
-          }`}>
-            {recommendations.map(product => (
-              <ProductCard
-                key={product.id}
-                product={product}
-                cartQuantity={getCartQuantity(product.id)}
-                onAddToCart={() => onAddToCart(product)}
-              />
-            ))}
+          <div className="relative">
+            <div className="flex gap-4 overflow-x-auto pb-4 scrollbar-hide snap-x snap-mandatory">
+              {recommendations.map((product, index) => (
+                <div key={product.id} className="flex-shrink-0 w-40 snap-start">
+                  <ProductCard
+                    product={product}
+                    cartQuantity={getCartQuantity(product.id)}
+                    onAddToCart={() => onAddToCart(product)}
+                  />
+                </div>
+              ))}
+            </div>
           </div>
         </CardContent>
       </Card>

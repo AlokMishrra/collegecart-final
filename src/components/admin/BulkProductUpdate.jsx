@@ -24,6 +24,7 @@ export default function BulkProductUpdate() {
     hostel_stock_gavaskar: "",
     hostel_stock_virat: "",
     hostel_stock_tendulkar: "",
+    hostel_stock_other: "",
     delivery_charge: "",
     delivery_time: "",
     available_from: "",
@@ -99,23 +100,32 @@ export default function BulkProductUpdate() {
 
       // Handle hostel stock updates
       if (updateData.hostel_stock_mithali || updateData.hostel_stock_gavaskar || 
-          updateData.hostel_stock_virat || updateData.hostel_stock_tendulkar) {
-        updates.hostel_stock = {};
-        if (updateData.hostel_stock_mithali) updates.hostel_stock.Mithali = parseInt(updateData.hostel_stock_mithali);
-        if (updateData.hostel_stock_gavaskar) updates.hostel_stock.Gavaskar = parseInt(updateData.hostel_stock_gavaskar);
-        if (updateData.hostel_stock_virat) updates.hostel_stock.Virat = parseInt(updateData.hostel_stock_virat);
-        if (updateData.hostel_stock_tendulkar) updates.hostel_stock.Tendulkar = parseInt(updateData.hostel_stock_tendulkar);
+          updateData.hostel_stock_virat || updateData.hostel_stock_tendulkar || updateData.hostel_stock_other) {
+        
+        // For each selected product, merge with existing hostel stock
+        for (const productId of selectedProducts) {
+          const product = allProducts.find(p => p.id === productId);
+          const existingStock = product?.hostel_stock || { Mithali: 0, Gavaskar: 0, Virat: 0, Tendulkar: 0, Other: 0 };
+          
+          updates.hostel_stock = { ...existingStock };
+          if (updateData.hostel_stock_mithali) updates.hostel_stock.Mithali = parseInt(updateData.hostel_stock_mithali);
+          if (updateData.hostel_stock_gavaskar) updates.hostel_stock.Gavaskar = parseInt(updateData.hostel_stock_gavaskar);
+          if (updateData.hostel_stock_virat) updates.hostel_stock.Virat = parseInt(updateData.hostel_stock_virat);
+          if (updateData.hostel_stock_tendulkar) updates.hostel_stock.Tendulkar = parseInt(updateData.hostel_stock_tendulkar);
+          if (updateData.hostel_stock_other) updates.hostel_stock.Other = parseInt(updateData.hostel_stock_other);
+        }
       }
 
       // Update each selected product
       for (const productId of selectedProducts) {
-        const product = products.find(p => p.id === productId);
+        const product = allProducts.find(p => p.id === productId);
         const finalUpdates = { ...updates };
         
         // Merge hostel stock if updating
         if (updates.hostel_stock) {
+          const existingStock = product?.hostel_stock || { Mithali: 0, Gavaskar: 0, Virat: 0, Tendulkar: 0, Other: 0 };
           finalUpdates.hostel_stock = {
-            ...(product.hostel_stock || {}),
+            ...existingStock,
             ...updates.hostel_stock
           };
         }
@@ -133,6 +143,7 @@ export default function BulkProductUpdate() {
         hostel_stock_gavaskar: "",
         hostel_stock_virat: "",
         hostel_stock_tendulkar: "",
+        hostel_stock_other: "",
         delivery_charge: "",
         delivery_time: "",
         available_from: "",
@@ -297,6 +308,15 @@ export default function BulkProductUpdate() {
                     placeholder="Skip"
                     value={updateData.hostel_stock_tendulkar}
                     onChange={(e) => setUpdateData({...updateData, hostel_stock_tendulkar: e.target.value})}
+                  />
+                </div>
+                <div>
+                  <Label className="text-xs">Other</Label>
+                  <Input
+                    type="number"
+                    placeholder="Skip"
+                    value={updateData.hostel_stock_other}
+                    onChange={(e) => setUpdateData({...updateData, hostel_stock_other: e.target.value})}
                   />
                 </div>
               </div>
