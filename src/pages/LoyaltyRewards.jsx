@@ -13,12 +13,14 @@ const LOYALTY_TIERS = [
     minSpending: 0, 
     color: "bg-amber-700", 
     icon: "🥉", 
-    cashback: "1%",
+    cashback: "5%",
+    multiplier: "1x",
     benefits: [
-      "Earn 1% cashback on all orders",
+      "Earn 5% points (1x multiplier)",
       "Early access to sales and promotions",
       "Monthly exclusive coupons",
-      "Special welcome bonus"
+      "Special welcome bonus",
+      "+50 bonus points on orders ₹1000+"
     ],
     description: "Start your journey with CollegeCart"
   },
@@ -27,10 +29,12 @@ const LOYALTY_TIERS = [
     minSpending: 2000, 
     color: "bg-gray-400", 
     icon: "🥈", 
-    cashback: "2%",
+    cashback: "7.5%",
+    multiplier: "1.5x",
     benefits: [
-      "Earn 2% cashback on all orders",
+      "Earn 7.5% points (1.5x multiplier)",
       "Free shipping on orders above ₹300",
+      "+100 bonus points on orders ₹2000+",
       "Birthday month special discount",
       "Priority customer support",
       "Extended return window (14 days)"
@@ -42,14 +46,16 @@ const LOYALTY_TIERS = [
     minSpending: 5000, 
     color: "bg-yellow-500", 
     icon: "🥇", 
-    cashback: "3%",
+    cashback: "10%",
+    multiplier: "2x",
     benefits: [
-      "Earn 3% cashback on all orders",
+      "Earn 10% points (2x multiplier)",
       "Free shipping on all orders",
+      "+200 bonus points on orders ₹3000+",
       "Exclusive VIP deals and discounts",
       "Priority support with dedicated line",
       "Early access to new products",
-      "Quarterly bonus points"
+      "Quarterly bonus points (500 pts)"
     ],
     description: "Premium benefits for loyal customers"
   },
@@ -58,16 +64,18 @@ const LOYALTY_TIERS = [
     minSpending: 10000, 
     color: "bg-purple-600", 
     icon: "💎", 
-    cashback: "5%",
+    cashback: "15%",
+    multiplier: "3x",
     benefits: [
-      "Earn 5% cashback on all orders",
+      "Earn 15% points (3x multiplier)",
       "Free express delivery (1-2 hours)",
+      "+350 bonus points on every order",
       "Exclusive platinum-only products",
       "Dedicated account manager",
       "VIP events and tastings invitation",
       "Personal shopping assistance",
       "30-day return policy",
-      "Double points on special occasions"
+      "Monthly 1000 bonus points"
     ],
     description: "The ultimate CollegeCart experience"
   }
@@ -141,13 +149,14 @@ export default function LoyaltyRewards() {
       {/* Current Status */}
       <Card className="bg-gradient-to-br from-purple-50 to-indigo-50 border-purple-200">
         <CardContent className="p-6">
-          <div className="grid md:grid-cols-2 gap-6">
+          <div className="grid md:grid-cols-3 gap-6">
             <div>
               <div className="flex items-center gap-3 mb-4">
                 <div className="text-4xl">{currentTier.icon}</div>
                 <div>
                   <h3 className="text-2xl font-bold text-gray-900">{currentTier.name} Member</h3>
                   <p className="text-gray-600">Total Spending: ₹{totalSpending.toFixed(2)}</p>
+                  <Badge className="mt-1 bg-purple-600 text-white">{currentTier.multiplier} Points Multiplier</Badge>
                 </div>
               </div>
               {nextTier && (
@@ -157,16 +166,46 @@ export default function LoyaltyRewards() {
                     <span className="font-medium">₹{(nextTier.minSpending - totalSpending).toFixed(2)} to go</span>
                   </div>
                   <Progress value={progressToNextTier()} className="h-2" />
+                  <p className="text-xs text-gray-600 mt-1">
+                    Upgrade to unlock {nextTier.multiplier} multiplier!
+                  </p>
                 </div>
               )}
             </div>
-            <div className="text-center md:text-right">
-              <div className="inline-block bg-white rounded-xl p-6 shadow-sm">
+            <div className="text-center">
+              <div className="bg-white rounded-xl p-6 shadow-sm h-full flex flex-col justify-center">
                 <Award className="w-8 h-8 text-purple-600 mx-auto mb-2" />
                 <p className="text-sm text-gray-600">Available Points</p>
                 <p className="text-4xl font-bold text-purple-600">{loyaltyPoints}</p>
-                <p className="text-sm text-gray-500">= ₹{(loyaltyPoints / 10).toFixed(2)}</p>
+                <p className="text-sm text-gray-500">= ₹{(loyaltyPoints / 10).toFixed(2)} in cart</p>
               </div>
+            </div>
+            <div className="bg-gradient-to-br from-emerald-50 to-green-50 border border-emerald-200 rounded-xl p-4">
+              <h4 className="font-semibold text-emerald-900 mb-3 flex items-center gap-2">
+                <Gift className="w-5 h-5" />
+                Order Now & Earn More!
+              </h4>
+              <div className="space-y-2 text-sm">
+                <div className="flex items-center justify-between">
+                  <span className="text-gray-700">₹500 order</span>
+                  <Badge className="bg-emerald-600">+{Math.floor(500 * 0.05 * (currentTier.name === 'Bronze' ? 1 : currentTier.name === 'Silver' ? 1.5 : currentTier.name === 'Gold' ? 2 : 3))} pts</Badge>
+                </div>
+                <div className="flex items-center justify-between">
+                  <span className="text-gray-700">₹1000 order</span>
+                  <Badge className="bg-emerald-600">+{Math.floor(1000 * 0.05 * (currentTier.name === 'Bronze' ? 1 : currentTier.name === 'Silver' ? 1.5 : currentTier.name === 'Gold' ? 2 : 3)) + 50} pts</Badge>
+                </div>
+                <div className="flex items-center justify-between">
+                  <span className="text-gray-700">₹2000 order</span>
+                  <Badge className="bg-emerald-600">+{Math.floor(2000 * 0.05 * (currentTier.name === 'Bronze' ? 1 : currentTier.name === 'Silver' ? 1.5 : currentTier.name === 'Gold' ? 2 : 3)) + 150} pts</Badge>
+                </div>
+                <div className="flex items-center justify-between">
+                  <span className="text-gray-700">₹3000 order</span>
+                  <Badge className="bg-emerald-600">+{Math.floor(3000 * 0.05 * (currentTier.name === 'Bronze' ? 1 : currentTier.name === 'Silver' ? 1.5 : currentTier.name === 'Gold' ? 2 : 3)) + 350} pts</Badge>
+                </div>
+              </div>
+              <p className="text-xs text-gray-600 mt-3 italic">
+                The more you order, the more you earn! 🎁
+              </p>
             </div>
           </div>
         </CardContent>
@@ -186,7 +225,10 @@ export default function LoyaltyRewards() {
               </div>
               <p className="text-xs text-gray-500 mb-1">{tier.description}</p>
               <p className="text-sm font-semibold text-gray-900">₹{tier.minSpending}+ total spending</p>
-              <Badge className={`mt-2 ${tier.color}`}>{tier.cashback} Cashback</Badge>
+              <div className="flex gap-2 mt-2">
+                <Badge className={`${tier.color}`}>{tier.cashback} Points</Badge>
+                <Badge variant="outline">{tier.multiplier} Multiplier</Badge>
+              </div>
             </CardHeader>
             <CardContent>
               <ul className="space-y-1.5">
