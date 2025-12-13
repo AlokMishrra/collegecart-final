@@ -324,10 +324,10 @@ export default function Orders() {
                       <p className="text-sm text-gray-600">
                         Placed for <span className="font-medium">{order.customer_name}</span>
                       </p>
-                      {user?.role === "admin" && (
-                        <p className="text-sm text-gray-500 mt-1">
-                          {(() => {
-                            const date = new Date(order.created_date);
+                      <p className="text-sm text-gray-500 mt-1">
+                        {(() => {
+                          const date = new Date(order.created_date);
+                          if (user?.role === "admin") {
                             return date.toLocaleString('en-IN', {
                               year: 'numeric',
                               month: 'long',
@@ -337,9 +337,18 @@ export default function Orders() {
                               second: '2-digit',
                               hour12: true
                             });
-                          })()}
-                        </p>
-                      )}
+                          } else {
+                            return date.toLocaleString('en-IN', {
+                              year: 'numeric',
+                              month: 'long',
+                              day: 'numeric',
+                              hour: '2-digit',
+                              minute: '2-digit',
+                              hour12: true
+                            });
+                          }
+                        })()}
+                      </p>
                     </div>
                     <div className="flex items-center gap-4">
                       <Badge className={getStatusColor(order.status)}>
