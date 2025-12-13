@@ -52,10 +52,27 @@ export default function Admin() {
       }
       setUser(currentUser);
       
-      // Load user permissions - give full access to anyone with a role
-      if (currentUser.role === 'admin' || (currentUser.assigned_role_ids && currentUser.assigned_role_ids.length > 0)) {
-        // Admin or any user with assigned roles has all permissions
+      // Load user permissions based on roles
+      if (currentUser.role === 'admin') {
+        // Super admin has all permissions
         setUserPermissions(['all']);
+      } else if (currentUser.assigned_role_ids && currentUser.assigned_role_ids.length > 0) {
+        // Load permissions from assigned roles
+        const rolePromises = currentUser.assigned_role_ids.map(roleId => 
+          base44.entities.Role.filter({ id: roleId })
+        );
+        const roleResults = await Promise.all(rolePromises);
+        const allRoles = roleResults.flat();
+        
+        // Combine all permissions from all roles
+        const combinedPermissions = new Set();
+        allRoles.forEach(role => {
+          if (role.permissions) {
+            role.permissions.forEach(permission => combinedPermissions.add(permission));
+          }
+        });
+        
+        setUserPermissions(Array.from(combinedPermissions));
       }
     } catch (error) {
       navigate(createPageUrl('Shop'));
