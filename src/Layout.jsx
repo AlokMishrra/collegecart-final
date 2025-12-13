@@ -206,11 +206,13 @@ export default function Layout({ children, currentPageName }) {
             {/* Logo */}
             <div className="p-6 border-b border-gray-200">
               <div className="flex items-center gap-3">
-                <div className="w-10 h-10 bg-gradient-to-r from-emerald-500 to-emerald-600 rounded-xl flex items-center justify-center">
-                  <ShoppingBag className="w-6 h-6 text-white" />
-                </div>
+                <img 
+                  src="https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/6885ba54fc40d82179646aca/56f3d15ef_WhatsAppImage2025-12-13at111830AM.jpeg"
+                  alt="CollegeCart Logo"
+                  className="w-12 h-12 object-contain"
+                />
                 <div>
-                  <h2 className="text-xl font-bold text-gray-900">CollegeCart</h2>
+                  <h2 className="text-xl font-bold text-emerald-600">CollegeCart</h2>
                   <p className="text-xs text-gray-500">Grocery Delivery</p>
                 </div>
               </div>

@@ -8,11 +8,13 @@ export default function EnhancedShopHero() {
         <div className="flex items-center justify-between gap-2 lg:gap-4">
           {/* Logo */}
           <div className="flex items-center gap-2 flex-shrink-0">
-            <div className="w-9 h-9 lg:w-10 lg:h-10 bg-gradient-to-br from-emerald-500 to-emerald-600 rounded-xl flex items-center justify-center shadow-md">
-              <ShoppingBag className="w-5 h-5 lg:w-6 lg:h-6 text-white" />
-            </div>
+            <img 
+              src="https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/6885ba54fc40d82179646aca/56f3d15ef_WhatsAppImage2025-12-13at111830AM.jpeg"
+              alt="CollegeCart Logo"
+              className="w-9 h-9 lg:w-12 lg:h-12 object-contain"
+            />
             <div>
-              <h1 className="text-base lg:text-xl font-bold text-gray-900 leading-tight">CollegeCart</h1>
+              <h1 className="text-base lg:text-xl font-bold text-emerald-600 leading-tight">CollegeCart</h1>
               <p className="text-[10px] lg:text-xs text-gray-500 leading-tight">Grocery Delivery</p>
             </div>
           </div>
