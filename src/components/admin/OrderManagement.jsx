@@ -1,9 +1,10 @@
 import React, { useState, useEffect } from "react";
+import { base44 } from "@/api/base44Client";
 import { Order } from "@/entities/Order";
 import { DeliveryPerson } from "@/entities/DeliveryPerson";
 import { Notification } from "@/entities/Notification";
 import { User } from "@/entities/User";
-import { Package, Clock, Truck, CheckCircle, XCircle, User as UserIcon, Trash2, RefreshCw } from "lucide-react";
+import { Package, Clock, Truck, CheckCircle, XCircle, User as UserIcon, Trash2, RefreshCw, DollarSign } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -258,6 +259,43 @@ export default function OrderManagement() {
     }
   };
 
+  const refundOrder = async (orderId) => {
+    try {
+      const order = orders.find(o => o.id === orderId);
+      if (!order) return;
+
+      // Create refund record
+      await base44.entities.Refund.create({
+        order_id: orderId,
+        user_id: order.user_id,
+        reason: "Admin initiated refund",
+        amount: order.total_amount,
+        status: "processed"
+      });
+
+      // Notify customer about refund
+      await Notification.create({
+        user_id: order.user_id,
+        title: "Refund Processed",
+        message: `Refund of ₹${order.total_amount.toFixed(2)} has been processed for order ${order.order_number}`,
+        type: "success"
+      });
+
+      // Notify admin
+      const currentUser = await User.me();
+      await Notification.create({
+        user_id: currentUser.id,
+        title: "Refund Successful",
+        message: `Refund of ₹${order.total_amount.toFixed(2)} processed for order ${order.order_number}`,
+        type: "success"
+      });
+
+      loadData();
+    } catch (error) {
+      console.error("Error processing refund:", error);
+    }
+  };
+
   return (
     <div className="space-y-6">
       <div className="flex justify-between items-center">
@@ -429,15 +467,26 @@ export default function OrderManagement() {
                         )}
 
                         {(order.status === "delivered" || order.status === "cancelled") && (
-                          <Button
-                            size="sm"
-                            variant="outline"
-                            onClick={() => deleteOrder(order.id)}
-                            className="text-red-600 hover:text-red-700"
-                          >
-                            <Trash2 className="w-4 h-4 mr-1" />
-                            Delete
-                          </Button>
+                          <>
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              onClick={() => refundOrder(order.id)}
+                              className="text-orange-600 hover:text-orange-700"
+                            >
+                              <DollarSign className="w-4 h-4 mr-1" />
+                              Refund
+                            </Button>
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              onClick={() => deleteOrder(order.id)}
+                              className="text-red-600 hover:text-red-700"
+                            >
+                              <Trash2 className="w-4 h-4 mr-1" />
+                              Delete
+                            </Button>
+                          </>
                         )}
                       </div>
                     </TableCell>
