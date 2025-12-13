@@ -23,7 +23,8 @@ export default function ProductForm({ product, categories, onSave, onCancel }) {
       Mithali: 0,
       Gavaskar: 0,
       Virat: 0,
-      Tendulkar: 0
+      Tendulkar: 0,
+      Other: 0
     },
     unit: product?.unit || "piece",
     is_available: product?.is_available ?? true,
@@ -46,7 +47,8 @@ export default function ProductForm({ product, categories, onSave, onCancel }) {
         Mithali: parseInt(formData.hostel_stock.Mithali) || totalStock,
         Gavaskar: parseInt(formData.hostel_stock.Gavaskar) || totalStock,
         Virat: parseInt(formData.hostel_stock.Virat) || totalStock,
-        Tendulkar: parseInt(formData.hostel_stock.Tendulkar) || totalStock
+        Tendulkar: parseInt(formData.hostel_stock.Tendulkar) || totalStock,
+        Other: parseInt(formData.hostel_stock.Other) || totalStock
       },
       delivery_charge: parseFloat(formData.delivery_charge) || 0,
       profit_margin: parseFloat(formData.profit_margin) || 0,
@@ -189,6 +191,15 @@ export default function ProductForm({ product, categories, onSave, onCancel }) {
                   type="number"
                   value={formData.hostel_stock.Tendulkar}
                   onChange={(e) => handleHostelStockChange("Tendulkar", e.target.value)}
+                />
+              </div>
+              <div>
+                <Label htmlFor="other" className="text-sm">Other</Label>
+                <Input
+                  id="other"
+                  type="number"
+                  value={formData.hostel_stock.Other}
+                  onChange={(e) => handleHostelStockChange("Other", e.target.value)}
                 />
               </div>
             </div>

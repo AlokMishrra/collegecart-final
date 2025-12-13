@@ -92,10 +92,10 @@ export default function Shop() {
   };
 
   const getHostelStock = (product) => {
-    if (!user?.selected_hostel || user.selected_hostel === 'Other') {
+    if (!user?.selected_hostel) {
       return product.stock_quantity || 0;
     }
-    return product.hostel_stock?.[user.selected_hostel] || 0;
+    return product.hostel_stock?.[user.selected_hostel] || product.stock_quantity || 0;
   };
 
   const isProductInStock = (product) => {
@@ -111,20 +111,16 @@ export default function Shop() {
         Category.filter({ is_active: true }, 'display_order'),
         User.me().catch(() => null)
       ]);
-      
-      // Filter products based on user's selected hostel and time availability
+
+      // Filter products based on time availability only
       let filteredProducts = productsData.filter(product => {
         // Check time availability
         if (!isProductAvailableNow(product)) return false;
-        
-        // Check hostel stock
-        if (currentUser?.selected_hostel && currentUser.selected_hostel !== 'Other') {
-          const hostelStock = product.hostel_stock?.[currentUser.selected_hostel] || 0;
-          return hostelStock > 0;
-        }
+
+        // Show all products regardless of hostel
         return true;
       });
-      
+
       setProducts(filteredProducts);
       setCategories(categoriesData);
     } catch (error) {
