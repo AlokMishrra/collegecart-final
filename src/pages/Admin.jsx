@@ -35,6 +35,7 @@ import ProductManagement from "../components/admin/ProductManagement";
   import OnboardingTour from "../components/onboarding/OnboardingTour";
   import BulkProductUpdate from "../components/admin/BulkProductUpdate";
   import NotificationConfigManager from "../components/admin/NotificationConfigManager";
+  import ProductScheduler from "../components/admin/ProductScheduler";
 
 export default function Admin() {
   const navigate = useNavigate();
@@ -93,6 +94,7 @@ export default function Admin() {
     { value: "support-ai", label: "AI Support Assistant", permission: "manage_orders", component: <AISupportAssistant /> },
     { value: "products", label: "Products", permission: "manage_products", component: <ProductManagement /> },
     { value: "bulk-update", label: "Bulk Update", permission: "manage_products", component: <BulkProductUpdate /> },
+    { value: "scheduler", label: "Product Scheduler", permission: "manage_products", component: <ProductScheduler /> },
     { value: "product-insights", label: "AI Product Insights", permission: "manage_products", component: <AIProductInsights /> },
     { value: "inventory-forecast", label: "Inventory Forecasting", permission: "manage_products", component: <AIInventoryForecasting /> },
     { value: "dynamic-pricing", label: "Dynamic Pricing", permission: "manage_products", component: <DynamicPricing /> },
