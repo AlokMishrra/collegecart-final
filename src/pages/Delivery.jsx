@@ -549,10 +549,20 @@ export default function Delivery() {
                     <CardContent className="p-6">
                       <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-4">
                         <div className="flex-1">
-                          <div className="flex items-center gap-3 mb-2">
+                          <div className="flex items-center gap-3 mb-2 flex-wrap">
                             <Badge className="bg-blue-500 text-white">
                               NEW ORDER
                             </Badge>
+                            {order.is_paid && (
+                              <Badge className="bg-green-100 text-green-800">
+                                ✓ PAID
+                              </Badge>
+                            )}
+                            {!order.is_paid && order.payment_method === "cash" && (
+                              <Badge className="bg-yellow-100 text-yellow-800">
+                                COD
+                              </Badge>
+                            )}
                             <h3 className="font-semibold text-lg">Order #{order.order_number}</h3>
                           </div>
                           
@@ -639,7 +649,7 @@ export default function Delivery() {
                     <CardContent className="p-6">
                       <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-4">
                         <div className="flex-1">
-                          <div className="flex items-center gap-3 mb-2">
+                          <div className="flex items-center gap-3 mb-2 flex-wrap">
                             {order.status === "preparing" ? (
                               <Badge className="bg-purple-100 text-purple-800">
                                 <Package className="w-4 h-4 mr-1" />
@@ -649,6 +659,16 @@ export default function Delivery() {
                               <Badge className="bg-orange-100 text-orange-800">
                                 <Truck className="w-4 h-4 mr-1" />
                                 OUT FOR DELIVERY
+                              </Badge>
+                            )}
+                            {order.is_paid && (
+                              <Badge className="bg-green-100 text-green-800">
+                                ✓ PAID
+                              </Badge>
+                            )}
+                            {!order.is_paid && order.payment_method === "cash" && (
+                              <Badge className="bg-yellow-100 text-yellow-800">
+                                COD
                               </Badge>
                             )}
                             <h3 className="font-semibold text-lg">Order #{order.order_number}</h3>
