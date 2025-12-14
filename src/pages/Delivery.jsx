@@ -3,7 +3,7 @@ import { base44 } from "@/api/base44Client";
 import { Order } from "@/entities/Order";
 import { DeliveryPerson } from "@/entities/DeliveryPerson";
 import { Notification } from "@/entities/Notification";
-import { Truck, MapPin, Phone, Package, CheckCircle, Loader2, Lock, User, Bell } from "lucide-react";
+import { Truck, MapPin, Phone, Package, CheckCircle, Loader2, Lock, User, Bell, XCircle } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -28,6 +28,7 @@ export default function Delivery() {
   const [acceptingOrderId, setAcceptingOrderId] = useState(null);
   const [notificationsEnabled, setNotificationsEnabled] = useState(false);
   const [previousOrderCount, setPreviousOrderCount] = useState(0);
+  const [cancellingOrderId, setCancellingOrderId] = useState(null);
 
   const loadAssignedOrders = useCallback(async (deliveryPersonId) => {
     try {
@@ -339,6 +340,44 @@ export default function Delivery() {
       console.error("Error marking order as delivered:", error);
     } finally {
       setUpdatingOrderId(null);
+    }
+  };
+
+  const cancelOrder = async (orderId) => {
+    if (!window.confirm('Are you sure you want to cancel this order?')) {
+      return;
+    }
+
+    setCancellingOrderId(orderId);
+    try {
+      await Order.update(orderId, { 
+        status: "cancelled",
+        delivery_person_id: null
+      });
+
+      const order = assignedOrders.find(o => o.id === orderId);
+      if (order) {
+        await Notification.create({
+          user_id: order.user_id,
+          title: "Order Cancelled",
+          message: `Your order #${order.order_number} has been cancelled by the delivery partner. You will be contacted shortly.`,
+          type: "error"
+        });
+      }
+
+      if (deliveryPerson) {
+        await DeliveryPerson.update(deliveryPerson.id, {
+          current_orders: (deliveryPerson.current_orders || []).filter(id => id !== orderId)
+        });
+
+        setAssignedOrders(prevOrders => prevOrders.filter(o => o.id !== orderId));
+      }
+
+      await loadAvailableOrders();
+    } catch (error) {
+      console.error("Error cancelling order:", error);
+    } finally {
+      setCancellingOrderId(null);
     }
   };
 
@@ -676,6 +715,19 @@ export default function Delivery() {
                           >
                             <Phone className="w-4 h-4 mr-2" />
                             Call Customer
+                          </Button>
+                          <Button
+                            variant="destructive"
+                            onClick={() => cancelOrder(order.id)}
+                            disabled={cancellingOrderId === order.id}
+                            className="w-full lg:w-auto"
+                          >
+                            {cancellingOrderId === order.id ? (
+                              <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                            ) : (
+                              <XCircle className="w-4 h-4 mr-2" />
+                            )}
+                            Cancel Order
                           </Button>
                         </div>
                       </div>
