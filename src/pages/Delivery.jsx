@@ -128,13 +128,20 @@ export default function Delivery() {
 
   useEffect(() => {
     // Auto-request notification permission when delivery person logs in
-    if (deliveryPerson && !notificationsEnabled) {
+    if (deliveryPerson) {
+      checkNotificationStatus();
       requestNotificationPermission();
     }
   }, [deliveryPerson]);
 
-  const requestNotificationPermission = async () => {
+  const checkNotificationStatus = () => {
     if ('Notification' in window) {
+      setNotificationsEnabled(Notification.permission === 'granted');
+    }
+  };
+
+  const requestNotificationPermission = async () => {
+    if ('Notification' in window && Notification.permission !== 'granted') {
       try {
         const permission = await Notification.requestPermission();
         setNotificationsEnabled(permission === 'granted');
@@ -473,7 +480,7 @@ export default function Delivery() {
       <DeliveryNotifications deliveryPersonEmail={deliveryPerson.email} />
 
       {/* Browser Notification Prompt */}
-      {!notificationsEnabled && (
+      {!notificationsEnabled && 'Notification' in window && (
         <motion.div
           initial={{ opacity: 0, y: -20 }}
           animate={{ opacity: 1, y: 0 }}
@@ -485,6 +492,11 @@ export default function Delivery() {
               <h3 className="font-semibold text-yellow-900">Enable Browser Notifications</h3>
               <p className="text-sm text-yellow-700 mt-1">
                 Get instant alerts for new orders even when this tab is not in focus or minimized.
+                {Notification.permission === 'denied' && (
+                  <span className="block mt-1 font-medium">
+                    ⚠️ Notifications are blocked. Please enable them in your browser settings.
+                  </span>
+                )}
               </p>
               <Button
                 onClick={requestNotificationPermission}
@@ -492,7 +504,7 @@ export default function Delivery() {
                 className="mt-2 bg-yellow-600 hover:bg-yellow-700 text-white"
               >
                 <Bell className="w-4 h-4 mr-2" />
-                Enable Notifications
+                {Notification.permission === 'denied' ? 'Check Browser Settings' : 'Enable Notifications'}
               </Button>
             </div>
           </div>
