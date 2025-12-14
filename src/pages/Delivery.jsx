@@ -757,12 +757,26 @@ export default function Delivery() {
                           ) : (
                             <>
                               <CODQRGenerator order={order} />
-                              <div className="w-full lg:min-w-[300px]">
+                              {/* Mobile: Swipe to Deliver */}
+                              <div className="w-full lg:hidden">
                                 <SwipeToDeliver
                                   onDeliver={() => markOrderDelivered(order.id)}
                                   isLoading={updatingOrderId === order.id}
                                 />
                               </div>
+                              {/* Desktop: Button */}
+                              <Button
+                                onClick={() => markOrderDelivered(order.id)}
+                                disabled={updatingOrderId === order.id}
+                                className="hidden lg:flex bg-green-600 hover:bg-green-700 w-full lg:w-auto"
+                              >
+                                {updatingOrderId === order.id ? (
+                                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                                ) : (
+                                  <CheckCircle className="w-4 h-4 mr-2" />
+                                )}
+                                Mark as Delivered
+                              </Button>
                             </>
                           )}
                           <Button
