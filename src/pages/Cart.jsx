@@ -289,6 +289,17 @@ export default function Cart() {
   };
 
   const placeOrder = async () => {
+      // Check if cart is empty
+      if (cartItems.length === 0) {
+        await Notification.create({
+          user_id: user.id,
+          title: "Cart is Empty",
+          message: "Please add products to your cart before placing an order.",
+          type: "warning"
+        });
+        return;
+      }
+
       // Validate based on address type
       if (!customerName.trim() || !phoneNumber.trim()) {
         await Notification.create({
