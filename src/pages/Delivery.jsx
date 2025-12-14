@@ -75,7 +75,7 @@ export default function Delivery() {
     } catch (error) {
       console.error("Error loading available orders:", error);
     }
-  }, [previousOrderCount, notificationsEnabled]);
+  }, [previousOrderCount]);
 
   const checkDeliveryLogin = useCallback(async () => {
     setIsLoading(true);
@@ -412,7 +412,7 @@ export default function Delivery() {
       {/* Real-time Notifications */}
       <DeliveryNotifications deliveryPersonEmail={deliveryPerson.email} />
 
-      {/* Browser Notification Alert */}
+      {/* Browser Notification Prompt */}
       {!notificationsEnabled && (
         <motion.div
           initial={{ opacity: 0, y: -20 }}
@@ -424,13 +424,14 @@ export default function Delivery() {
             <div className="flex-1">
               <h3 className="font-semibold text-yellow-900">Enable Browser Notifications</h3>
               <p className="text-sm text-yellow-700 mt-1">
-                Get instant alerts for new orders even when this tab is not in focus. 
+                Get instant alerts for new orders even when this tab is not in focus or minimized.
               </p>
               <Button
                 onClick={requestNotificationPermission}
                 size="sm"
                 className="mt-2 bg-yellow-600 hover:bg-yellow-700 text-white"
               >
+                <Bell className="w-4 h-4 mr-2" />
                 Enable Notifications
               </Button>
             </div>
