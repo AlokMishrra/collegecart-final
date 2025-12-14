@@ -2,7 +2,7 @@ import React, { useState, useEffect } from "react";
 import { base44 } from "@/api/base44Client";
 import { useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/utils";
-import { ArrowLeft } from "lucide-react";
+import { ArrowLeft, ShoppingCart } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { motion, AnimatePresence } from "framer-motion";
@@ -38,6 +38,45 @@ export default function CategoryProducts() {
     } catch (error) {
       console.error("Error loading cart:", error);
     }
+  };
+
+  const isProductAvailableNow = (product) => {
+    if (!product.available_from || !product.available_to) return true;
+    
+    try {
+      const now = new Date();
+      const currentHours = now.getHours();
+      const currentMinutes = now.getMinutes();
+      const currentTime = currentHours * 60 + currentMinutes;
+      
+      const fromParts = product.available_from.split(':');
+      const fromTime = parseInt(fromParts[0], 10) * 60 + parseInt(fromParts[1] || '0', 10);
+      
+      const toParts = product.available_to.split(':');
+      const toTime = parseInt(toParts[0], 10) * 60 + parseInt(toParts[1] || '0', 10);
+      
+      return currentTime >= fromTime && currentTime <= toTime;
+    } catch (error) {
+      return true;
+    }
+  };
+
+  const getHostelStock = (product) => {
+    if (!user?.selected_hostel || user.selected_hostel === 'Other') {
+      return product.stock_quantity || 0;
+    }
+    if (product.hostel_stock && typeof product.hostel_stock[user.selected_hostel] === 'number') {
+      return product.hostel_stock[user.selected_hostel];
+    }
+    return product.stock_quantity || 0;
+  };
+
+  const isProductInStock = (product) => {
+    if (!isProductAvailableNow(product)) {
+      return false;
+    }
+    const hostelStock = getHostelStock(product);
+    return hostelStock > 0;
   };
 
   const loadData = async () => {
@@ -144,6 +183,8 @@ export default function CategoryProducts() {
                   product={product}
                   cartQuantity={getCartQuantity(product.id)}
                   onAddToCart={() => addToCart(product)}
+                  hostelStock={getHostelStock(product)}
+                  isInStock={isProductInStock(product)}
                 />
               </motion.div>
             ))}
