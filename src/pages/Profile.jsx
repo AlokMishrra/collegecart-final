@@ -8,7 +8,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Award, Star, TrendingUp, Gift, History, Trophy, Package, MapPin, Heart, User as UserIcon, Edit2, Plus, Trash2, Building2 } from "lucide-react";
+import { Award, Star, TrendingUp, Gift, History, Trophy, Package, MapPin, Heart, User as UserIcon, Edit2, Plus, Trash2, Building2, Upload, Camera } from "lucide-react";
 import { motion } from "framer-motion";
 import { useNavigate, Link } from "react-router-dom";
 import { createPageUrl } from "@/utils";
@@ -40,8 +40,10 @@ export default function Profile() {
   const [showEditProfile, setShowEditProfile] = useState(false);
   const [profileForm, setProfileForm] = useState({
     full_name: "",
-    phone_number: ""
+    phone_number: "",
+    profile_photo: ""
   });
+  const [uploadingPhoto, setUploadingPhoto] = useState(false);
 
   useEffect(() => {
     loadUserData();
@@ -54,7 +56,8 @@ export default function Profile() {
       setUser(currentUser);
       setProfileForm({
         full_name: currentUser.full_name || "",
-        phone_number: currentUser.phone_number || ""
+        phone_number: currentUser.phone_number || "",
+        profile_photo: currentUser.profile_photo || ""
       });
 
       // Load addresses
@@ -114,6 +117,16 @@ export default function Profile() {
   };
 
   const handleSaveProfile = async () => {
+    if (!profileForm.phone_number || !profileForm.phone_number.trim()) {
+      await base44.entities.Notification.create({
+        user_id: user.id,
+        title: "Phone Number Required",
+        message: "Please enter your phone number",
+        type: "error"
+      });
+      return;
+    }
+
     try {
       await base44.auth.updateMe(profileForm);
       await base44.entities.Notification.create({
@@ -127,6 +140,32 @@ export default function Profile() {
     } catch (error) {
       console.error("Error updating profile:", error);
     }
+  };
+
+  const handlePhotoUpload = async (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    setUploadingPhoto(true);
+    try {
+      const { file_url } = await base44.integrations.Core.UploadFile({ file });
+      setProfileForm({ ...profileForm, profile_photo: file_url });
+      await base44.entities.Notification.create({
+        user_id: user.id,
+        title: "Photo Uploaded",
+        message: "Profile photo uploaded successfully",
+        type: "success"
+      });
+    } catch (error) {
+      console.error("Error uploading photo:", error);
+      await base44.entities.Notification.create({
+        user_id: user.id,
+        title: "Upload Failed",
+        message: "Failed to upload photo. Please try again.",
+        type: "error"
+      });
+    }
+    setUploadingPhoto(false);
   };
 
   const handleAddAddress = () => {
@@ -250,10 +289,18 @@ export default function Profile() {
         <CardContent className="p-6">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-4">
-              <div className="w-20 h-20 bg-white/20 rounded-full flex items-center justify-center">
-                <span className="text-3xl font-bold">
-                  {user?.full_name?.charAt(0)?.toUpperCase() || 'U'}
-                </span>
+              <div className="w-20 h-20 bg-white/20 rounded-full flex items-center justify-center overflow-hidden">
+                {user?.profile_photo ? (
+                  <img 
+                    src={user.profile_photo} 
+                    alt="Profile" 
+                    className="w-full h-full object-cover"
+                  />
+                ) : (
+                  <span className="text-3xl font-bold">
+                    {user?.full_name?.charAt(0)?.toUpperCase() || 'U'}
+                  </span>
+                )}
               </div>
               <div className="flex-1">
                 <h1 className="text-2xl font-bold">{user?.full_name || 'User'}</h1>
@@ -698,6 +745,36 @@ export default function Profile() {
             <DialogTitle>Edit Profile</DialogTitle>
           </DialogHeader>
           <div className="space-y-4">
+            <div className="flex flex-col items-center gap-4">
+              <div className="relative w-24 h-24">
+                <div className="w-24 h-24 bg-emerald-100 rounded-full flex items-center justify-center overflow-hidden">
+                  {profileForm.profile_photo ? (
+                    <img 
+                      src={profileForm.profile_photo} 
+                      alt="Profile" 
+                      className="w-full h-full object-cover"
+                    />
+                  ) : (
+                    <UserIcon className="w-12 h-12 text-emerald-600" />
+                  )}
+                </div>
+                <label htmlFor="photo-upload" className="absolute bottom-0 right-0 bg-emerald-600 rounded-full p-2 cursor-pointer hover:bg-emerald-700 transition-colors">
+                  <Camera className="w-4 h-4 text-white" />
+                  <input
+                    id="photo-upload"
+                    type="file"
+                    accept="image/*"
+                    onChange={handlePhotoUpload}
+                    className="hidden"
+                    disabled={uploadingPhoto}
+                  />
+                </label>
+              </div>
+              {uploadingPhoto && (
+                <p className="text-sm text-gray-600">Uploading photo...</p>
+              )}
+              <p className="text-sm text-gray-600">Click camera icon to upload photo</p>
+            </div>
             <div>
               <Label htmlFor="full_name">Full Name</Label>
               <Input
@@ -707,12 +784,15 @@ export default function Profile() {
               />
             </div>
             <div>
-              <Label htmlFor="phone_number">Phone Number</Label>
+              <Label htmlFor="phone_number">Phone Number *</Label>
               <Input
                 id="phone_number"
                 value={profileForm.phone_number}
                 onChange={(e) => setProfileForm({ ...profileForm, phone_number: e.target.value })}
+                required
+                placeholder="Enter your phone number"
               />
+              <p className="text-xs text-gray-500 mt-1">Required for order delivery</p>
             </div>
           </div>
           <DialogFooter>
