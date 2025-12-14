@@ -16,6 +16,7 @@ import { motion, AnimatePresence } from "framer-motion";
   import DeliveryNotifications from "../components/delivery/DeliveryNotifications";
   import CODQRGenerator from "../components/delivery/CODQRGenerator";
   import DeliveryAI from "../components/delivery/DeliveryAI";
+  import SwipeToDeliver from "../components/delivery/SwipeToDeliver";
 
 export default function Delivery() {
   const [deliveryPerson, setDeliveryPerson] = useState(null);
@@ -756,18 +757,12 @@ export default function Delivery() {
                           ) : (
                             <>
                               <CODQRGenerator order={order} />
-                              <Button
-                                onClick={() => markOrderDelivered(order.id)}
-                                disabled={updatingOrderId === order.id}
-                                className="bg-green-600 hover:bg-green-700 w-full lg:w-auto"
-                              >
-                                {updatingOrderId === order.id ? (
-                                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                                ) : (
-                                    <CheckCircle className="w-4 h-4 mr-2" />
-                                )}
-                                Mark as Delivered
-                              </Button>
+                              <div className="w-full lg:min-w-[300px]">
+                                <SwipeToDeliver
+                                  onDeliver={() => markOrderDelivered(order.id)}
+                                  isLoading={updatingOrderId === order.id}
+                                />
+                              </div>
                             </>
                           )}
                           <Button
