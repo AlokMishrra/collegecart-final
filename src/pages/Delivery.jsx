@@ -124,13 +124,31 @@ export default function Delivery() {
 
   useEffect(() => {
     checkDeliveryLogin();
-    requestNotificationPermission();
   }, [checkDeliveryLogin]);
+
+  useEffect(() => {
+    // Auto-request notification permission when delivery person logs in
+    if (deliveryPerson && !notificationsEnabled) {
+      requestNotificationPermission();
+    }
+  }, [deliveryPerson]);
 
   const requestNotificationPermission = async () => {
     if ('Notification' in window) {
-      const permission = await Notification.requestPermission();
-      setNotificationsEnabled(permission === 'granted');
+      try {
+        const permission = await Notification.requestPermission();
+        setNotificationsEnabled(permission === 'granted');
+        
+        if (permission === 'granted') {
+          // Show a test notification
+          showBrowserNotification(
+            '🔔 Notifications Enabled!',
+            'You will now receive alerts for new orders.'
+          );
+        }
+      } catch (error) {
+        console.error('Error requesting notification permission:', error);
+      }
     }
   };
 
@@ -222,6 +240,9 @@ export default function Delivery() {
         loadAssignedOrders(deliveryPerson.id),
         loadAvailableOrders()
       ]);
+      
+      // Request notification permission immediately after login
+      requestNotificationPermission();
       
       // Clear form
       setLoginForm({ email: "", password: "" });
