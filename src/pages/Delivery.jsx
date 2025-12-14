@@ -3,13 +3,14 @@ import { base44 } from "@/api/base44Client";
 import { Order } from "@/entities/Order";
 import { DeliveryPerson } from "@/entities/DeliveryPerson";
 import { Notification } from "@/entities/Notification";
-import { Truck, MapPin, Phone, Package, CheckCircle, Loader2, Lock, User, Bell, XCircle } from "lucide-react";
+import { Truck, MapPin, Phone, Package, CheckCircle, Loader2, Lock, User, Bell, XCircle, AlertTriangle } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Alert, AlertDescription } from "@/components/ui/alert";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
 import { motion, AnimatePresence } from "framer-motion";
   import DeliveryStats from "../components/delivery/DeliveryStats";
   import DeliveryNotifications from "../components/delivery/DeliveryNotifications";
@@ -29,6 +30,8 @@ export default function Delivery() {
   const [notificationsEnabled, setNotificationsEnabled] = useState(false);
   const [previousOrderCount, setPreviousOrderCount] = useState(0);
   const [cancellingOrderId, setCancellingOrderId] = useState(null);
+  const [showCancelDialog, setShowCancelDialog] = useState(false);
+  const [orderToCancel, setOrderToCancel] = useState(null);
 
   const loadAssignedOrders = useCallback(async (deliveryPersonId) => {
     try {
@@ -371,11 +374,16 @@ export default function Delivery() {
     }
   };
 
-  const cancelOrder = async (orderId) => {
-    if (!window.confirm('Are you sure you want to cancel this order?')) {
-      return;
-    }
+  const handleCancelClick = (order) => {
+    setOrderToCancel(order);
+    setShowCancelDialog(true);
+  };
 
+  const cancelOrder = async () => {
+    if (!orderToCancel) return;
+
+    const orderId = orderToCancel.id;
+    setShowCancelDialog(false);
     setCancellingOrderId(orderId);
     try {
       await Order.update(orderId, { 
@@ -406,6 +414,7 @@ export default function Delivery() {
       console.error("Error cancelling order:", error);
     } finally {
       setCancellingOrderId(null);
+      setOrderToCancel(null);
     }
   };
 
@@ -771,7 +780,7 @@ export default function Delivery() {
                           </Button>
                           <Button
                             variant="destructive"
-                            onClick={() => cancelOrder(order.id)}
+                            onClick={() => handleCancelClick(order)}
                             disabled={cancellingOrderId === order.id}
                             className="w-full lg:w-auto"
                           >
@@ -792,6 +801,49 @@ export default function Delivery() {
           </div>
         )}
       </div>
-    </div>
-  );
-}
+      </div>
+
+      {/* Cancel Order Dialog */}
+      <Dialog open={showCancelDialog} onOpenChange={setShowCancelDialog}>
+      <DialogContent className="sm:max-w-md">
+        <DialogHeader>
+          <div className="flex items-center gap-3 mb-2">
+            <div className="w-12 h-12 bg-red-100 rounded-full flex items-center justify-center">
+              <AlertTriangle className="w-6 h-6 text-red-600" />
+            </div>
+            <DialogTitle className="text-xl">Cancel Order?</DialogTitle>
+          </div>
+          <DialogDescription className="text-base pt-2">
+            Are you sure you want to cancel this order?
+            {orderToCancel && (
+              <div className="mt-3 p-3 bg-gray-50 rounded-lg">
+                <p className="font-semibold text-gray-900">Order #{orderToCancel.order_number}</p>
+                <p className="text-sm text-gray-600 mt-1">{orderToCancel.customer_name}</p>
+                <p className="text-sm text-gray-600">{orderToCancel.delivery_address}</p>
+              </div>
+            )}
+          </DialogDescription>
+        </DialogHeader>
+        <DialogFooter className="gap-2 sm:gap-0">
+          <Button
+            variant="outline"
+            onClick={() => {
+              setShowCancelDialog(false);
+              setOrderToCancel(null);
+            }}
+            className="w-full sm:w-auto"
+          >
+            Go Back
+          </Button>
+          <Button
+            variant="destructive"
+            onClick={cancelOrder}
+            className="w-full sm:w-auto bg-red-600 hover:bg-red-700"
+          >
+            Yes, Cancel Order
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+      </Dialog>
+      );
+      }
