@@ -36,6 +36,7 @@ import ProductManagement from "../components/admin/ProductManagement";
   import BulkProductUpdate from "../components/admin/BulkProductUpdate";
   import NotificationConfigManager from "../components/admin/NotificationConfigManager";
   import ProductScheduler from "../components/admin/ProductScheduler";
+  import CustomQRGenerator from "../components/admin/CustomQRGenerator";
 
 export default function Admin() {
   const navigate = useNavigate();
@@ -106,6 +107,7 @@ export default function Admin() {
     { value: "orders", label: "Orders", permission: "manage_orders", component: <OrderManagement /> },
     { value: "notifications", label: "Notification Config", permission: "manage_settings", component: <NotificationConfigManager /> },
     { value: "gamification", label: "Gamification", permission: "manage_settings", component: <GamificationConfig /> },
+    { value: "qr-generator", label: "QR Generator", permission: "manage_orders", component: <CustomQRGenerator /> },
     { value: "settings", label: "Settings", permission: "manage_settings", component: <SettingsManagement /> },
     { value: "roles", label: "Roles", permission: "manage_roles", component: <RoleManagement /> }
   ];
