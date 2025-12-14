@@ -3,7 +3,7 @@ import { base44 } from "@/api/base44Client";
 import { Order } from "@/entities/Order";
 import { DeliveryPerson } from "@/entities/DeliveryPerson";
 import { Notification } from "@/entities/Notification";
-import { Truck, MapPin, Phone, Package, CheckCircle, Loader2, Lock, User } from "lucide-react";
+import { Truck, MapPin, Phone, Package, CheckCircle, Loader2, Lock, User, Bell } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -26,6 +26,8 @@ export default function Delivery() {
   const [loginError, setLoginError] = useState("");
   const [updatingOrderId, setUpdatingOrderId] = useState(null);
   const [acceptingOrderId, setAcceptingOrderId] = useState(null);
+  const [notificationsEnabled, setNotificationsEnabled] = useState(false);
+  const [previousOrderCount, setPreviousOrderCount] = useState(0);
 
   const loadAssignedOrders = useCallback(async (deliveryPersonId) => {
     try {
@@ -58,11 +60,22 @@ export default function Delivery() {
       }, '-created_date');
       // Only show orders without delivery person assigned
       const unassignedOrders = orders.filter(order => !order.delivery_person_id);
+      
+      // Check for new orders and show browser notification
+      if (previousOrderCount > 0 && unassignedOrders.length > previousOrderCount) {
+        const newOrdersCount = unassignedOrders.length - previousOrderCount;
+        showBrowserNotification(
+          `🎉 ${newOrdersCount} New Order${newOrdersCount > 1 ? 's' : ''} Available!`,
+          `${newOrdersCount} new order${newOrdersCount > 1 ? 's' : ''} ready for pickup. Check the app now!`
+        );
+      }
+      
+      setPreviousOrderCount(unassignedOrders.length);
       setAvailableOrders(unassignedOrders);
     } catch (error) {
       console.error("Error loading available orders:", error);
     }
-  }, []);
+  }, [previousOrderCount, notificationsEnabled]);
 
   const checkDeliveryLogin = useCallback(async () => {
     setIsLoading(true);
@@ -110,7 +123,40 @@ export default function Delivery() {
 
   useEffect(() => {
     checkDeliveryLogin();
+    requestNotificationPermission();
   }, [checkDeliveryLogin]);
+
+  const requestNotificationPermission = async () => {
+    if ('Notification' in window) {
+      const permission = await Notification.requestPermission();
+      setNotificationsEnabled(permission === 'granted');
+    }
+  };
+
+  const showBrowserNotification = (title, body) => {
+    if (notificationsEnabled && 'Notification' in window && Notification.permission === 'granted') {
+      try {
+        const notification = new Notification(title, {
+          body: body,
+          icon: 'https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/6885ba54fc40d82179646aca/56f3d15ef_WhatsAppImage2025-12-13at111830AM.jpeg',
+          badge: 'https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/6885ba54fc40d82179646aca/56f3d15ef_WhatsAppImage2025-12-13at111830AM.jpeg',
+          tag: 'new-order',
+          requireInteraction: true
+        });
+
+        // Play notification sound
+        const audio = new Audio('https://assets.mixkit.co/active_storage/sfx/2869/2869-preview.mp3');
+        audio.play().catch(err => console.log('Could not play sound'));
+
+        notification.onclick = () => {
+          window.focus();
+          notification.close();
+        };
+      } catch (error) {
+        console.error('Error showing notification:', error);
+      }
+    }
+  };
 
   useEffect(() => {
     let intervalId;
@@ -365,6 +411,32 @@ export default function Delivery() {
     <div className="max-w-4xl mx-auto space-y-6">
       {/* Real-time Notifications */}
       <DeliveryNotifications deliveryPersonEmail={deliveryPerson.email} />
+
+      {/* Browser Notification Alert */}
+      {!notificationsEnabled && (
+        <motion.div
+          initial={{ opacity: 0, y: -20 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="bg-yellow-50 border-l-4 border-yellow-400 p-4 rounded-lg"
+        >
+          <div className="flex items-start gap-3">
+            <Bell className="w-5 h-5 text-yellow-600 mt-0.5" />
+            <div className="flex-1">
+              <h3 className="font-semibold text-yellow-900">Enable Browser Notifications</h3>
+              <p className="text-sm text-yellow-700 mt-1">
+                Get instant alerts for new orders even when this tab is not in focus. 
+              </p>
+              <Button
+                onClick={requestNotificationPermission}
+                size="sm"
+                className="mt-2 bg-yellow-600 hover:bg-yellow-700 text-white"
+              >
+                Enable Notifications
+              </Button>
+            </div>
+          </div>
+        </motion.div>
+      )}
 
       <div className="flex justify-between items-center">
         <div>
