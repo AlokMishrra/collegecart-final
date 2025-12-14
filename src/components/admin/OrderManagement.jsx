@@ -4,15 +4,12 @@ import { Order } from "@/entities/Order";
 import { DeliveryPerson } from "@/entities/DeliveryPerson";
 import { Notification } from "@/entities/Notification";
 import { User } from "@/entities/User";
-import { Package, Clock, Truck, CheckCircle, XCircle, User as UserIcon, Trash2, RefreshCw, DollarSign, Edit } from "lucide-react";
+import { Package, Clock, Truck, CheckCircle, XCircle, User as UserIcon, Trash2, RefreshCw, DollarSign } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 
 export default function OrderManagement() {
   const [orders, setOrders] = useState([]);
@@ -20,8 +17,6 @@ export default function OrderManagement() {
   const [isLoading, setIsLoading] = useState(true);
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [lastOrderCount, setLastOrderCount] = useState(0);
-  const [editingOrder, setEditingOrder] = useState(null);
-  const [editAmount, setEditAmount] = useState("");
 
   useEffect(() => {
     loadData();
@@ -266,53 +261,6 @@ export default function OrderManagement() {
     }
   };
 
-  const openEditAmount = (order) => {
-    setEditingOrder(order);
-    setEditAmount(order.total_amount.toString());
-  };
-
-  const updateOrderAmount = async () => {
-    if (!editingOrder) return;
-    
-    const newAmount = parseFloat(editAmount);
-    if (isNaN(newAmount) || newAmount <= 0) {
-      alert("Please enter a valid amount");
-      return;
-    }
-
-    try {
-      await Order.update(editingOrder.id, {
-        total_amount: newAmount
-      });
-
-      await Notification.create({
-        user_id: editingOrder.user_id,
-        title: "Order Amount Updated",
-        message: `Your order #${editingOrder.order_number} amount has been updated to ₹${newAmount.toFixed(2)}`,
-        type: "info"
-      });
-
-      try {
-        const currentUser = await User.me();
-        await Notification.create({
-          user_id: currentUser.id,
-          title: "Amount Updated",
-          message: `Order ${editingOrder.order_number} amount updated to ₹${newAmount.toFixed(2)}`,
-          type: "success"
-        });
-      } catch (err) {
-        console.error("Error creating admin notification:", err);
-      }
-
-      setEditingOrder(null);
-      setEditAmount("");
-      loadData();
-    } catch (error) {
-      console.error("Error updating order amount:", error);
-      alert("Failed to update order amount");
-    }
-  };
-
   const refundOrder = async (orderId) => {
     if (!window.confirm("Are you sure you want to process refund for this order?")) {
       return;
@@ -436,19 +384,7 @@ export default function OrderManagement() {
                         </div>
                       </div>
                     </TableCell>
-                    <TableCell>
-                      <div className="flex items-center gap-2">
-                        <span className="font-medium">₹{order.total_amount.toFixed(2)}</span>
-                        <Button
-                          size="sm"
-                          variant="ghost"
-                          onClick={() => openEditAmount(order)}
-                          className="h-6 w-6 p-0"
-                        >
-                          <Edit className="w-3 h-3" />
-                        </Button>
-                      </div>
-                    </TableCell>
+                    <TableCell>₹{order.total_amount.toFixed(2)}</TableCell>
                     <TableCell>
                       <div className="flex items-center gap-2">
                         <Clock className="w-4 h-4 text-gray-400" />
@@ -588,43 +524,6 @@ export default function OrderManagement() {
           </Table>
         </CardContent>
       </Card>
-
-      {/* Edit Amount Dialog */}
-      <Dialog open={!!editingOrder} onOpenChange={() => setEditingOrder(null)}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Edit Order Amount</DialogTitle>
-          </DialogHeader>
-          {editingOrder && (
-            <div className="space-y-4">
-              <div className="bg-gray-50 p-3 rounded-lg">
-                <p className="text-sm text-gray-600">Order #{editingOrder.order_number}</p>
-                <p className="text-sm text-gray-600">Customer: {editingOrder.customer_name}</p>
-              </div>
-              <div>
-                <Label htmlFor="amount">New Amount (₹)</Label>
-                <Input
-                  id="amount"
-                  type="number"
-                  value={editAmount}
-                  onChange={(e) => setEditAmount(e.target.value)}
-                  placeholder="Enter new amount"
-                  min="1"
-                  step="0.01"
-                />
-              </div>
-            </div>
-          )}
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setEditingOrder(null)}>
-              Cancel
-            </Button>
-            <Button onClick={updateOrderAmount} className="bg-emerald-600 hover:bg-emerald-700">
-              Update Amount
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
     </div>
   );
 }
