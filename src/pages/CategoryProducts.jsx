@@ -185,6 +185,7 @@ export default function CategoryProducts() {
                   onAddToCart={() => addToCart(product)}
                   hostelStock={getHostelStock(product)}
                   isInStock={isProductInStock(product)}
+                  userHostel={user?.selected_hostel}
                 />
               </motion.div>
             ))}
