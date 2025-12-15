@@ -2,7 +2,7 @@ import React, { useState, useEffect, useCallback } from "react";
 import { Order } from "@/entities/Order";
 import { User } from "@/entities/User";
 import { Notification } from "@/entities/Notification";
-import { Package, Clock, Truck, CheckCircle, XCircle, Edit, Plus, Search, History } from "lucide-react";
+import { Package, Clock, Truck, CheckCircle, XCircle, Edit, Plus, Search, History, Download, FileText, FileSpreadsheet, Filter } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -18,6 +18,9 @@ import { motion } from "framer-motion";
 import { useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/utils";
 import { Product } from "@/entities/Product";
+import { jsPDF } from "jspdf";
+import * as XLSX from "xlsx";
+import { base44 } from "@/api/base44Client";
 
 export default function Orders() {
   const navigate = useNavigate();
@@ -38,6 +41,8 @@ export default function Orders() {
   const [showRefundDialog, setShowRefundDialog] = useState(false);
   const [refundingOrder, setRefundingOrder] = useState(null);
   const [refundReason, setRefundReason] = useState("");
+  const [orderSearchQuery, setOrderSearchQuery] = useState("");
+  const [hostelFilter, setHostelFilter] = useState("all");
 
   useEffect(() => {
     // Check URL for tab parameter
@@ -280,13 +285,86 @@ export default function Orders() {
     );
   }
 
+  // Filter and search orders
+  const filterOrders = (ordersList) => {
+    return ordersList.filter(order => {
+      const matchesSearch = !orderSearchQuery || 
+        order.order_number.toLowerCase().includes(orderSearchQuery.toLowerCase()) ||
+        order.customer_name.toLowerCase().includes(orderSearchQuery.toLowerCase()) ||
+        order.delivery_address.toLowerCase().includes(orderSearchQuery.toLowerCase());
+      
+      const matchesHostel = hostelFilter === "all" || 
+        order.delivery_address.toLowerCase().includes(hostelFilter.toLowerCase());
+      
+      return matchesSearch && matchesHostel;
+    });
+  };
+
   // Separate active and completed orders
-  const activeOrders = orders.filter(order => 
+  const activeOrders = filterOrders(orders.filter(order => 
     ['pending', 'confirmed', 'preparing', 'out_for_delivery'].includes(order.status)
-  );
-  const completedOrders = orders.filter(order => 
+  ));
+  const completedOrders = filterOrders(orders.filter(order => 
     ['delivered', 'cancelled', 'refunded'].includes(order.status)
-  );
+  ));
+
+  const exportToPDF = (ordersList, fileName) => {
+    const doc = new jsPDF();
+    
+    doc.setFontSize(20);
+    doc.text('Orders Report', 20, 20);
+    doc.setFontSize(10);
+    doc.text(`Generated: ${new Date().toLocaleDateString()}`, 20, 30);
+    doc.text(`Total Orders: ${ordersList.length}`, 20, 35);
+    
+    let y = 50;
+    ordersList.forEach((order, index) => {
+      if (y > 270) {
+        doc.addPage();
+        y = 20;
+      }
+      
+      doc.setFontSize(12);
+      doc.setFont(undefined, 'bold');
+      doc.text(`Order #${order.order_number}`, 20, y);
+      y += 7;
+      
+      doc.setFontSize(10);
+      doc.setFont(undefined, 'normal');
+      doc.text(`Customer: ${order.customer_name}`, 20, y);
+      y += 5;
+      doc.text(`Address: ${order.delivery_address}`, 20, y);
+      y += 5;
+      doc.text(`Status: ${order.status}`, 20, y);
+      y += 5;
+      doc.text(`Amount: ₹${order.total_amount.toFixed(2)}`, 20, y);
+      y += 5;
+      doc.text(`Date: ${new Date(order.created_date).toLocaleString()}`, 20, y);
+      y += 10;
+    });
+    
+    doc.save(`${fileName}.pdf`);
+  };
+
+  const exportToExcel = (ordersList, fileName) => {
+    const data = ordersList.map(order => ({
+      'Order Number': order.order_number,
+      'Customer Name': order.customer_name,
+      'Delivery Address': order.delivery_address,
+      'Phone': order.phone_number,
+      'Status': order.status,
+      'Total Amount': order.total_amount,
+      'Payment Method': order.payment_method || 'N/A',
+      'Items Count': order.items.length,
+      'Order Date': new Date(order.created_date).toLocaleString(),
+      'Items': order.items.map(item => `${item.product_name} x${item.quantity}`).join(', ')
+    }));
+    
+    const ws = XLSX.utils.json_to_sheet(data);
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, 'Orders');
+    XLSX.writeFile(wb, `${fileName}.xlsx`);
+  };
 
   if (orders.length === 0) {
     return (
@@ -441,7 +519,63 @@ export default function Orders() {
 
   return (
     <div className="max-w-4xl mx-auto space-y-6">
-      <h1 className="text-3xl font-bold text-gray-900">My Orders</h1>
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+        <h1 className="text-3xl font-bold text-gray-900">My Orders</h1>
+        
+        <div className="flex gap-2">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => exportToPDF(activeTab === 'active' ? activeOrders : completedOrders, `orders-${activeTab}`)}
+            className="gap-2"
+          >
+            <FileText className="w-4 h-4" />
+            Export PDF
+          </Button>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => exportToExcel(activeTab === 'active' ? activeOrders : completedOrders, `orders-${activeTab}`)}
+            className="gap-2"
+          >
+            <FileSpreadsheet className="w-4 h-4" />
+            Export Excel
+          </Button>
+        </div>
+      </div>
+
+      {/* Search and Filter */}
+      <Card>
+        <CardContent className="p-4">
+          <div className="grid md:grid-cols-2 gap-4">
+            <div className="relative">
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
+              <Input
+                placeholder="Search orders by number, name, or address..."
+                value={orderSearchQuery}
+                onChange={(e) => setOrderSearchQuery(e.target.value)}
+                className="pl-10"
+              />
+            </div>
+            <div className="flex items-center gap-2">
+              <Filter className="w-4 h-4 text-gray-400" />
+              <Select value={hostelFilter} onValueChange={setHostelFilter}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Filter by hostel" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Hostels</SelectItem>
+                  <SelectItem value="Mithali">Mithali Hostel</SelectItem>
+                  <SelectItem value="Gavaskar">Gavaskar Hostel</SelectItem>
+                  <SelectItem value="Virat">Virat Hostel</SelectItem>
+                  <SelectItem value="Tendulkar">Tendulkar Hostel</SelectItem>
+                  <SelectItem value="Other">Other Location</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
 
       <Tabs value={activeTab} onValueChange={setActiveTab}>
         <TabsList className="grid w-full grid-cols-2">
