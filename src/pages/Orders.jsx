@@ -521,27 +521,6 @@ export default function Orders() {
     <div className="max-w-4xl mx-auto space-y-6">
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
         <h1 className="text-3xl font-bold text-gray-900">My Orders</h1>
-        
-        <div className="flex gap-2">
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => exportToPDF(activeTab === 'active' ? activeOrders : completedOrders, `orders-${activeTab}`)}
-            className="gap-2"
-          >
-            <FileText className="w-4 h-4" />
-            Export PDF
-          </Button>
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => exportToExcel(activeTab === 'active' ? activeOrders : completedOrders, `orders-${activeTab}`)}
-            className="gap-2"
-          >
-            <FileSpreadsheet className="w-4 h-4" />
-            Export Excel
-          </Button>
-        </div>
       </div>
 
       {/* Search and Filter */}
