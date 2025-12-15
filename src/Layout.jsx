@@ -178,7 +178,7 @@ export default function Layout({ children, currentPageName }) {
           </div>
           <div className="flex items-center gap-2">
             <NotificationCenter />
-            {user && !isDeliveryRole && (
+            {user && !isDeliveryOnlyRole && (
               <Link to={createPageUrl("Cart")}>
                 <Button variant="ghost" size="icon" className="relative">
                   <ShoppingCart className="w-5 h-5" />
@@ -314,7 +314,7 @@ export default function Layout({ children, currentPageName }) {
             <div className="flex items-center gap-4">
               {user && <InAppChat currentUser={user} />}
               <NotificationCenter />
-              {user && !isDeliveryRole && (
+              {user && !isDeliveryOnlyRole && (
                 <Link to={createPageUrl("Cart")}>
                   <Button variant="ghost" size="icon" className="relative">
                     <ShoppingCart className="w-5 h-5" />
