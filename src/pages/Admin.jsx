@@ -47,15 +47,47 @@ export default function Admin() {
   const checkAdminAccess = useCallback(async () => {
     try {
       const currentUser = await User.me();
+      
+      // Check if user is a delivery person by checking localStorage
+      const deliveryPerson = localStorage.getItem('deliveryPerson');
+      if (deliveryPerson) {
+        // Delivery persons cannot access admin panel
+        navigate(createPageUrl('Delivery'));
+        return;
+      }
+      
+      // Only allow admin users or users with specific admin role assignments
       if (currentUser.role !== 'admin' && (!currentUser.assigned_role_ids || currentUser.assigned_role_ids.length === 0)) {
         navigate(createPageUrl('Shop'));
         return;
       }
+      
+      // If user has assigned roles, verify they are NOT delivery-only roles
+      if (currentUser.assigned_role_ids && currentUser.assigned_role_ids.length > 0) {
+        const rolePromises = currentUser.assigned_role_ids.map(roleId => 
+          base44.entities.Role.filter({ id: roleId })
+        );
+        const roleResults = await Promise.all(rolePromises);
+        const roles = roleResults.flat();
+        
+        // Check if user only has delivery-related permissions
+        const isDeliveryOnly = roles.every(role => 
+          role.permissions && 
+          role.permissions.length > 0 && 
+          role.permissions.every(perm => perm.includes('delivery') || perm === 'view_delivery_portal')
+        );
+        
+        if (isDeliveryOnly) {
+          // User only has delivery permissions, redirect to delivery portal
+          navigate(createPageUrl('Delivery'));
+          return;
+        }
+      }
+      
       setUser(currentUser);
       
-      // Load user permissions - give full access to anyone with a role
+      // Load user permissions
       if (currentUser.role === 'admin' || (currentUser.assigned_role_ids && currentUser.assigned_role_ids.length > 0)) {
-        // Admin or any user with assigned roles has all permissions
         setUserPermissions(['all']);
       }
     } catch (error) {
