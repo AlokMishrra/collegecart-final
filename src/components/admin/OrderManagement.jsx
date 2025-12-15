@@ -4,12 +4,15 @@ import { Order } from "@/entities/Order";
 import { DeliveryPerson } from "@/entities/DeliveryPerson";
 import { Notification } from "@/entities/Notification";
 import { User } from "@/entities/User";
-import { Package, Clock, Truck, CheckCircle, XCircle, User as UserIcon, Trash2, RefreshCw, DollarSign } from "lucide-react";
+import { Package, Clock, Truck, CheckCircle, XCircle, User as UserIcon, Trash2, RefreshCw, DollarSign, Search, Filter, FileText, FileSpreadsheet } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { Input } from "@/components/ui/input";
+import { jsPDF } from "jspdf";
+import * as XLSX from "xlsx";
 
 export default function OrderManagement() {
   const [orders, setOrders] = useState([]);
@@ -17,6 +20,9 @@ export default function OrderManagement() {
   const [isLoading, setIsLoading] = useState(true);
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [lastOrderCount, setLastOrderCount] = useState(0);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [hostelFilter, setHostelFilter] = useState("all");
+  const [statusFilter, setStatusFilter] = useState("all");
 
   useEffect(() => {
     loadData();
@@ -322,22 +328,162 @@ export default function OrderManagement() {
     }
   };
 
+  const exportToPDF = (ordersList, fileName) => {
+    const doc = new jsPDF();
+    
+    doc.setFontSize(20);
+    doc.text('Orders Report', 20, 20);
+    doc.setFontSize(10);
+    doc.text(`Generated: ${new Date().toLocaleDateString()}`, 20, 30);
+    doc.text(`Total Orders: ${ordersList.length}`, 20, 35);
+    
+    let y = 50;
+    ordersList.forEach((order, index) => {
+      if (y > 270) {
+        doc.addPage();
+        y = 20;
+      }
+      
+      doc.setFontSize(12);
+      doc.setFont(undefined, 'bold');
+      doc.text(`Order #${order.order_number}`, 20, y);
+      y += 7;
+      
+      doc.setFontSize(10);
+      doc.setFont(undefined, 'normal');
+      doc.text(`Customer: ${order.customer_name}`, 20, y);
+      y += 5;
+      doc.text(`Address: ${order.delivery_address}`, 20, y);
+      y += 5;
+      doc.text(`Status: ${order.status}`, 20, y);
+      y += 5;
+      doc.text(`Amount: ₹${order.total_amount.toFixed(2)}`, 20, y);
+      y += 5;
+      doc.text(`Date: ${new Date(order.created_date).toLocaleString()}`, 20, y);
+      y += 10;
+    });
+    
+    doc.save(`${fileName}.pdf`);
+  };
+
+  const exportToExcel = (ordersList, fileName) => {
+    const data = ordersList.map(order => ({
+      'Order Number': order.order_number,
+      'Customer Name': order.customer_name,
+      'Delivery Address': order.delivery_address,
+      'Phone': order.phone_number,
+      'Status': order.status,
+      'Total Amount': order.total_amount,
+      'Payment Method': order.payment_method || 'N/A',
+      'Items Count': order.items?.length || 0,
+      'Order Date': new Date(order.created_date).toLocaleString(),
+      'Items': order.items?.map(item => `${item.product_name} x${item.quantity}`).join(', ') || ''
+    }));
+    
+    const ws = XLSX.utils.json_to_sheet(data);
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, 'Orders');
+    XLSX.writeFile(wb, `${fileName}.xlsx`);
+  };
+
+  const filteredOrders = orders.filter(order => {
+    const matchesSearch = !searchQuery || 
+      order.order_number.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      order.customer_name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      order.delivery_address.toLowerCase().includes(searchQuery.toLowerCase());
+    
+    const matchesHostel = hostelFilter === "all" || 
+      order.delivery_address.toLowerCase().includes(hostelFilter.toLowerCase());
+    
+    const matchesStatus = statusFilter === "all" || order.status === statusFilter;
+    
+    return matchesSearch && matchesHostel && matchesStatus;
+  });
+
   return (
     <div className="space-y-6">
-      <div className="flex justify-between items-center">
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
         <div>
           <h2 className="text-2xl font-bold text-gray-900">Order Management</h2>
           <p className="text-gray-600">Track and manage customer orders</p>
         </div>
-        <Button
-          onClick={() => loadData(true)}
-          disabled={isRefreshing}
-          className="bg-emerald-600 hover:bg-emerald-700"
-        >
-          <RefreshCw className={`w-4 h-4 mr-2 ${isRefreshing ? 'animate-spin' : ''}`} />
-          {isRefreshing ? 'Refreshing...' : 'Refresh'}
-        </Button>
+        <div className="flex gap-2">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => exportToPDF(filteredOrders, 'admin-orders-report')}
+            className="gap-2"
+          >
+            <FileText className="w-4 h-4" />
+            Export PDF
+          </Button>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => exportToExcel(filteredOrders, 'admin-orders-report')}
+            className="gap-2"
+          >
+            <FileSpreadsheet className="w-4 h-4" />
+            Export Excel
+          </Button>
+          <Button
+            onClick={() => loadData(true)}
+            disabled={isRefreshing}
+            className="bg-emerald-600 hover:bg-emerald-700"
+          >
+            <RefreshCw className={`w-4 h-4 mr-2 ${isRefreshing ? 'animate-spin' : ''}`} />
+            {isRefreshing ? 'Refreshing...' : 'Refresh'}
+          </Button>
+        </div>
       </div>
+
+      {/* Search and Filter Card */}
+      <Card>
+        <CardContent className="p-4">
+          <div className="grid md:grid-cols-3 gap-4">
+            <div className="relative">
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
+              <Input
+                placeholder="Search by order #, name, or address..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="pl-10"
+              />
+            </div>
+            <div className="flex items-center gap-2">
+              <Filter className="w-4 h-4 text-gray-400" />
+              <Select value={hostelFilter} onValueChange={setHostelFilter}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Filter by hostel" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Hostels</SelectItem>
+                  <SelectItem value="Mithali">Mithali Hostel</SelectItem>
+                  <SelectItem value="Gavaskar">Gavaskar Hostel</SelectItem>
+                  <SelectItem value="Virat">Virat Hostel</SelectItem>
+                  <SelectItem value="Tendulkar">Tendulkar Hostel</SelectItem>
+                  <SelectItem value="Other">Other Location</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <Select value={statusFilter} onValueChange={setStatusFilter}>
+              <SelectTrigger>
+                <SelectValue placeholder="Filter by status" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Status</SelectItem>
+                <SelectItem value="pending">Pending</SelectItem>
+                <SelectItem value="confirmed">Confirmed</SelectItem>
+                <SelectItem value="preparing">Preparing</SelectItem>
+                <SelectItem value="out_for_delivery">Out for Delivery</SelectItem>
+                <SelectItem value="delivered">Delivered</SelectItem>
+                <SelectItem value="cancelled">Cancelled</SelectItem>
+                <SelectItem value="refunded">Refunded</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+        </CardContent>
+      </Card>
 
       <Card>
         <CardContent className="p-0">
@@ -355,7 +501,7 @@ export default function OrderManagement() {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {orders.map((order) => {
+              {filteredOrders.map((order) => {
                 const StatusIcon = getStatusIcon(order.status);
                 
                 return (
