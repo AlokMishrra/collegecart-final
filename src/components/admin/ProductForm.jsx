@@ -16,7 +16,6 @@ export default function ProductForm({ product, categories, onSave, onCancel }) {
     description: product?.description || "",
     price: product?.price || "",
     original_price: product?.original_price || "",
-    hostel_pricing: product?.hostel_pricing || {},
     category_id: product?.category_id || "",
     image_url: product?.image_url || "",
     stock_quantity: product?.stock_quantity || 0,
@@ -39,21 +38,11 @@ export default function ProductForm({ product, categories, onSave, onCancel }) {
   const handleSubmit = (e) => {
     e.preventDefault();
     const totalStock = parseInt(formData.stock_quantity);
-    // Clean up hostel pricing - remove undefined values
-    const cleanHostelPricing = {};
-    if (formData.hostel_pricing) {
-      Object.keys(formData.hostel_pricing).forEach(hostel => {
-        if (formData.hostel_pricing[hostel] !== undefined && formData.hostel_pricing[hostel] !== "") {
-          cleanHostelPricing[hostel] = parseFloat(formData.hostel_pricing[hostel]);
-        }
-      });
-    }
 
     onSave({
       ...formData,
       price: parseFloat(formData.price),
       original_price: formData.original_price ? parseFloat(formData.original_price) : null,
-      hostel_pricing: cleanHostelPricing,
       stock_quantity: totalStock,
       hostel_stock: {
         Mithali: formData.hostel_stock.Mithali !== "" ? parseInt(formData.hostel_stock.Mithali) : 0,
@@ -115,7 +104,7 @@ export default function ProductForm({ product, categories, onSave, onCancel }) {
 
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <Label htmlFor="price">Default Price (₹)</Label>
+              <Label htmlFor="price">Price (₹)</Label>
               <Input
                 id="price"
                 type="number"
@@ -124,7 +113,6 @@ export default function ProductForm({ product, categories, onSave, onCancel }) {
                 onChange={(e) => handleInputChange("price", e.target.value)}
                 required
               />
-              <p className="text-xs text-gray-500 mt-1">Used when no hostel-specific price set</p>
             </div>
             <div>
               <Label htmlFor="original_price">Original Price (₹)</Label>
@@ -135,32 +123,6 @@ export default function ProductForm({ product, categories, onSave, onCancel }) {
                 value={formData.original_price}
                 onChange={(e) => handleInputChange("original_price", e.target.value)}
               />
-            </div>
-          </div>
-
-          <div>
-            <Label className="mb-3 block">Hostel-Specific Pricing (Optional)</Label>
-            <p className="text-xs text-gray-500 mb-3">Leave empty to use default price</p>
-            <div className="grid grid-cols-2 gap-4">
-              {['Mithali', 'Gavaskar', 'Virat', 'Tendulkar', 'Other'].map(hostel => (
-                <div key={hostel}>
-                  <Label htmlFor={`price-${hostel}`} className="text-sm">{hostel} Hostel</Label>
-                  <Input
-                    id={`price-${hostel}`}
-                    type="number"
-                    step="0.01"
-                    placeholder={`₹${formData.price || 0}`}
-                    value={formData.hostel_pricing?.[hostel] || ""}
-                    onChange={(e) => setFormData({
-                      ...formData,
-                      hostel_pricing: {
-                        ...formData.hostel_pricing,
-                        [hostel]: e.target.value ? parseFloat(e.target.value) : undefined
-                      }
-                    })}
-                  />
-                </div>
-              ))}
             </div>
           </div>
 
