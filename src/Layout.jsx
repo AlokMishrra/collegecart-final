@@ -93,8 +93,8 @@ export default function Layout({ children, currentPageName }) {
   // Check if user has multiple roles
   const hasMultipleRoles = user?.assigned_role_ids && user.assigned_role_ids.length > 1;
 
-  // Check if user is a delivery person
-  const isDeliveryRole = userRole && (
+  // Check if user is a delivery person (single role only)
+  const isDeliveryOnlyRole = !hasMultipleRoles && userRole && (
     userRole.name.toLowerCase().includes("delivery") ||
     userRole.permissions?.includes("view_delivery_portal")
   );
@@ -124,25 +124,30 @@ export default function Layout({ children, currentPageName }) {
       url: createPageUrl("Admin"),
       icon: Settings,
       showCondition: () => {
-        // Show Admin Panel if user has any role that is NOT delivery
-        if (!userHasRole && user?.role !== "admin") return false;
-        if (hasMultipleRoles) return true; // Multiple roles get both panels
-        return !isDeliveryRole && (user?.role === "admin" || userHasRole);
+        // Hide for delivery-only users
+        if (isDeliveryOnlyRole) return false;
+        // Show for admin or users with non-delivery roles
+        return user?.role === "admin" || (userHasRole && !isDeliveryOnlyRole);
       }
     },
     {
       title: "User Management",
       url: createPageUrl("UserManagement"),
       icon: UserIcon,
-      showCondition: () => !isDeliveryRole && (user?.role === "admin" || userHasRole)
+      showCondition: () => {
+        // Hide for delivery-only users
+        if (isDeliveryOnlyRole) return false;
+        // Show for admin or users with non-delivery roles
+        return user?.role === "admin" || (userHasRole && !isDeliveryOnlyRole);
+      }
     },
     {
       title: "Delivery Portal",
       url: createPageUrl("Delivery"),
       icon: Truck,
       showCondition: () => {
-        if (hasMultipleRoles) return true; // Multiple roles get both panels
-        return isDeliveryRole;
+        // Show for delivery persons or users with multiple roles
+        return isDeliveryOnlyRole || (hasMultipleRoles && userRole?.permissions?.includes("view_delivery_portal"));
       }
     }
   ];
