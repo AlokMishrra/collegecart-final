@@ -17,6 +17,7 @@ import { motion, AnimatePresence } from "framer-motion";
   import CODQRGenerator from "../components/delivery/CODQRGenerator";
   import DeliveryAI from "../components/delivery/DeliveryAI";
   import SwipeToDeliver from "../components/delivery/SwipeToDeliver";
+  import LiveLocationTracker from "../components/delivery/LiveLocationTracker";
 
 export default function Delivery() {
   const [deliveryPerson, setDeliveryPerson] = useState(null);
@@ -533,6 +534,12 @@ export default function Delivery() {
 
       {/* Delivery Statistics */}
       <DeliveryStats deliveryPerson={deliveryPerson} />
+
+      {/* Live Location Tracking */}
+      <LiveLocationTracker 
+        deliveryPersonId={deliveryPerson.id}
+        orderId={assignedOrders.find(o => o.status === 'out_for_delivery')?.id}
+      />
 
       {/* AI Delivery Assistant */}
       <DeliveryAI deliveryPerson={deliveryPerson} orders={assignedOrders} />
