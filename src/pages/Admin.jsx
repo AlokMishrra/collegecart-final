@@ -38,6 +38,7 @@ import ProductManagement from "../components/admin/ProductManagement";
   import ProductScheduler from "../components/admin/ProductScheduler";
   import CustomQRGenerator from "../components/admin/CustomQRGenerator";
   import DeliveryPerformance from "../components/admin/DeliveryPerformance";
+  import BannerManagement from "../components/admin/BannerManagement";
 
 export default function Admin() {
   const navigate = useNavigate();
@@ -133,6 +134,7 @@ export default function Admin() {
     { value: "inventory-forecast", label: "Inventory Forecasting", permission: "manage_products", component: <AIInventoryForecasting /> },
     { value: "dynamic-pricing", label: "Dynamic Pricing", permission: "manage_products", component: <DynamicPricing /> },
     { value: "categories", label: "Categories", permission: "manage_categories", component: <CategoryManagement /> },
+    { value: "banners", label: "Banners", permission: "manage_settings", component: <BannerManagement /> },
     { value: "campaigns", label: "Campaigns", permission: "manage_campaigns", component: <CampaignManagement /> },
     { value: "recommendations", label: "AI Recommendations", permission: "manage_settings", component: <RecommendationConfig /> },
     { value: "reviews", label: "Reviews", permission: "manage_reviews", component: <ReviewModeration /> },

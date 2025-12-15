@@ -22,6 +22,7 @@ import QuickAddToCart from "../components/shop/QuickAddToCart";
   import HostelSelector from "../components/shop/HostelSelector";
   import RecommendationEngine from "../components/shop/RecommendationEngine";
   import EnhancedSearch from "../components/shop/EnhancedSearch";
+  import BannerCarousel from "../components/shop/BannerCarousel";
 
 export default function Shop() {
   const [products, setProducts] = useState([]);
@@ -305,9 +306,12 @@ export default function Shop() {
     <div className="max-w-7xl mx-auto space-y-8 pb-8">
       {/* Hostel Selector Modal */}
       {showHostelSelector && <HostelSelector onHostelSelected={handleHostelSelected} />}
-      
+
       {/* Enhanced Header */}
       <EnhancedShopHero />
+
+      {/* Banner Carousel */}
+      <BannerCarousel />
 
       {/* Change Hostel Button */}
       {user?.selected_hostel && (
