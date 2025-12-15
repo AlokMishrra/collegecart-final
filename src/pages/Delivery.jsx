@@ -709,18 +709,16 @@ export default function Delivery() {
                           </div>
 
                           <div className="mb-4">
-                            <p className="font-medium text-gray-900 mb-2">Items ({order.items?.length || 0})</p>
-                            <div className="space-y-1">
-                              {order.items?.slice(0, 3).map((item, itemIndex) => (
-                                <p key={itemIndex} className="text-sm text-gray-600">
-                                  {item.product_name} x {item.quantity}
-                                </p>
+                            <p className="font-medium text-gray-900 mb-2">Order Items</p>
+                            <div className="bg-gray-50 rounded-lg p-3 space-y-1.5">
+                              {order.items?.map((item, itemIndex) => (
+                                <div key={itemIndex} className="flex items-center gap-2">
+                                  <div className="w-1.5 h-1.5 rounded-full bg-emerald-600"></div>
+                                  <p className="text-sm text-gray-900 font-medium">
+                                    {item.product_name} <span className="text-gray-600">× {item.quantity}</span>
+                                  </p>
+                                </div>
                               ))}
-                              {order.items?.length > 3 && (
-                                <p className="text-sm text-gray-500">
-                                  +{order.items.length - 3} more items
-                                </p>
-                              )}
                             </div>
                           </div>
 
