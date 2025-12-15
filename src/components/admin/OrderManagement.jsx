@@ -115,6 +115,31 @@ export default function OrderManagement() {
           message: `Your order ${order.order_number} is now ${newStatus.replace(/_/g, ' ')}`,
           type: "info"
         });
+
+        // Send email notification
+        try {
+          const user = await base44.entities.User.filter({ id: order.user_id });
+          if (user[0]?.email) {
+            await base44.integrations.Core.SendEmail({
+              from_name: "CollegeCart",
+              to: user[0].email,
+              subject: `Order ${order.order_number} - Status Update`,
+              body: `
+                <h2>Order Status Updated</h2>
+                <p>Hi ${order.customer_name},</p>
+                <p>Your order <strong>#${order.order_number}</strong> status has been updated to: <strong>${newStatus.replace(/_/g, ' ').toUpperCase()}</strong></p>
+                <p>Order Total: ₹${order.total_amount.toFixed(2)}</p>
+                <p>Delivery Address: ${order.delivery_address}</p>
+                ${newStatus === 'out_for_delivery' ? '<p><strong>Your order is on its way! 🚚</strong></p>' : ''}
+                ${newStatus === 'delivered' ? '<p><strong>Thank you for choosing CollegeCart! 🎉</strong></p>' : ''}
+                <br/>
+                <p>Best regards,<br/>CollegeCart Team</p>
+              `
+            });
+          }
+        } catch (emailError) {
+          console.error("Error sending email:", emailError);
+        }
       }
 
       // Show success notification to admin
@@ -156,12 +181,27 @@ export default function OrderManagement() {
         status: "out_for_delivery"
       });
 
+      // Track pickup time for performance
+      await base44.entities.DeliveryPerformance.create({
+        delivery_person_id: deliveryPersonId,
+        order_id: orderId,
+        pickup_time: new Date().toISOString()
+      });
+
       // Update delivery person's current orders
       const deliveryPerson = deliveryPersons.find(p => p.id === deliveryPersonId);
       if (deliveryPerson) {
         const currentOrders = deliveryPerson.current_orders || [];
         await DeliveryPerson.update(deliveryPersonId, {
           current_orders: [...currentOrders, orderId]
+        });
+
+        // Send push notification to delivery person
+        await Notification.create({
+          user_id: deliveryPerson.email,
+          title: "New Order Assigned! 📦",
+          message: `Order #${orders.find(o => o.id === orderId)?.order_number} has been assigned to you`,
+          type: "info"
         });
       }
 
@@ -174,6 +214,30 @@ export default function OrderManagement() {
           message: `Your order ${order.order_number} is out for delivery!`,
           type: "info"
         });
+
+        // Send email
+        try {
+          const user = await base44.entities.User.filter({ id: order.user_id });
+          if (user[0]?.email) {
+            await base44.integrations.Core.SendEmail({
+              from_name: "CollegeCart",
+              to: user[0].email,
+              subject: `Order ${order.order_number} - Out for Delivery! 🚚`,
+              body: `
+                <h2>Your Order is On Its Way!</h2>
+                <p>Hi ${order.customer_name},</p>
+                <p>Great news! Your order <strong>#${order.order_number}</strong> is now out for delivery.</p>
+                <p>Delivery Address: ${order.delivery_address}</p>
+                <p>Contact: ${order.phone_number}</p>
+                <p>Expected delivery: Within 30-40 minutes</p>
+                <br/>
+                <p>Thank you for choosing CollegeCart!</p>
+              `
+            });
+          }
+        } catch (emailError) {
+          console.error("Error sending email:", emailError);
+        }
       }
 
       // Show success notification to admin

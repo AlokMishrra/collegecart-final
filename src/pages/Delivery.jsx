@@ -326,6 +326,21 @@ export default function Delivery() {
         current_orders: updatedOrders
       });
 
+      // Send notification to admin
+      try {
+        const currentUser = await base44.auth.me();
+        if (currentUser.role === 'admin') {
+          await base44.entities.Notification.create({
+            user_id: currentUser.id,
+            title: "Order Accepted by Delivery Partner",
+            message: `${deliveryPerson.name} has accepted order #${availableOrders.find(o => o.id === orderId)?.order_number}`,
+            type: "info"
+          });
+        }
+      } catch (notifError) {
+        console.error("Error sending admin notification:", notifError);
+      }
+
       // Reload orders
       await Promise.all([
         loadAssignedOrders(deliveryPerson.id),
@@ -369,12 +384,59 @@ export default function Delivery() {
 
       const order = assignedOrders.find(o => o.id === orderId);
       if (order) {
+        // Update performance record with delivery time
+        try {
+          const performanceRecords = await base44.entities.DeliveryPerformance.filter({
+            order_id: orderId,
+            delivery_person_id: deliveryPerson.id
+          });
+          
+          if (performanceRecords[0]) {
+            const pickupTime = new Date(performanceRecords[0].pickup_time);
+            const deliveryTime = new Date();
+            const durationMinutes = Math.round((deliveryTime - pickupTime) / (1000 * 60));
+            
+            await base44.entities.DeliveryPerformance.update(performanceRecords[0].id, {
+              delivery_time: deliveryTime.toISOString(),
+              duration_minutes: durationMinutes,
+              order_value: order.total_amount
+            });
+          }
+        } catch (perfError) {
+          console.error("Error updating performance:", perfError);
+        }
+
         await Notification.create({
           user_id: order.user_id,
           title: "Order Delivered!",
           message: `Your order #${order.order_number} has been delivered. Thank you for choosing CollegeCart!`,
           type: "success"
         });
+
+        // Send delivery confirmation email
+        try {
+          const user = await base44.entities.User.filter({ id: order.user_id });
+          if (user[0]?.email) {
+            await base44.integrations.Core.SendEmail({
+              from_name: "CollegeCart",
+              to: user[0].email,
+              subject: `Order ${order.order_number} - Delivered Successfully! 🎉`,
+              body: `
+                <h2>Order Delivered!</h2>
+                <p>Hi ${order.customer_name},</p>
+                <p>Your order <strong>#${order.order_number}</strong> has been successfully delivered!</p>
+                <p>Order Total: ₹${order.total_amount.toFixed(2)}</p>
+                <p>We hope you enjoy your items! 🎉</p>
+                <br/>
+                <p>Thank you for choosing CollegeCart. We look forward to serving you again!</p>
+                <br/>
+                <p>Best regards,<br/>CollegeCart Team</p>
+              `
+            });
+          }
+        } catch (emailError) {
+          console.error("Error sending email:", emailError);
+        }
 
         // Award loyalty points
         try {

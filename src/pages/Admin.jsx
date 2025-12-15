@@ -37,6 +37,7 @@ import ProductManagement from "../components/admin/ProductManagement";
   import NotificationConfigManager from "../components/admin/NotificationConfigManager";
   import ProductScheduler from "../components/admin/ProductScheduler";
   import CustomQRGenerator from "../components/admin/CustomQRGenerator";
+  import DeliveryPerformance from "../components/admin/DeliveryPerformance";
 
 export default function Admin() {
   const navigate = useNavigate();
@@ -136,6 +137,7 @@ export default function Admin() {
     { value: "recommendations", label: "AI Recommendations", permission: "manage_settings", component: <RecommendationConfig /> },
     { value: "reviews", label: "Reviews", permission: "manage_reviews", component: <ReviewModeration /> },
     { value: "delivery", label: "Delivery", permission: "manage_delivery", component: <DeliveryPersonManagement /> },
+    { value: "delivery-performance", label: "Performance", permission: "manage_delivery", component: <DeliveryPerformance /> },
     { value: "orders", label: "Orders", permission: "manage_orders", component: <OrderManagement /> },
     { value: "notifications", label: "Notification Config", permission: "manage_settings", component: <NotificationConfigManager /> },
     { value: "gamification", label: "Gamification", permission: "manage_settings", component: <GamificationConfig /> },
