@@ -13,6 +13,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Input } from "@/components/ui/input";
 import { jsPDF } from "jspdf";
 import * as XLSX from "xlsx";
+import DeliveryMap from "../delivery/DeliveryMap";
 
 export default function OrderManagement() {
   const [orders, setOrders] = useState([]);
@@ -402,6 +403,9 @@ export default function OrderManagement() {
 
   return (
     <div className="space-y-6">
+      {/* Live Delivery Map */}
+      <DeliveryMap showAllDeliveryPersons={true} />
+
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
         <div>
           <h2 className="text-2xl font-bold text-gray-900">Order Management</h2>

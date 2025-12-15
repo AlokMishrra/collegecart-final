@@ -918,8 +918,8 @@ export default function Cart() {
               
               <Button
                 onClick={placeOrder}
-                disabled={isPlacingOrder || cartItems.length === 0}
-                className="w-full bg-emerald-600 hover:bg-emerald-700"
+                disabled={isPlacingOrder || cartItems.length === 0 || calculateSubtotal() === 0}
+                className="w-full bg-emerald-600 hover:bg-emerald-700 disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 {isPlacingOrder ? "Placing Order..." : "Place Order"}
               </Button>
