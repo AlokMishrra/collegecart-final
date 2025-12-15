@@ -83,33 +83,6 @@ export default function Cart() {
     try {
       const userOrders = await Order.filter({ user_id: userId });
       setIsFirstOrder(userOrders.length === 0);
-      
-      // If user has previous orders, auto-select and lock their hostel
-      if (userOrders.length > 0) {
-        const lastOrder = userOrders[0]; // Most recent order
-        const lastAddress = lastOrder.delivery_address;
-        
-        // Extract hostel name from address
-        const hostels = ['Mithali', 'Gavaskar', 'Virat', 'Tendulkar'];
-        for (const hostel of hostels) {
-          if (lastAddress.includes(hostel)) {
-            setSelectedHostel(hostel);
-            
-            // Extract room number if exists
-            const roomMatch = lastAddress.match(/Room No:?\s*(\w+)/i);
-            if (roomMatch) {
-              setRoomNumber(roomMatch[1]);
-            }
-            break;
-          }
-        }
-        
-        // If it's "Other", set it
-        if (!hostels.some(h => lastAddress.includes(h))) {
-          setSelectedHostel("Other");
-          setCustomAddress(lastAddress);
-        }
-      }
     } catch (error) {
       console.error("Error checking orders:", error);
     }
@@ -718,15 +691,10 @@ export default function Cart() {
                 </div>
                  <div>
                   <Label htmlFor="hostel">Delivery Location <span className="text-red-500">*</span></Label>
-                   <Select 
-                     onValueChange={(value) => {
-                       setSelectedHostel(value);
-                       if (value !== "Other") setCustomAddress("");
-                     }} 
-                     value={selectedHostel} 
-                     required
-                     disabled={!isFirstOrder}
-                   >
+                   <Select onValueChange={(value) => {
+                     setSelectedHostel(value);
+                     if (value !== "Other") setCustomAddress("");
+                   }} value={selectedHostel} required>
                     <SelectTrigger id="hostel">
                       <SelectValue placeholder="Select your location" />
                     </SelectTrigger>
@@ -738,39 +706,32 @@ export default function Cart() {
                       <SelectItem value="Other">Other</SelectItem>
                     </SelectContent>
                   </Select>
-                  {!isFirstOrder && (
-                    <p className="text-xs text-gray-500 mt-1">Hostel locked from your previous order</p>
-                  )}
                  </div>
 
                  {selectedHostel === "Other" ? (
-                 <div>
-                   <Label htmlFor="customAddress">Delivery Address <span className="text-red-500">*</span></Label>
-                   <Textarea
-                     id="customAddress"
-                     value={customAddress}
-                     onChange={(e) => setCustomAddress(e.target.value)}
-                     placeholder="Enter your complete delivery address"
-                     rows={3}
-                     required
-                     disabled={!isFirstOrder}
-                   />
-                   {!isFirstOrder && (
-                     <p className="text-xs text-gray-500 mt-1">Address locked from your previous order</p>
-                   )}
-                 </div>
+                  <div>
+                    <Label htmlFor="customAddress">Delivery Address <span className="text-red-500">*</span></Label>
+                    <Textarea
+                      id="customAddress"
+                      value={customAddress}
+                      onChange={(e) => setCustomAddress(e.target.value)}
+                      placeholder="Enter your complete delivery address"
+                      rows={3}
+                      required
+                    />
+                  </div>
                  ) : (
-                 <div>
-                   <Label htmlFor="room">Room Number <span className="text-red-500">*</span></Label>
-                   <Input
-                     id="room"
-                     value={roomNumber}
-                     onChange={(e) => setRoomNumber(e.target.value)}
-                     placeholder="Enter room number"
-                     disabled={!selectedHostel || selectedHostel === "Other"}
-                     required={selectedHostel !== "Other"}
-                   />
-                 </div>
+                  <div>
+                    <Label htmlFor="room">Room Number <span className="text-red-500">*</span></Label>
+                    <Input
+                      id="room"
+                      value={roomNumber}
+                      onChange={(e) => setRoomNumber(e.target.value)}
+                      placeholder="Enter room number"
+                      disabled={!selectedHostel || selectedHostel === "Other"}
+                      required={selectedHostel !== "Other"}
+                    />
+                  </div>
                  )}
                 <div>
                   <Label htmlFor="notes">Delivery Notes (Optional)</Label>
