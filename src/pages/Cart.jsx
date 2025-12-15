@@ -108,6 +108,8 @@ export default function Cart() {
       loadLoyaltyPoints(currentUser.id);
       setCustomerName(currentUser.full_name || "");
       setPhoneNumber(currentUser.phone_number || "");
+      // Automatically set delivery location from user's selected hostel
+      setSelectedHostel(currentUser.selected_hostel || "");
     } catch (error) {
       navigate(createPageUrl('Shop'));
     }
@@ -690,22 +692,16 @@ export default function Cart() {
                   />
                 </div>
                  <div>
-                  <Label htmlFor="hostel">Delivery Location <span className="text-red-500">*</span></Label>
-                   <Select onValueChange={(value) => {
-                     setSelectedHostel(value);
-                     if (value !== "Other") setCustomAddress("");
-                   }} value={selectedHostel} required>
-                    <SelectTrigger id="hostel">
-                      <SelectValue placeholder="Select your location" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="Mithali">Mithali Hostel</SelectItem>
-                      <SelectItem value="Gavaskar">Gavaskar Hostel</SelectItem>
-                      <SelectItem value="Virat">Virat Hostel</SelectItem>
-                      <SelectItem value="Tendulkar">Tendulkar Hostel</SelectItem>
-                      <SelectItem value="Other">Other</SelectItem>
-                    </SelectContent>
-                  </Select>
+                  <Label>Delivery Location <span className="text-red-500">*</span></Label>
+                  <div className="bg-emerald-50 border border-emerald-200 rounded-lg p-3 flex items-center justify-between">
+                    <div>
+                      <p className="text-sm text-gray-600">Delivering to</p>
+                      <p className="text-base font-semibold text-gray-900">
+                        {selectedHostel === "Other" ? "Other Location" : `${selectedHostel} Hostel`}
+                      </p>
+                    </div>
+                  </div>
+                  <p className="text-xs text-gray-500 mt-1">Delivery location is set from your shop preferences</p>
                  </div>
 
                  {selectedHostel === "Other" ? (
