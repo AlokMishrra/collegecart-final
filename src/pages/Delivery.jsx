@@ -69,8 +69,10 @@ export default function Delivery() {
       const unassignedOrders = orders.filter(order => !order.delivery_person_id);
       
       // Check for new orders and show browser notification (only if delivery person is available)
-      if (deliveryPerson && deliveryPerson.is_available) {
-        if (previousOrderCount > 0 && unassignedOrders.length > previousOrderCount) {
+      const savedPerson = localStorage.getItem('deliveryPerson');
+      if (savedPerson) {
+        const person = JSON.parse(savedPerson);
+        if (person.is_available && previousOrderCount > 0 && unassignedOrders.length > previousOrderCount) {
           const newOrdersCount = unassignedOrders.length - previousOrderCount;
           showBrowserNotification(
             `🎉 ${newOrdersCount} New Order${newOrdersCount > 1 ? 's' : ''} Available!`,
@@ -84,7 +86,7 @@ export default function Delivery() {
     } catch (error) {
       console.error("Error loading available orders:", error);
     }
-  }, [previousOrderCount, deliveryPerson]);
+  }, [previousOrderCount]);
 
   const checkDeliveryLogin = useCallback(async () => {
     setIsLoading(true);
@@ -201,9 +203,11 @@ export default function Delivery() {
         loadAvailableOrders();
       }, 5000);
     }
-    // Cleanup on unmount or when deliveryPerson changes
-    return () => clearInterval(intervalId);
-  }, [deliveryPerson, loadAssignedOrders, loadAvailableOrders]);
+    // Cleanup on unmount
+    return () => {
+      if (intervalId) clearInterval(intervalId);
+    };
+  }, [deliveryPerson?.id]);
 
   const handleLogin = async (e) => {
     e.preventDefault();
