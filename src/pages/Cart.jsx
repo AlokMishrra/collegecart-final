@@ -140,10 +140,18 @@ export default function Cart() {
     }
   };
 
+  const getProductPrice = (product) => {
+    if (user?.selected_hostel && product.hostel_pricing && typeof product.hostel_pricing[user.selected_hostel] === 'number') {
+      return product.hostel_pricing[user.selected_hostel];
+    }
+    return product.price;
+  };
+
   const calculateSubtotal = () => {
     return cartItems.reduce((total, item) => {
       const product = products[item.product_id];
-      return total + (product ? product.price * item.quantity : 0);
+      const price = getProductPrice(product);
+      return total + (product ? price * item.quantity : 0);
     }, 0);
   };
 
@@ -339,7 +347,7 @@ export default function Cart() {
       const orderItems = cartItems.map(item => ({
         product_id: item.product_id,
         product_name: products[item.product_id]?.name || "",
-        price: products[item.product_id]?.price || 0,
+        price: getProductPrice(products[item.product_id]) || 0,
         quantity: item.quantity
       }));
       
@@ -592,7 +600,7 @@ export default function Cart() {
                         />
                         <div className="flex-1">
                           <h3 className="font-semibold text-gray-900">{product.name}</h3>
-                          <p className="text-emerald-600 font-medium">₹{product.price}/{product.unit}</p>
+                          <p className="text-emerald-600 font-medium">₹{getProductPrice(product)}/{product.unit}</p>
                         </div>
                         <div className="flex items-center gap-3">
                           <Button
@@ -613,7 +621,7 @@ export default function Cart() {
                           </Button>
                         </div>
                         <div className="text-right">
-                          <p className="font-semibold">₹{(product.price * item.quantity).toFixed(2)}</p>
+                          <p className="font-semibold">₹{(getProductPrice(product) * item.quantity).toFixed(2)}</p>
                           <Button
                             variant="ghost"
                             size="icon"

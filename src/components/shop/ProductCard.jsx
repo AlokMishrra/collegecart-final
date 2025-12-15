@@ -8,7 +8,7 @@ import { Star, Clock, Truck, Heart } from "lucide-react";
 import { Link } from "react-router-dom";
 import { createPageUrl } from "@/utils";
 
-export default function ProductCard({ product, cartQuantity, onAddToCart, onUpdateQuantity, hostelStock: propHostelStock, isInStock }) {
+export default function ProductCard({ product, cartQuantity, onAddToCart, onUpdateQuantity, hostelStock: propHostelStock, isInStock, userHostel }) {
   const [reviews, setReviews] = useState([]);
   const [avgRating, setAvgRating] = useState(0);
   const [reviewCount, setReviewCount] = useState(0);
@@ -16,6 +16,16 @@ export default function ProductCard({ product, cartQuantity, onAddToCart, onUpda
   const [isAddingToWishlist, setIsAddingToWishlist] = useState(false);
   
   const hostelStock = propHostelStock !== undefined ? propHostelStock : product.stock_quantity || 0;
+
+  // Get hostel-specific price if available
+  const getProductPrice = () => {
+    if (userHostel && product.hostel_pricing && typeof product.hostel_pricing[userHostel] === 'number') {
+      return product.hostel_pricing[userHostel];
+    }
+    return product.price;
+  };
+  
+  const displayPrice = getProductPrice();
 
   useEffect(() => {
     loadReviews();
@@ -112,7 +122,7 @@ export default function ProductCard({ product, cartQuantity, onAddToCart, onUpda
   };
 
   const discount = product.original_price
-    ? Math.round(((product.original_price - product.price) / product.original_price) * 100)
+    ? Math.round(((product.original_price - displayPrice) / product.original_price) * 100)
     : 0;
 
   const isOutOfStock = isInStock !== undefined ? !isInStock : hostelStock === 0;
@@ -174,8 +184,8 @@ export default function ProductCard({ product, cartQuantity, onAddToCart, onUpda
         
         <div className="flex items-center justify-between">
           <div className="flex items-baseline gap-1.5">
-            <span className="text-2xl font-bold text-gray-900">₹{product.price}</span>
-            {product.original_price && (
+            <span className="text-2xl font-bold text-gray-900">₹{displayPrice}</span>
+            {product.original_price && product.original_price > displayPrice && (
               <span className="text-sm text-gray-400 line-through">₹{product.original_price}</span>
             )}
           </div>
