@@ -143,10 +143,11 @@ export default function Cart() {
   };
 
   const getProductPrice = (product) => {
+    if (!product) return 0;
     if (user?.selected_hostel && product.hostel_pricing && typeof product.hostel_pricing[user.selected_hostel] === 'number') {
       return product.hostel_pricing[user.selected_hostel];
     }
-    return product.price;
+    return product.price || 0;
   };
 
   const calculateSubtotal = () => {
