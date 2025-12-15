@@ -14,6 +14,8 @@ import { Input } from "@/components/ui/input";
 import { jsPDF } from "jspdf";
 import * as XLSX from "xlsx";
 import DeliveryMap from "../delivery/DeliveryMap";
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
+import { ChevronDown } from "lucide-react";
 
 export default function OrderManagement() {
   const [orders, setOrders] = useState([]);
@@ -24,6 +26,7 @@ export default function OrderManagement() {
   const [searchQuery, setSearchQuery] = useState("");
   const [hostelFilter, setHostelFilter] = useState("all");
   const [statusFilter, setStatusFilter] = useState("all");
+  const [showMap, setShowMap] = useState(false);
 
   useEffect(() => {
     loadData();
@@ -403,8 +406,27 @@ export default function OrderManagement() {
 
   return (
     <div className="space-y-6">
-      {/* Live Delivery Map */}
-      <DeliveryMap showAllDeliveryPersons={true} />
+      {/* Live Delivery Map - Collapsible */}
+      <Collapsible open={showMap} onOpenChange={setShowMap}>
+        <Card>
+          <CollapsibleTrigger className="w-full">
+            <CardContent className="p-4">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <Truck className="w-5 h-5 text-emerald-600" />
+                  <h3 className="font-semibold text-lg">Live Delivery Tracking</h3>
+                </div>
+                <ChevronDown className={`w-5 h-5 transition-transform ${showMap ? 'rotate-180' : ''}`} />
+              </div>
+            </CardContent>
+          </CollapsibleTrigger>
+          <CollapsibleContent>
+            <CardContent className="pt-0">
+              <DeliveryMap showAllDeliveryPersons={true} />
+            </CardContent>
+          </CollapsibleContent>
+        </Card>
+      </Collapsible>
 
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
         <div>

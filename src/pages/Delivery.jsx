@@ -3,7 +3,7 @@ import { base44 } from "@/api/base44Client";
 import { Order } from "@/entities/Order";
 import { DeliveryPerson } from "@/entities/DeliveryPerson";
 import { Notification } from "@/entities/Notification";
-import { Truck, MapPin, Phone, Package, CheckCircle, Loader2, Lock, User, Bell, XCircle, AlertTriangle } from "lucide-react";
+import { Truck, MapPin, Phone, Package, CheckCircle, Loader2, Lock, User, Bell, XCircle, AlertTriangle, Power } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -34,6 +34,7 @@ export default function Delivery() {
   const [cancellingOrderId, setCancellingOrderId] = useState(null);
   const [showCancelDialog, setShowCancelDialog] = useState(false);
   const [orderToCancel, setOrderToCancel] = useState(null);
+  const [isTogglingAvailability, setIsTogglingAvailability] = useState(false);
 
   const loadAssignedOrders = useCallback(async (deliveryPersonId) => {
     try {
@@ -67,13 +68,15 @@ export default function Delivery() {
       // Only show orders without delivery person assigned
       const unassignedOrders = orders.filter(order => !order.delivery_person_id);
       
-      // Check for new orders and show browser notification
-      if (previousOrderCount > 0 && unassignedOrders.length > previousOrderCount) {
-        const newOrdersCount = unassignedOrders.length - previousOrderCount;
-        showBrowserNotification(
-          `🎉 ${newOrdersCount} New Order${newOrdersCount > 1 ? 's' : ''} Available!`,
-          `${newOrdersCount} new order${newOrdersCount > 1 ? 's' : ''} ready for pickup. Check the app now!`
-        );
+      // Check for new orders and show browser notification (only if delivery person is available)
+      if (deliveryPerson && deliveryPerson.is_available) {
+        if (previousOrderCount > 0 && unassignedOrders.length > previousOrderCount) {
+          const newOrdersCount = unassignedOrders.length - previousOrderCount;
+          showBrowserNotification(
+            `🎉 ${newOrdersCount} New Order${newOrdersCount > 1 ? 's' : ''} Available!`,
+            `${newOrdersCount} new order${newOrdersCount > 1 ? 's' : ''} ready for pickup. Check the app now!`
+          );
+        }
       }
       
       setPreviousOrderCount(unassignedOrders.length);
@@ -81,7 +84,7 @@ export default function Delivery() {
     } catch (error) {
       console.error("Error loading available orders:", error);
     }
-  }, [previousOrderCount]);
+  }, [previousOrderCount, deliveryPerson]);
 
   const checkDeliveryLogin = useCallback(async () => {
     setIsLoading(true);
@@ -272,6 +275,37 @@ export default function Delivery() {
     setDeliveryPerson(null);
     setAssignedOrders([]);
     setAvailableOrders([]);
+  };
+
+  const toggleAvailability = async () => {
+    setIsTogglingAvailability(true);
+    try {
+      const newAvailability = !deliveryPerson.is_available;
+      await DeliveryPerson.update(deliveryPerson.id, {
+        is_available: newAvailability
+      });
+
+      // Update local state
+      const updatedPerson = { ...deliveryPerson, is_available: newAvailability };
+      setDeliveryPerson(updatedPerson);
+      localStorage.setItem('deliveryPerson', JSON.stringify(updatedPerson));
+
+      // Show notification about status change
+      if (newAvailability) {
+        showBrowserNotification(
+          '✅ You are now ONLINE',
+          'You will receive notifications for new orders'
+        );
+      } else {
+        showBrowserNotification(
+          '⏸️ You are now OFFLINE',
+          'You will not receive new order notifications'
+        );
+      }
+    } catch (error) {
+      console.error("Error toggling availability:", error);
+    }
+    setIsTogglingAvailability(false);
   };
 
   const acceptOrder = async (orderId) => {
@@ -527,10 +561,44 @@ export default function Delivery() {
           <h1 className="text-3xl font-bold text-gray-900">Delivery Dashboard</h1>
           <p className="text-gray-600">Welcome back, {deliveryPerson.name}!</p>
         </div>
-        <Button variant="outline" onClick={handleLogout}>
-          Logout
-        </Button>
+        <div className="flex gap-2">
+          <Button
+            variant={deliveryPerson.is_available ? "default" : "outline"}
+            onClick={toggleAvailability}
+            disabled={isTogglingAvailability}
+            className={deliveryPerson.is_available ? "bg-green-600 hover:bg-green-700" : "border-red-500 text-red-600 hover:bg-red-50"}
+          >
+            {isTogglingAvailability ? (
+              <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+            ) : (
+              <Power className="w-4 h-4 mr-2" />
+            )}
+            {deliveryPerson.is_available ? "Available" : "Offline"}
+          </Button>
+          <Button variant="outline" onClick={handleLogout}>
+            Logout
+          </Button>
+        </div>
       </div>
+
+      {/* Availability Status Banner */}
+      {!deliveryPerson.is_available && (
+        <motion.div
+          initial={{ opacity: 0, y: -20 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="bg-orange-50 border-l-4 border-orange-400 p-4 rounded-lg"
+        >
+          <div className="flex items-start gap-3">
+            <AlertTriangle className="w-5 h-5 text-orange-600 mt-0.5" />
+            <div>
+              <h3 className="font-semibold text-orange-900">You are currently OFFLINE</h3>
+              <p className="text-sm text-orange-700 mt-1">
+                You will not receive notifications for new orders. Toggle the availability button to go online.
+              </p>
+            </div>
+          </div>
+        </motion.div>
+      )}
 
       {/* Delivery Statistics */}
       <DeliveryStats deliveryPerson={deliveryPerson} />
@@ -544,8 +612,8 @@ export default function Delivery() {
       {/* AI Delivery Assistant */}
       <DeliveryAI deliveryPerson={deliveryPerson} orders={assignedOrders} />
 
-      {/* Available Orders to Accept */}
-      {availableOrders.length > 0 && (
+      {/* Available Orders to Accept - Only show if available */}
+      {deliveryPerson.is_available && availableOrders.length > 0 && (
         <div className="space-y-4">
           <div className="flex items-center gap-2">
             <h2 className="text-xl font-semibold">Available Orders</h2>
