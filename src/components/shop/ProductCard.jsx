@@ -16,16 +16,7 @@ export default function ProductCard({ product, cartQuantity, onAddToCart, onUpda
   const [isAddingToWishlist, setIsAddingToWishlist] = useState(false);
   
   const hostelStock = propHostelStock !== undefined ? propHostelStock : product.stock_quantity || 0;
-
-  // Get hostel-specific price if available
-  const getProductPrice = () => {
-    if (userHostel && product.hostel_pricing && typeof product.hostel_pricing[userHostel] === 'number') {
-      return product.hostel_pricing[userHostel];
-    }
-    return product.price;
-  };
-  
-  const displayPrice = getProductPrice();
+  const displayPrice = product.price;
 
   useEffect(() => {
     loadReviews();
