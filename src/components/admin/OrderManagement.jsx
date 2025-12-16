@@ -615,6 +615,11 @@ export default function OrderManagement() {
                           {order.items?.map((item, idx) => (
                             <div key={idx}>
                               • {item.product_name} x{item.quantity}
+                              {item.dhaba_name && (
+                                <span className="ml-1 text-amber-600 font-medium">
+                                  (from {item.dhaba_name})
+                                </span>
+                              )}
                             </div>
                           ))}
                         </div>
