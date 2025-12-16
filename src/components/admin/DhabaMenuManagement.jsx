@@ -18,9 +18,7 @@ export default function DhabaMenuManagement() {
   const [editingItem, setEditingItem] = useState(null);
   const [formData, setFormData] = useState({
     dhaba_name: "",
-    item_name: "",
-    price: "",
-    is_available: true
+    items: [{ item_name: "", price: "" }]
   });
   const [openDhabas, setOpenDhabas] = useState({});
   const [dhabaList, setDhabaList] = useState([]);
@@ -69,9 +67,7 @@ export default function DhabaMenuManagement() {
     setEditingItem(null);
     setFormData({
       dhaba_name: "",
-      item_name: "",
-      price: "",
-      is_available: true
+      items: [{ item_name: "", price: "" }]
     });
     setShowDialog(true);
   };
@@ -80,32 +76,102 @@ export default function DhabaMenuManagement() {
     setEditingItem(item);
     setFormData({
       dhaba_name: item.dhaba_name,
-      item_name: item.item_name,
-      price: item.price,
-      is_available: item.is_available
+      items: [{ item_name: item.item_name, price: item.price }]
     });
     setShowDialog(true);
   };
 
+  const addItemRow = () => {
+    setFormData({
+      ...formData,
+      items: [...formData.items, { item_name: "", price: "" }]
+    });
+  };
+
+  const removeItemRow = (index) => {
+    const newItems = formData.items.filter((_, i) => i !== index);
+    setFormData({ ...formData, items: newItems });
+  };
+
+  const updateItemRow = (index, field, value) => {
+    const newItems = [...formData.items];
+    newItems[index][field] = value;
+    setFormData({ ...formData, items: newItems });
+  };
+
   const handleSave = async () => {
     try {
-      const data = {
-        dhaba_name: formData.dhaba_name,
-        item_name: formData.item_name,
-        price: parseFloat(formData.price),
-        is_available: formData.is_available
-      };
+      if (!formData.dhaba_name) {
+        alert("Please select a dhaba name");
+        return;
+      }
 
       if (editingItem) {
-        await base44.entities.DhabaMenu.update(editingItem.id, data);
+        // Update single item
+        await base44.entities.DhabaMenu.update(editingItem.id, {
+          dhaba_name: formData.dhaba_name,
+          item_name: formData.items[0].item_name,
+          price: parseFloat(formData.items[0].price),
+          is_available: true
+        });
       } else {
-        await base44.entities.DhabaMenu.create(data);
+        // Create multiple items
+        for (const item of formData.items) {
+          if (item.item_name && item.price) {
+            await base44.entities.DhabaMenu.create({
+              dhaba_name: formData.dhaba_name,
+              item_name: item.item_name,
+              price: parseFloat(item.price),
+              is_available: true
+            });
+          }
+        }
       }
 
       setShowDialog(false);
       loadMenuItems();
+      loadDhabas();
     } catch (error) {
-      console.error("Error saving menu item:", error);
+      console.error("Error saving menu items:", error);
+      alert("Error saving items. Please try again.");
+    }
+  };
+
+  const handleDialogFileUpload = async (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    if (!formData.dhaba_name) {
+      alert("Please select a dhaba name first");
+      e.target.value = "";
+      return;
+    }
+
+    try {
+      const data = await file.arrayBuffer();
+      const workbook = XLSX.read(data);
+      const worksheet = workbook.Sheets[workbook.SheetNames[0]];
+      const jsonData = XLSX.utils.sheet_to_json(worksheet);
+
+      // Extract items from uploaded file
+      const newItems = jsonData.map(row => ({
+        item_name: row['Item Name'] || row.item_name || "",
+        price: row['Price'] || row.price || ""
+      })).filter(item => item.item_name && item.price);
+
+      if (newItems.length === 0) {
+        alert("No valid items found in file. Please check format: Item Name, Price");
+        e.target.value = "";
+        return;
+      }
+
+      setFormData({ ...formData, items: newItems });
+      alert(`Loaded ${newItems.length} items from file`);
+      e.target.value = "";
+    } catch (error) {
+      console.error("Error reading file:", error);
+      alert("Error reading file. Please check format.");
+      e.target.value = "";
     }
   };
 
@@ -300,13 +366,13 @@ export default function DhabaMenuManagement() {
       </Dialog>
 
       <Dialog open={showDialog} onOpenChange={setShowDialog}>
-        <DialogContent>
+        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle>{editingItem ? "Edit Menu Item" : "Add Menu Item"}</DialogTitle>
+            <DialogTitle>{editingItem ? "Edit Menu Item" : "Add Menu Items"}</DialogTitle>
           </DialogHeader>
           <div className="space-y-4">
             <div>
-              <Label>Dhaba Name</Label>
+              <Label>Dhaba Name *</Label>
               <div className="flex gap-2">
                 <Select 
                   value={formData.dhaba_name} 
@@ -317,6 +383,7 @@ export default function DhabaMenuManagement() {
                       setFormData({ ...formData, dhaba_name: value });
                     }
                   }}
+                  disabled={editingItem}
                 >
                   <SelectTrigger>
                     <SelectValue placeholder="Select Dhaba" />
@@ -333,28 +400,93 @@ export default function DhabaMenuManagement() {
                 </Select>
               </div>
             </div>
-            <div>
-              <Label>Item Name</Label>
-              <Input
-                value={formData.item_name}
-                onChange={(e) => setFormData({ ...formData, item_name: e.target.value })}
-                placeholder="e.g., Aaloo Paratha, Chai"
-              />
-            </div>
-            <div>
-              <Label>Price (₹)</Label>
-              <Input
-                type="number"
-                step="0.01"
-                value={formData.price}
-                onChange={(e) => setFormData({ ...formData, price: e.target.value })}
-              />
+
+            {!editingItem && (
+              <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
+                <div className="flex items-center justify-between mb-2">
+                  <Label className="text-sm font-medium text-blue-900">Upload Items (Excel/CSV)</Label>
+                  <label>
+                    <Button 
+                      type="button" 
+                      size="sm" 
+                      variant="outline" 
+                      className="border-blue-300 text-blue-700 hover:bg-blue-100"
+                      asChild
+                    >
+                      <span>
+                        <Upload className="w-3 h-3 mr-2" />
+                        Upload File
+                      </span>
+                    </Button>
+                    <input
+                      type="file"
+                      accept=".xlsx,.xls,.csv"
+                      onChange={handleDialogFileUpload}
+                      className="hidden"
+                    />
+                  </label>
+                </div>
+                <p className="text-xs text-blue-700">
+                  Format: Columns should be "Item Name" and "Price"
+                </p>
+              </div>
+            )}
+
+            <div className="space-y-3">
+              <div className="flex items-center justify-between">
+                <Label>Items *</Label>
+                {!editingItem && (
+                  <Button
+                    type="button"
+                    size="sm"
+                    variant="outline"
+                    onClick={addItemRow}
+                    className="h-7"
+                  >
+                    <Plus className="w-3 h-3 mr-1" />
+                    Add Item
+                  </Button>
+                )}
+              </div>
+              
+              <div className="space-y-2 max-h-64 overflow-y-auto">
+                {formData.items.map((item, index) => (
+                  <div key={index} className="flex gap-2 items-start p-2 border rounded-lg bg-gray-50">
+                    <div className="flex-1">
+                      <Input
+                        placeholder="Item name (e.g., Chai, Aaloo Paratha)"
+                        value={item.item_name}
+                        onChange={(e) => updateItemRow(index, 'item_name', e.target.value)}
+                        className="mb-2"
+                      />
+                      <Input
+                        type="number"
+                        step="0.01"
+                        placeholder="Price (₹)"
+                        value={item.price}
+                        onChange={(e) => updateItemRow(index, 'price', e.target.value)}
+                      />
+                    </div>
+                    {!editingItem && formData.items.length > 1 && (
+                      <Button
+                        type="button"
+                        size="icon"
+                        variant="ghost"
+                        onClick={() => removeItemRow(index)}
+                        className="text-red-600 hover:text-red-700 hover:bg-red-50"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </Button>
+                    )}
+                  </div>
+                ))}
+              </div>
             </div>
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setShowDialog(false)}>Cancel</Button>
             <Button onClick={handleSave} className="bg-emerald-600 hover:bg-emerald-700">
-              {editingItem ? "Update" : "Add"}
+              {editingItem ? "Update" : `Add ${formData.items.length} Item(s)`}
             </Button>
           </DialogFooter>
         </DialogContent>
