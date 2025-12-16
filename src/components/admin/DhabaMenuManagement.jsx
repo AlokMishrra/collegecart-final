@@ -1,12 +1,13 @@
 import React, { useState, useEffect } from "react";
 import { base44 } from "@/api/base44Client";
-import { Plus, Edit, Trash2, Upload, Download } from "lucide-react";
+import { Plus, Edit, Trash2, Upload, Download, ChevronDown } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import * as XLSX from "xlsx";
 
 export default function DhabaMenuManagement() {
@@ -20,6 +21,7 @@ export default function DhabaMenuManagement() {
     price: "",
     is_available: true
   });
+  const [openDhabas, setOpenDhabas] = useState({});
 
   useEffect(() => {
     loadMenuItems();
@@ -138,6 +140,10 @@ export default function DhabaMenuManagement() {
     return acc;
   }, {});
 
+  const toggleDhaba = (dhabaName) => {
+    setOpenDhabas(prev => ({ ...prev, [dhabaName]: !prev[dhabaName] }));
+  };
+
   return (
     <div className="space-y-6">
       <div className="flex justify-between items-center">
@@ -180,46 +186,63 @@ export default function DhabaMenuManagement() {
         </Card>
       ) : (
         Object.entries(groupedMenu).map(([dhabaName, items]) => (
-          <Card key={dhabaName}>
-            <CardHeader>
-              <CardTitle className="text-lg">{dhabaName}</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Item Name</TableHead>
-                    <TableHead>Price</TableHead>
-                    <TableHead>Status</TableHead>
-                    <TableHead>Actions</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {items.map(item => (
-                    <TableRow key={item.id}>
-                      <TableCell className="font-medium">{item.item_name}</TableCell>
-                      <TableCell>₹{item.price.toFixed(2)}</TableCell>
-                      <TableCell>
-                        <span className={item.is_available ? "text-green-600" : "text-red-600"}>
-                          {item.is_available ? "Available" : "Unavailable"}
-                        </span>
-                      </TableCell>
-                      <TableCell>
-                        <div className="flex gap-2">
-                          <Button size="sm" variant="outline" onClick={() => handleEdit(item)}>
-                            <Edit className="w-3 h-3" />
-                          </Button>
-                          <Button size="sm" variant="outline" onClick={() => handleDelete(item.id)}>
-                            <Trash2 className="w-3 h-3 text-red-600" />
-                          </Button>
-                        </div>
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            </CardContent>
-          </Card>
+          <Collapsible key={dhabaName} open={openDhabas[dhabaName]} onOpenChange={() => toggleDhaba(dhabaName)}>
+            <Card>
+              <CollapsibleTrigger className="w-full">
+                <CardHeader className="cursor-pointer hover:bg-gray-50 transition-colors">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-3">
+                      <div className="w-10 h-10 bg-gradient-to-br from-amber-500 to-orange-500 rounded-lg flex items-center justify-center">
+                        <span className="text-white text-lg">🍽️</span>
+                      </div>
+                      <div className="text-left">
+                        <CardTitle className="text-lg">{dhabaName}</CardTitle>
+                        <p className="text-sm text-gray-600">{items.length} items available</p>
+                      </div>
+                    </div>
+                    <ChevronDown className={`w-5 h-5 text-gray-500 transition-transform ${openDhabas[dhabaName] ? 'rotate-180' : ''}`} />
+                  </div>
+                </CardHeader>
+              </CollapsibleTrigger>
+              <CollapsibleContent>
+                <CardContent>
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>Item Name</TableHead>
+                        <TableHead>Price</TableHead>
+                        <TableHead>Status</TableHead>
+                        <TableHead>Actions</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {items.map(item => (
+                        <TableRow key={item.id}>
+                          <TableCell className="font-medium">{item.item_name}</TableCell>
+                          <TableCell>₹{item.price.toFixed(2)}</TableCell>
+                          <TableCell>
+                            <span className={item.is_available ? "text-green-600" : "text-red-600"}>
+                              {item.is_available ? "Available" : "Unavailable"}
+                            </span>
+                          </TableCell>
+                          <TableCell>
+                            <div className="flex gap-2">
+                              <Button size="sm" variant="outline" onClick={() => handleEdit(item)}>
+                                <Edit className="w-3 h-3" />
+                              </Button>
+                              <Button size="sm" variant="outline" onClick={() => handleDelete(item.id)}>
+                                <Trash2 className="w-3 h-3 text-red-600" />
+                              </Button>
+                            </div>
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                </CardContent>
+              </CollapsibleContent>
+            </Card>
+          </Collapsible>
         ))
       )}
 

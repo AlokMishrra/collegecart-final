@@ -77,6 +77,7 @@ export default function Delivery() {
   const [orderToCancel, setOrderToCancel] = useState(null);
   const [isTogglingAvailability, setIsTogglingAvailability] = useState(false);
   const [cheaperOptions, setCheaperOptions] = useState({});
+  const [itemLocations, setItemLocations] = useState({});
 
   const loadAssignedOrders = useCallback(async (deliveryPersonId) => {
     try {
@@ -254,8 +255,45 @@ export default function Delivery() {
   useEffect(() => {
     if (assignedOrders.length > 0) {
       findCheaperOptions();
+      analyzeItemLocations();
     }
   }, [assignedOrders]);
+
+  const analyzeItemLocations = async () => {
+    try {
+      const menuItems = await base44.entities.DhabaMenu.filter({ is_available: true });
+      const locations = {};
+      
+      for (const order of assignedOrders) {
+        const orderLocations = [];
+        
+        for (const item of order.items || []) {
+          // Find matching menu items
+          const matches = menuItems.filter(menu => 
+            menu.item_name.toLowerCase().includes(item.product_name.toLowerCase()) ||
+            item.product_name.toLowerCase().includes(menu.item_name.toLowerCase())
+          );
+          
+          if (matches.length > 0) {
+            const dhabas = matches.map(m => ({ dhaba: m.dhaba_name, price: m.price }));
+            orderLocations.push({
+              item_name: item.product_name,
+              quantity: item.quantity,
+              available_at: dhabas
+            });
+          }
+        }
+        
+        if (orderLocations.length > 0) {
+          locations[order.id] = orderLocations;
+        }
+      }
+      
+      setItemLocations(locations);
+    } catch (error) {
+      console.error("Error analyzing item locations:", error);
+    }
+  };
 
   const findCheaperOptions = async () => {
     try {
@@ -959,6 +997,41 @@ export default function Delivery() {
                               ))}
                             </div>
                           </div>
+
+                          {/* Item Location Analysis */}
+                          {itemLocations[order.id] && itemLocations[order.id].length > 0 && (
+                            <div className="bg-blue-50 border-l-4 border-blue-400 p-4 rounded-lg mb-4">
+                              <div className="flex items-start gap-3">
+                                <div className="flex-shrink-0 w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center">
+                                  <span className="text-blue-600 text-xl">📍</span>
+                                </div>
+                                <div className="flex-1">
+                                  <h4 className="font-semibold text-blue-900 mb-2">Item Availability in Dhaba Menu</h4>
+                                  <div className="space-y-2">
+                                    {itemLocations[order.id].map((loc, idx) => (
+                                      <div key={idx} className="bg-white rounded-lg p-3 border border-blue-200">
+                                        <div className="flex items-center justify-between mb-2">
+                                          <span className="font-medium text-gray-900">{loc.item_name} × {loc.quantity}</span>
+                                        </div>
+                                        <div className="space-y-1">
+                                          <p className="text-xs text-gray-600 font-medium">Available at:</p>
+                                          {loc.available_at.map((d, i) => (
+                                            <div key={i} className="flex items-center justify-between text-sm">
+                                              <span className="text-blue-700">🍽️ {d.dhaba}</span>
+                                              <span className="text-green-600 font-medium">₹{d.price.toFixed(2)}</span>
+                                            </div>
+                                          ))}
+                                        </div>
+                                      </div>
+                                    ))}
+                                  </div>
+                                  <p className="text-xs text-blue-700 mt-3">
+                                    💡 System analysis: These items are available at the listed dhabas
+                                  </p>
+                                </div>
+                              </div>
+                            </div>
+                          )}
 
                           {/* Cheaper Options Alert */}
                           {cheaperOptions[order.id] && cheaperOptions[order.id].length > 0 && (
