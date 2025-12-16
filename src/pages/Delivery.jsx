@@ -239,23 +239,26 @@ export default function Delivery() {
 
   useEffect(() => {
     let intervalId;
-    if (deliveryPerson) {
-      // Poll for new orders every 5 seconds
+    if (deliveryPerson && !updatingOrderId && !acceptingOrderId && !cancellingOrderId) {
+      // Poll for new orders every 10 seconds (only when not performing actions)
       intervalId = setInterval(() => {
         loadAssignedOrders(deliveryPerson.id);
         loadAvailableOrders();
-      }, 5000);
+      }, 10000);
     }
-    // Cleanup on unmount
     return () => {
       if (intervalId) clearInterval(intervalId);
     };
-  }, [deliveryPerson?.id]);
+  }, [deliveryPerson?.id, updatingOrderId, acceptingOrderId, cancellingOrderId]);
 
   useEffect(() => {
     if (assignedOrders.length > 0) {
-      findCheaperOptions();
-      analyzeItemLocations();
+      // Debounce expensive analysis operations
+      const timer = setTimeout(() => {
+        findCheaperOptions();
+        analyzeItemLocations();
+      }, 300);
+      return () => clearTimeout(timer);
     }
   }, [assignedOrders]);
 
@@ -475,37 +478,22 @@ export default function Delivery() {
   const acceptOrder = async (orderId) => {
     setAcceptingOrderId(orderId);
     try {
-      await Order.update(orderId, {
-        delivery_person_id: deliveryPerson.id,
-        status: "preparing"
-      });
-
-      // Update delivery person's current orders
-      const updatedOrders = [...(deliveryPerson.current_orders || []), orderId];
-      await DeliveryPerson.update(deliveryPerson.id, {
-        current_orders: updatedOrders
-      });
-
-      // Send notification to admin
-      try {
-        const currentUser = await base44.auth.me();
-        if (currentUser.role === 'admin') {
-          await base44.entities.Notification.create({
-            user_id: currentUser.id,
-            title: "Order Accepted by Delivery Partner",
-            message: `${deliveryPerson.name} has accepted order #${availableOrders.find(o => o.id === orderId)?.order_number}`,
-            type: "info"
-          });
-        }
-      } catch (notifError) {
-        console.error("Error sending admin notification:", notifError);
-      }
-
-      // Reload orders
-      await Promise.all([
-        loadAssignedOrders(deliveryPerson.id),
-        loadAvailableOrders()
-      ]);
+      const order = availableOrders.find(o => o.id === orderId);
+      
+      // Update UI immediately
+      setAvailableOrders(prev => prev.filter(o => o.id !== orderId));
+      setAssignedOrders(prev => [...prev, { ...order, status: "preparing", delivery_person_id: deliveryPerson.id }]);
+      
+      // Background updates
+      Promise.all([
+        Order.update(orderId, {
+          delivery_person_id: deliveryPerson.id,
+          status: "preparing"
+        }),
+        DeliveryPerson.update(deliveryPerson.id, {
+          current_orders: [...(deliveryPerson.current_orders || []), orderId]
+        })
+      ]).catch(error => console.error("Error in background update:", error));
 
     } catch (error) {
       console.error("Error accepting order:", error);
@@ -517,19 +505,24 @@ export default function Delivery() {
   const markOutForDelivery = async (orderId) => {
     setUpdatingOrderId(orderId);
     try {
-      await Order.update(orderId, { status: "out_for_delivery" });
-
       const order = assignedOrders.find(o => o.id === orderId);
-      if (order) {
-        await Notification.create({
+      
+      // Update UI immediately
+      setAssignedOrders(prev => prev.map(o => 
+        o.id === orderId ? { ...o, status: "out_for_delivery" } : o
+      ));
+      
+      // Background updates
+      Promise.all([
+        Order.update(orderId, { status: "out_for_delivery" }),
+        order && Notification.create({
           user_id: order.user_id,
           title: "Order Out for Delivery!",
           message: `Your order #${order.order_number} is on its way!`,
           type: "info"
-        });
-      }
+        })
+      ]).catch(error => console.error("Error in background update:", error));
 
-      await loadAssignedOrders(deliveryPerson.id);
     } catch (error) {
       console.error("Error marking order out for delivery:", error);
     } finally {
@@ -540,94 +533,36 @@ export default function Delivery() {
   const markOrderDelivered = async (orderId) => {
     setUpdatingOrderId(orderId);
     try {
-      await Order.update(orderId, { status: "delivered" });
-
       const order = assignedOrders.find(o => o.id === orderId);
-      if (order) {
-        // Update performance record with delivery time
-        try {
-          const performanceRecords = await base44.entities.DeliveryPerformance.filter({
-            order_id: orderId,
-            delivery_person_id: deliveryPerson.id
-          });
-          
-          if (performanceRecords[0]) {
-            const pickupTime = new Date(performanceRecords[0].pickup_time);
-            const deliveryTime = new Date();
-            const durationMinutes = Math.round((deliveryTime - pickupTime) / (1000 * 60));
-            
-            await base44.entities.DeliveryPerformance.update(performanceRecords[0].id, {
-              delivery_time: deliveryTime.toISOString(),
-              duration_minutes: durationMinutes,
-              order_value: order.total_amount
-            });
-          }
-        } catch (perfError) {
-          console.error("Error updating performance:", perfError);
-        }
+      if (!order) return;
 
-        await Notification.create({
+      const commission = order.total_amount * 0.10;
+      const newTotalDeliveries = (deliveryPerson.total_deliveries || 0) + 1;
+      const newTotalEarnings = (deliveryPerson.total_earnings || 0) + commission;
+
+      // Update UI immediately
+      setAssignedOrders(prev => prev.filter(o => o.id !== orderId));
+      setDeliveryPerson(prev => ({
+        ...prev,
+        total_deliveries: newTotalDeliveries,
+        total_earnings: newTotalEarnings
+      }));
+
+      // All background updates in parallel
+      Promise.all([
+        Order.update(orderId, { status: "delivered" }),
+        DeliveryPerson.update(deliveryPerson.id, {
+          total_deliveries: newTotalDeliveries,
+          total_earnings: newTotalEarnings,
+          current_orders: (deliveryPerson.current_orders || []).filter(id => id !== orderId)
+        }),
+        Notification.create({
           user_id: order.user_id,
           title: "Order Delivered!",
           message: `Your order #${order.order_number} has been delivered. Thank you for choosing CollegeCart!`,
           type: "success"
-        });
-
-        // Send delivery confirmation email
-        try {
-          const user = await base44.entities.User.filter({ id: order.user_id });
-          if (user[0]?.email) {
-            await base44.integrations.Core.SendEmail({
-              from_name: "CollegeCart",
-              to: user[0].email,
-              subject: `Order ${order.order_number} - Delivered Successfully! 🎉`,
-              body: `
-                <h2>Order Delivered!</h2>
-                <p>Hi ${order.customer_name},</p>
-                <p>Your order <strong>#${order.order_number}</strong> has been successfully delivered!</p>
-                <p>Order Total: ₹${order.total_amount.toFixed(2)}</p>
-                <p>We hope you enjoy your items! 🎉</p>
-                <br/>
-                <p>Thank you for choosing CollegeCart. We look forward to serving you again!</p>
-                <br/>
-                <p>Best regards,<br/>CollegeCart Team</p>
-              `
-            });
-          }
-        } catch (emailError) {
-          console.error("Error sending email:", emailError);
-        }
-
-        // Award loyalty points
-        try {
-          await base44.functions.invoke('awardLoyaltyPoints', { orderId: orderId });
-        } catch (error) {
-          console.error("Error awarding loyalty points:", error);
-        }
-      }
-
-      if (deliveryPerson) {
-        // Calculate 10% commission from the order total
-        const commission = order.total_amount * 0.10;
-        const newTotalDeliveries = (deliveryPerson.total_deliveries || 0) + 1;
-        const newTotalEarnings = (deliveryPerson.total_earnings || 0) + commission;
-
-        await DeliveryPerson.update(deliveryPerson.id, {
-          total_deliveries: newTotalDeliveries,
-          total_earnings: newTotalEarnings,
-          current_orders: (deliveryPerson.current_orders || []).filter(id => id !== orderId)
-        });
-
-        // Update local state
-        setDeliveryPerson(prev => ({
-          ...prev,
-          total_deliveries: newTotalDeliveries,
-          total_earnings: newTotalEarnings
-        }));
-
-        // Refresh orders locally for immediate UI update
-        setAssignedOrders(prevOrders => prevOrders.filter(o => o.id !== orderId));
-      }
+        })
+      ]).catch(error => console.error("Error in background update:", error));
 
     } catch (error) {
       console.error("Error marking order as delivered:", error);
@@ -645,33 +580,33 @@ export default function Delivery() {
     if (!orderToCancel) return;
 
     const orderId = orderToCancel.id;
+    const order = assignedOrders.find(o => o.id === orderId);
+    
     setShowCancelDialog(false);
     setCancellingOrderId(orderId);
+    
     try {
-      await Order.update(orderId, { 
-        status: "cancelled",
-        delivery_person_id: null
-      });
-
-      const order = assignedOrders.find(o => o.id === orderId);
-      if (order) {
-        await Notification.create({
+      // Update UI immediately
+      setAssignedOrders(prev => prev.filter(o => o.id !== orderId));
+      setAvailableOrders(prev => [...prev, { ...order, status: "cancelled", delivery_person_id: null }]);
+      
+      // Background updates
+      Promise.all([
+        Order.update(orderId, { 
+          status: "cancelled",
+          delivery_person_id: null
+        }),
+        DeliveryPerson.update(deliveryPerson.id, {
+          current_orders: (deliveryPerson.current_orders || []).filter(id => id !== orderId)
+        }),
+        order && Notification.create({
           user_id: order.user_id,
           title: "Order Cancelled",
           message: `Your order #${order.order_number} has been cancelled by the delivery partner. You will be contacted shortly.`,
           type: "error"
-        });
-      }
+        })
+      ]).catch(error => console.error("Error in background update:", error));
 
-      if (deliveryPerson) {
-        await DeliveryPerson.update(deliveryPerson.id, {
-          current_orders: (deliveryPerson.current_orders || []).filter(id => id !== orderId)
-        });
-
-        setAssignedOrders(prevOrders => prevOrders.filter(o => o.id !== orderId));
-      }
-
-      await loadAvailableOrders();
     } catch (error) {
       console.error("Error cancelling order:", error);
     } finally {
