@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, lazy, Suspense } from "react";
 import { Product } from "@/entities/Product";
 import { Category } from "@/entities/Category";
 import { CartItem } from "@/entities/CartItem";
@@ -14,15 +14,16 @@ import { motion, AnimatePresence } from "framer-motion";
 import { Link } from "react-router-dom";
 import { createPageUrl } from "@/utils";
 
-import QuickAddToCart from "../components/shop/QuickAddToCart";
-  import EnhancedShopHero from "../components/shop/EnhancedShopHero";
-  import CategorySection from "../components/shop/CategorySection";
-  import CategoryFilter from "../components/shop/CategoryFilter";
-  import ProductCard from "../components/shop/ProductCard";
-  import HostelSelector from "../components/shop/HostelSelector";
-  import RecommendationEngine from "../components/shop/RecommendationEngine";
-  import EnhancedSearch from "../components/shop/EnhancedSearch";
-  import BannerCarousel from "../components/shop/BannerCarousel";
+// Lazy load heavy components
+const QuickAddToCart = lazy(() => import("../components/shop/QuickAddToCart"));
+const EnhancedShopHero = lazy(() => import("../components/shop/EnhancedShopHero"));
+const CategorySection = lazy(() => import("../components/shop/CategorySection"));
+const CategoryFilter = lazy(() => import("../components/shop/CategoryFilter"));
+const ProductCard = lazy(() => import("../components/shop/ProductCard"));
+const HostelSelector = lazy(() => import("../components/shop/HostelSelector"));
+const RecommendationEngine = lazy(() => import("../components/shop/RecommendationEngine"));
+const EnhancedSearch = lazy(() => import("../components/shop/EnhancedSearch"));
+const BannerCarousel = lazy(() => import("../components/shop/BannerCarousel"));
 
 export default function Shop() {
   const [products, setProducts] = useState([]);
@@ -305,13 +306,21 @@ export default function Shop() {
   return (
     <div className="max-w-7xl mx-auto space-y-8 pb-8">
       {/* Hostel Selector Modal */}
-      {showHostelSelector && <HostelSelector onHostelSelected={handleHostelSelected} />}
+      {showHostelSelector && (
+        <Suspense fallback={<div className="fixed inset-0 bg-black/50 flex items-center justify-center"><Skeleton className="w-96 h-64" /></div>}>
+          <HostelSelector onHostelSelected={handleHostelSelected} />
+        </Suspense>
+      )}
 
       {/* Enhanced Header */}
-      <EnhancedShopHero />
+      <Suspense fallback={<Skeleton className="w-full h-48 rounded-2xl" />}>
+        <EnhancedShopHero />
+      </Suspense>
 
       {/* Banner Carousel */}
-      <BannerCarousel />
+      <Suspense fallback={<Skeleton className="w-full h-48 rounded-2xl" />}>
+        <BannerCarousel />
+      </Suspense>
 
       {/* Change Hostel Button */}
       {user?.selected_hostel && (
@@ -343,36 +352,42 @@ export default function Shop() {
       )}
 
       {/* Enhanced Search */}
-      <EnhancedSearch
-        products={products}
-        onSearch={setSearchQuery}
-        filters={filters}
-        onFilterChange={setFilters}
-        sortBy={sortBy}
-        onSortChange={setSortBy}
-      />
+      <Suspense fallback={<Skeleton className="w-full h-24 rounded-2xl" />}>
+        <EnhancedSearch
+          products={products}
+          onSearch={setSearchQuery}
+          filters={filters}
+          onFilterChange={setFilters}
+          sortBy={sortBy}
+          onSortChange={setSortBy}
+        />
+      </Suspense>
 
       {/* Category Filter */}
-      <CategoryFilter
-        categories={categories}
-        selectedCategory={selectedCategory}
-        onSelectCategory={setSelectedCategory}
-      />
+      <Suspense fallback={<Skeleton className="w-full h-16 rounded-xl" />}>
+        <CategoryFilter
+          categories={categories}
+          selectedCategory={selectedCategory}
+          onSelectCategory={setSelectedCategory}
+        />
+      </Suspense>
 
       {/* Personalized Recommendations */}
       {!searchQuery.trim() && !selectedCategory && filters.availability === "all" && filters.rating === "all" && user && (
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.2 }}
-        >
-          <RecommendationEngine 
-            user={user} 
-            onAddToCart={addToCart}
-            getCartQuantity={getCartQuantity}
-            context="shop"
-          />
-        </motion.div>
+        <Suspense fallback={<Skeleton className="w-full h-64 rounded-2xl" />}>
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.2 }}
+          >
+            <RecommendationEngine 
+              user={user} 
+              onAddToCart={addToCart}
+              getCartQuantity={getCartQuantity}
+              context="shop"
+            />
+          </motion.div>
+        </Suspense>
       )}
 
       {/* Category Sections */}
@@ -413,22 +428,23 @@ export default function Shop() {
               <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
                 <AnimatePresence>
                   {filteredProducts.map((product, index) => (
-                    <motion.div
-                      key={product.id}
-                      initial={{ opacity: 0, scale: 0.9 }}
-                      animate={{ opacity: 1, scale: 1 }}
-                      exit={{ opacity: 0, scale: 0.9 }}
-                      transition={{ delay: index * 0.05 }}
-                    >
-                      <ProductCard
-                        product={product}
-                        cartQuantity={getCartQuantity(product.id)}
-                        onAddToCart={addToCart}
-                        onUpdateQuantity={updateCartQuantity}
-                        hostelStock={getHostelStock(product)}
-                        isInStock={isProductInStock(product)}
-                      />
-                    </motion.div>
+                    <Suspense key={product.id} fallback={<Skeleton className="h-80 rounded-2xl" />}>
+                      <motion.div
+                        initial={{ opacity: 0, scale: 0.9 }}
+                        animate={{ opacity: 1, scale: 1 }}
+                        exit={{ opacity: 0, scale: 0.9 }}
+                        transition={{ delay: index * 0.05 }}
+                      >
+                        <ProductCard
+                          product={product}
+                          cartQuantity={getCartQuantity(product.id)}
+                          onAddToCart={addToCart}
+                          onUpdateQuantity={updateCartQuantity}
+                          hostelStock={getHostelStock(product)}
+                          isInStock={isProductInStock(product)}
+                        />
+                      </motion.div>
+                    </Suspense>
                   ))}
                 </AnimatePresence>
               </div>
@@ -438,29 +454,32 @@ export default function Shop() {
       ) : (
         <div className="space-y-12">
           {categories.filter(category => (categorizedProducts[category.id] || []).length > 0).map((category, idx) => (
-            <motion.div
-              key={category.id}
-              initial={{ opacity: 0, y: 30 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: idx * 0.1 }}
-            >
-              <CategorySection
-                category={category}
-                products={categorizedProducts[category.id] || []}
-                onAddToCart={addToCart}
-                onUpdateQuantity={updateCartQuantity}
-                getCartQuantity={getCartQuantity}
-                getHostelStock={getHostelStock}
-                isProductInStock={isProductInStock}
-              />
-            </motion.div>
+            <Suspense key={category.id} fallback={<Skeleton className="w-full h-96 rounded-2xl" />}>
+              <motion.div
+                initial={{ opacity: 0, y: 30 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: idx * 0.1 }}
+              >
+                <CategorySection
+                  category={category}
+                  products={categorizedProducts[category.id] || []}
+                  onAddToCart={addToCart}
+                  onUpdateQuantity={updateCartQuantity}
+                  getCartQuantity={getCartQuantity}
+                  getHostelStock={getHostelStock}
+                  isProductInStock={isProductInStock}
+                />
+              </motion.div>
+            </Suspense>
           ))}
         </div>
       )}
 
       {/* Quick Add to Cart */}
       {user && cartItems.length > 0 && (
-        <QuickAddToCart cartItems={cartItems} />
+        <Suspense fallback={null}>
+          <QuickAddToCart cartItems={cartItems} />
+        </Suspense>
       )}
     </div>
   );
