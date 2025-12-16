@@ -175,7 +175,6 @@ export default function Shop() {
       return;
     }
 
-    // Check hostel stock before adding
     if (quantityChange > 0 && !isProductInStock(product)) {
       await Notification.create({
         user_id: user.id,
@@ -186,30 +185,40 @@ export default function Shop() {
       return;
     }
 
+    const existingItem = cartItems.find(item => item.product_id === product.id);
+    const hostelStock = getHostelStock(product);
+    const newQuantity = existingItem ? existingItem.quantity + quantityChange : 1;
+    
+    if (newQuantity > hostelStock) {
+      await Notification.create({
+        user_id: user.id,
+        title: "Stock Limit Reached",
+        message: `Only ${hostelStock} units available in your hostel`,
+        type: "warning"
+      });
+      return;
+    }
+
+    // Optimistic update - update UI immediately
+    if (existingItem) {
+      if (newQuantity <= 0) {
+        setCartItems(prev => prev.filter(item => item.product_id !== product.id));
+      } else {
+        setCartItems(prev => prev.map(item => 
+          item.product_id === product.id ? { ...item, quantity: newQuantity } : item
+        ));
+      }
+    } else if (quantityChange > 0) {
+      setCartItems(prev => [...prev, { product_id: product.id, user_id: user.id, quantity: 1, id: 'temp-' + Date.now() }]);
+    }
+
+    // Background API call
     try {
-      const existingItem = cartItems.find(item => item.product_id === product.id);
-      const hostelStock = getHostelStock(product);
-      
       if (existingItem) {
-        const newQuantity = existingItem.quantity + quantityChange;
-        
-        // Check if new quantity exceeds hostel stock
-        if (newQuantity > hostelStock) {
-          await Notification.create({
-            user_id: user.id,
-            title: "Stock Limit Reached",
-            message: `Only ${hostelStock} units available in your hostel`,
-            type: "warning"
-          });
-          return;
-        }
-        
         if (newQuantity <= 0) {
           await CartItem.delete(existingItem.id);
         } else {
-          await CartItem.update(existingItem.id, {
-            quantity: newQuantity
-          });
+          await CartItem.update(existingItem.id, { quantity: newQuantity });
         }
       } else if (quantityChange > 0) {
         await CartItem.create({
@@ -218,19 +227,12 @@ export default function Shop() {
           quantity: 1
         });
       }
-
-      if (quantityChange > 0) {
-        await Notification.create({
-          user_id: user.id,
-          title: "Added to Cart",
-          message: `${product.name} has been added to your cart`,
-          type: "success"
-        });
-      }
-
+      
+      // Refresh cart in background
       loadCartItems(user.id);
     } catch (error) {
       console.error("Error updating cart:", error);
+      loadCartItems(user.id); // Revert on error
     }
   };
 
