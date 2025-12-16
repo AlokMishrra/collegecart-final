@@ -913,16 +913,67 @@ export default function Delivery() {
                           <div className="mb-4">
                             <p className="font-medium text-gray-900 mb-2">Order Items</p>
                             <div className="bg-gray-50 rounded-lg p-3 space-y-1.5">
-                              {order.items?.map((item, itemIndex) => (
-                                <div key={itemIndex} className="flex items-center gap-2">
-                                  <div className="w-1.5 h-1.5 rounded-full bg-emerald-600"></div>
-                                  <p className="text-sm text-gray-900 font-medium">
-                                    {item.product_name} <span className="text-gray-600">× {item.quantity}</span>
-                                  </p>
-                                </div>
-                              ))}
+                              {order.items?.map((item, itemIndex) => {
+                                const product = (async () => {
+                                  try {
+                                    const prods = await base44.entities.Product.filter({ id: item.product_id });
+                                    return prods[0];
+                                  } catch {
+                                    return null;
+                                  }
+                                })();
+                                
+                                return (
+                                  <div key={itemIndex}>
+                                    <div className="flex items-center gap-2">
+                                      <div className="w-1.5 h-1.5 rounded-full bg-emerald-600"></div>
+                                      <p className="text-sm text-gray-900 font-medium">
+                                        {item.product_name} <span className="text-gray-600">× {item.quantity}</span>
+                                        {item.dhaba_name && (
+                                          <span className="ml-2 text-xs bg-amber-100 text-amber-800 px-2 py-0.5 rounded">
+                                            from {item.dhaba_name}
+                                          </span>
+                                        )}
+                                      </p>
+                                    </div>
+                                  </div>
+                                );
+                              })}
                             </div>
                           </div>
+
+                          {/* Cheaper Options Alert */}
+                          {cheaperOptions[order.id] && cheaperOptions[order.id].length > 0 && (
+                            <div className="bg-amber-50 border-l-4 border-amber-400 p-4 rounded-lg mb-4">
+                              <div className="flex items-start gap-3">
+                                <div className="flex-shrink-0 w-10 h-10 bg-amber-100 rounded-full flex items-center justify-center">
+                                  <span className="text-amber-600 text-xl">💰</span>
+                                </div>
+                                <div className="flex-1">
+                                  <h4 className="font-semibold text-amber-900 mb-2">Cheaper Options Available!</h4>
+                                  <div className="space-y-2">
+                                    {cheaperOptions[order.id].map((opt, idx) => (
+                                      <div key={idx} className="bg-white rounded-lg p-3 border border-amber-200">
+                                        <div className="flex items-center justify-between mb-1">
+                                          <span className="font-medium text-gray-900">{opt.item_name}</span>
+                                          <span className="text-green-600 font-bold">Save ₹{opt.savings.toFixed(2)}</span>
+                                        </div>
+                                        <div className="text-sm text-gray-600">
+                                          <p>Current: ₹{opt.current_price.toFixed(2)} {opt.source_dhaba && `(from ${opt.source_dhaba})`}</p>
+                                          <p className="text-green-600 font-medium">
+                                            ✓ Get from {opt.cheaper_dhaba}: ₹{opt.cheaper_price.toFixed(2)}
+                                          </p>
+                                        </div>
+                                      </div>
+                                    ))}
+                                  </div>
+                                  <p className="text-xs text-amber-700 mt-3">
+                                    💡 Consider suggesting these cheaper alternatives to the customer
+                                  </p>
+                                </div>
+                              </div>
+                            </div>
+                          )}
 
                           <div className="flex items-center justify-between">
                             <div>
