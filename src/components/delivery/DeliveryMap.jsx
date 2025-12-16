@@ -53,8 +53,10 @@ export default function DeliveryMap({ showAllDeliveryPersons = true, orderId = n
   const [center, setCenter] = useState([28.6139, 77.2090]); // Default: Delhi
 
   useEffect(() => {
-    loadLocations();
-    const interval = setInterval(loadLocations, 5000); // Refresh every 5 seconds
+    loadLocations().catch(err => console.error("Map load error:", err));
+    const interval = setInterval(() => {
+      loadLocations().catch(err => console.error("Map refresh error:", err));
+    }, 30000); // Refresh every 30 seconds
     return () => clearInterval(interval);
   }, []);
 
@@ -63,12 +65,18 @@ export default function DeliveryMap({ showAllDeliveryPersons = true, orderId = n
       const locations = await base44.entities.DeliveryLocation.filter({
         is_active: true
       });
+      
+      if (locations.length === 0) {
+        setDeliveryLocations([]);
+        return;
+      }
+      
       setDeliveryLocations(locations);
 
-      // Load delivery person details
-      const personIds = [...new Set(locations.map(l => l.delivery_person_id))];
+      // Load only if we have locations
+      const personIds = [...new Set(locations.map(l => l.delivery_person_id))].slice(0, 10);
       const personsData = await Promise.all(
-        personIds.map(id => base44.entities.DeliveryPerson.filter({ id }))
+        personIds.map(id => base44.entities.DeliveryPerson.filter({ id }).catch(() => []))
       );
       const personsMap = {};
       personsData.flat().forEach(person => {
@@ -76,19 +84,21 @@ export default function DeliveryMap({ showAllDeliveryPersons = true, orderId = n
       });
       setDeliveryPersons(personsMap);
 
-      // Load order details
-      const orderIds = orderId ? [orderId] : [...new Set(locations.map(l => l.order_id).filter(Boolean))];
-      const ordersData = await Promise.all(
-        orderIds.map(id => base44.entities.Order.filter({ id }))
-      );
-      const ordersMap = {};
-      ordersData.flat().forEach(order => {
-        ordersMap[order.id] = order;
-      });
-      setOrders(ordersMap);
+      // Load orders (limited)
+      const orderIds = orderId ? [orderId] : [...new Set(locations.map(l => l.order_id).filter(Boolean))].slice(0, 10);
+      if (orderIds.length > 0) {
+        const ordersData = await Promise.all(
+          orderIds.map(id => base44.entities.Order.filter({ id }).catch(() => []))
+        );
+        const ordersMap = {};
+        ordersData.flat().forEach(order => {
+          ordersMap[order.id] = order;
+        });
+        setOrders(ordersMap);
 
-      // Extract customer and dhaba locations from orders
-      await extractOrderLocations(ordersData.flat());
+        // Extract locations only for limited orders
+        await extractOrderLocations(ordersData.flat());
+      }
 
       // Set center to first active delivery person
       if (locations.length > 0) {
@@ -103,8 +113,10 @@ export default function DeliveryMap({ showAllDeliveryPersons = true, orderId = n
     const customers = [];
     const dhabas = [];
     
-    for (const order of ordersList) {
-      // Geocode customer address (simplified - using Delhi coordinates with offset)
+    // Limit processing
+    const limitedOrders = ordersList.slice(0, 10);
+    
+    for (const order of limitedOrders) {
       const customerCoords = geocodeAddress(order.delivery_address);
       customers.push({
         orderId: order.id,
@@ -115,8 +127,9 @@ export default function DeliveryMap({ showAllDeliveryPersons = true, orderId = n
         coords: customerCoords
       });
 
-      // Extract dhaba locations from order items
-      for (const item of order.items || []) {
+      // Limit items per order
+      const items = (order.items || []).slice(0, 5);
+      for (const item of items) {
         if (item.dhaba_name) {
           const dhabaCoords = geocodeDhaba(item.dhaba_name);
           if (!dhabas.find(d => d.name === item.dhaba_name)) {
@@ -127,7 +140,7 @@ export default function DeliveryMap({ showAllDeliveryPersons = true, orderId = n
             });
           } else {
             const existing = dhabas.find(d => d.name === item.dhaba_name);
-            if (!existing.items.includes(item.product_name)) {
+            if (existing.items.length < 10 && !existing.items.includes(item.product_name)) {
               existing.items.push(item.product_name);
             }
           }

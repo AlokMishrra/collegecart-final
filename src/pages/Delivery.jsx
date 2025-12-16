@@ -81,10 +81,8 @@ export default function Delivery() {
 
   const loadAssignedOrders = useCallback(async (deliveryPersonId) => {
     try {
-      // Verify delivery person is not blocked before loading orders
       const persons = await DeliveryPerson.filter({ id: deliveryPersonId });
       if (persons.length > 0 && persons[0].is_blocked) {
-        // Person is blocked, clear everything and logout
         localStorage.removeItem('deliveryPerson');
         setDeliveryPerson(null);
         setAssignedOrders([]);
@@ -92,14 +90,15 @@ export default function Delivery() {
         return;
       }
 
-      // Load both preparing and out_for_delivery orders
+      // Load orders with limit
       const [preparingOrders, outForDeliveryOrders] = await Promise.all([
-        Order.filter({ delivery_person_id: deliveryPersonId, status: "preparing" }),
-        Order.filter({ delivery_person_id: deliveryPersonId, status: "out_for_delivery" })
+        Order.filter({ delivery_person_id: deliveryPersonId, status: "preparing" }, '-created_date', 20),
+        Order.filter({ delivery_person_id: deliveryPersonId, status: "out_for_delivery" }, '-created_date', 20)
       ]);
       setAssignedOrders([...preparingOrders, ...outForDeliveryOrders]);
     } catch (error) {
       console.error("Error loading assigned orders:", error);
+      setAssignedOrders([]);
     }
   }, []);
 
@@ -107,11 +106,9 @@ export default function Delivery() {
     try {
       const orders = await Order.filter({
         status: "confirmed"
-      }, '-created_date');
-      // Only show orders without delivery person assigned
+      }, '-created_date', 50);
       const unassignedOrders = orders.filter(order => !order.delivery_person_id);
       
-      // Check for new orders and show browser notification (only if delivery person is available)
       const savedPerson = localStorage.getItem('deliveryPerson');
       if (savedPerson) {
         const person = JSON.parse(savedPerson);
@@ -128,6 +125,7 @@ export default function Delivery() {
       setAvailableOrders(unassignedOrders);
     } catch (error) {
       console.error("Error loading available orders:", error);
+      setAvailableOrders([]);
     }
   }, [previousOrderCount]);
 
@@ -240,11 +238,11 @@ export default function Delivery() {
   useEffect(() => {
     let intervalId;
     if (deliveryPerson && !updatingOrderId && !acceptingOrderId && !cancellingOrderId) {
-      // Poll for new orders every 10 seconds (only when not performing actions)
+      // Poll for new orders every 30 seconds (only when not performing actions)
       intervalId = setInterval(() => {
-        loadAssignedOrders(deliveryPerson.id);
-        loadAvailableOrders();
-      }, 10000);
+        loadAssignedOrders(deliveryPerson.id).catch(err => console.error("Error polling:", err));
+        loadAvailableOrders().catch(err => console.error("Error polling:", err));
+      }, 30000);
     }
     return () => {
       if (intervalId) clearInterval(intervalId);
@@ -252,12 +250,12 @@ export default function Delivery() {
   }, [deliveryPerson?.id, updatingOrderId, acceptingOrderId, cancellingOrderId]);
 
   useEffect(() => {
-    if (assignedOrders.length > 0) {
-      // Debounce expensive analysis operations
+    if (assignedOrders.length > 0 && assignedOrders.length < 10) {
+      // Only run analysis for reasonable number of orders
       const timer = setTimeout(() => {
-        findCheaperOptions();
-        analyzeItemLocations();
-      }, 300);
+        findCheaperOptions().catch(err => console.error("Analysis error:", err));
+        analyzeItemLocations().catch(err => console.error("Analysis error:", err));
+      }, 500);
       return () => clearTimeout(timer);
     }
   }, [assignedOrders]);
@@ -267,11 +265,13 @@ export default function Delivery() {
       const menuItems = await base44.entities.DhabaMenu.filter({ is_available: true });
       const locations = {};
       
-      for (const order of assignedOrders) {
+      // Limit to first 5 orders for performance
+      const ordersToAnalyze = assignedOrders.slice(0, 5);
+      
+      for (const order of ordersToAnalyze) {
         const orderLocations = [];
         
         for (const item of order.items || []) {
-          // Find matching menu items
           const matches = menuItems.filter(menu => 
             menu.item_name.toLowerCase().includes(item.product_name.toLowerCase()) ||
             item.product_name.toLowerCase().includes(menu.item_name.toLowerCase())
@@ -279,13 +279,12 @@ export default function Delivery() {
           
           if (matches.length > 0) {
             const dhabas = matches.map(m => ({ dhaba: m.dhaba_name, price: m.price }));
-            // Sort by price to show cheapest first
             dhabas.sort((a, b) => a.price - b.price);
             
             orderLocations.push({
               item_name: item.product_name,
               quantity: item.quantity,
-              available_at: dhabas,
+              available_at: dhabas.slice(0, 5), // Limit to top 5 options
               cheapest_dhaba: dhabas[0].dhaba,
               cheapest_price: dhabas[0].price
             });
@@ -310,31 +309,28 @@ export default function Delivery() {
       
       const options = {};
       
-      for (const order of assignedOrders) {
+      // Limit to first 5 orders for performance
+      const ordersToAnalyze = assignedOrders.slice(0, 5);
+      
+      for (const order of ordersToAnalyze) {
         const orderAnalysis = [];
         
         for (const item of order.items || []) {
-          // Find all matching menu items for this product
           const matches = menuItems.filter(menu => 
             menu.item_name.toLowerCase().includes(item.product_name.toLowerCase()) ||
             item.product_name.toLowerCase().includes(menu.item_name.toLowerCase())
           );
           
           if (matches.length > 0) {
-            // Sort by price to find cheapest
-            const sortedMatches = matches.sort((a, b) => a.price - b.price);
+            const sortedMatches = matches.sort((a, b) => a.price - b.price).slice(0, 5); // Top 5 only
             const cheapest = sortedMatches[0];
             
-            // Get product and customer's selected info
             const product = products.find(p => p.id === item.product_id);
             const customerPrice = item.price;
             const customerDhaba = item.dhaba_name || product?.source_dhaba || "Not specified";
-            
-            // Calculate savings
             const savings = customerPrice - cheapest.price;
             
-            // Build analysis object
-            const analysis = {
+            orderAnalysis.push({
               item_name: item.product_name,
               quantity: item.quantity,
               customer_selected: {
@@ -355,9 +351,7 @@ export default function Delivery() {
               savings_per_item: savings,
               total_savings: savings * item.quantity,
               recommendation: savings > 0 ? 'cheaper_available' : 'best_price'
-            };
-            
-            orderAnalysis.push(analysis);
+            });
           }
         }
         
