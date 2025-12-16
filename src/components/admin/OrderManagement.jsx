@@ -17,6 +17,38 @@ import DeliveryMap from "../delivery/DeliveryMap";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { ChevronDown } from "lucide-react";
 
+function AdminOrderItem({ item }) {
+  const [product, setProduct] = useState(null);
+
+  useEffect(() => {
+    const loadProduct = async () => {
+      try {
+        const prods = await base44.entities.Product.filter({ id: item.product_id });
+        setProduct(prods[0] || null);
+      } catch (error) {
+        console.error("Error loading product:", error);
+      }
+    };
+    loadProduct();
+  }, [item.product_id]);
+
+  return (
+    <div>
+      • {item.product_name} x{item.quantity}
+      {item.dhaba_name && (
+        <span className="ml-1 text-amber-600 font-medium">
+          (from {item.dhaba_name})
+        </span>
+      )}
+      {product?.source_dhaba && (
+        <span className="ml-1 text-blue-600 text-xs">
+          [📍 {product.source_dhaba}]
+        </span>
+      )}
+    </div>
+  );
+}
+
 export default function OrderManagement() {
   const [orders, setOrders] = useState([]);
   const [deliveryPersons, setDeliveryPersons] = useState([]);
@@ -613,14 +645,7 @@ export default function OrderManagement() {
                         <p className="font-medium mb-1">{order.items?.length || 0} items</p>
                         <div className="text-xs text-gray-600 space-y-0.5">
                           {order.items?.map((item, idx) => (
-                            <div key={idx}>
-                              • {item.product_name} x{item.quantity}
-                              {item.dhaba_name && (
-                                <span className="ml-1 text-amber-600 font-medium">
-                                  (from {item.dhaba_name})
-                                </span>
-                              )}
-                            </div>
+                            <AdminOrderItem key={idx} item={item} />
                           ))}
                         </div>
                       </div>

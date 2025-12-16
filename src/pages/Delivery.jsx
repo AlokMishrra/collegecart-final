@@ -19,6 +19,47 @@ import { motion, AnimatePresence } from "framer-motion";
   import SwipeToDeliver from "../components/delivery/SwipeToDeliver";
   import LiveLocationTracker from "../components/delivery/LiveLocationTracker";
 
+function DeliveryOrderItem({ item }) {
+  const [product, setProduct] = useState(null);
+
+  useEffect(() => {
+    const loadProduct = async () => {
+      try {
+        const prods = await base44.entities.Product.filter({ id: item.product_id });
+        setProduct(prods[0] || null);
+      } catch (error) {
+        console.error("Error loading product:", error);
+      }
+    };
+    loadProduct();
+  }, [item.product_id]);
+
+  return (
+    <div>
+      <div className="flex items-start gap-2">
+        <div className="w-1.5 h-1.5 rounded-full bg-emerald-600 mt-1.5"></div>
+        <div className="flex-1">
+          <p className="text-sm text-gray-900 font-medium">
+            {item.product_name} <span className="text-gray-600">× {item.quantity}</span>
+          </p>
+          <div className="flex flex-wrap gap-1 mt-1">
+            {item.dhaba_name && (
+              <span className="text-xs bg-amber-100 text-amber-800 px-2 py-0.5 rounded">
+                Customer selected: {item.dhaba_name}
+              </span>
+            )}
+            {product?.source_dhaba && (
+              <span className="text-xs bg-blue-100 text-blue-800 px-2 py-0.5 rounded">
+                📍 Source: {product.source_dhaba}
+              </span>
+            )}
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 export default function Delivery() {
   const [deliveryPerson, setDeliveryPerson] = useState(null);
   const [assignedOrders, setAssignedOrders] = useState([]);
@@ -912,33 +953,10 @@ export default function Delivery() {
 
                           <div className="mb-4">
                             <p className="font-medium text-gray-900 mb-2">Order Items</p>
-                            <div className="bg-gray-50 rounded-lg p-3 space-y-1.5">
-                              {order.items?.map((item, itemIndex) => {
-                                const product = (async () => {
-                                  try {
-                                    const prods = await base44.entities.Product.filter({ id: item.product_id });
-                                    return prods[0];
-                                  } catch {
-                                    return null;
-                                  }
-                                })();
-                                
-                                return (
-                                  <div key={itemIndex}>
-                                    <div className="flex items-center gap-2">
-                                      <div className="w-1.5 h-1.5 rounded-full bg-emerald-600"></div>
-                                      <p className="text-sm text-gray-900 font-medium">
-                                        {item.product_name} <span className="text-gray-600">× {item.quantity}</span>
-                                        {item.dhaba_name && (
-                                          <span className="ml-2 text-xs bg-amber-100 text-amber-800 px-2 py-0.5 rounded">
-                                            from {item.dhaba_name}
-                                          </span>
-                                        )}
-                                      </p>
-                                    </div>
-                                  </div>
-                                );
-                              })}
+                            <div className="bg-gray-50 rounded-lg p-3 space-y-2">
+                              {order.items?.map((item, itemIndex) => (
+                                <DeliveryOrderItem key={itemIndex} item={item} />
+                              ))}
                             </div>
                           </div>
 
