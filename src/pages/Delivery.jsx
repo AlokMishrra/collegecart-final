@@ -238,11 +238,11 @@ export default function Delivery() {
   useEffect(() => {
     let intervalId;
     if (deliveryPerson && !updatingOrderId && !acceptingOrderId && !cancellingOrderId) {
-      // Poll for new orders every 30 seconds (only when not performing actions)
+      // Poll for new orders every 5 seconds for real-time updates
       intervalId = setInterval(() => {
         loadAssignedOrders(deliveryPerson.id).catch(err => console.error("Error polling:", err));
         loadAvailableOrders().catch(err => console.error("Error polling:", err));
-      }, 30000);
+      }, 5000);
     }
     return () => {
       if (intervalId) clearInterval(intervalId);
