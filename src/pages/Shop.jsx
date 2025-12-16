@@ -4,7 +4,7 @@ import { Category } from "@/entities/Category";
 import { CartItem } from "@/entities/CartItem";
 import { User } from "@/entities/User";
 import { Notification } from "@/entities/Notification";
-import { Search, Filter, ShoppingCart, Plus, Minus, Building2, ShoppingBag } from "lucide-react";
+import { Search, Filter, ShoppingCart, Plus, Minus, Building2, ShoppingBag, Loader2 } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -41,6 +41,11 @@ export default function Shop() {
     priceRange: [0, 1000]
   });
   const [sortBy, setSortBy] = useState("relevance");
+  const [displayedProducts, setDisplayedProducts] = useState([]);
+  const [page, setPage] = useState(1);
+  const [hasMore, setHasMore] = useState(true);
+  const [loadingMore, setLoadingMore] = useState(false);
+  const PRODUCTS_PER_PAGE = 20;
 
   useEffect(() => {
     checkUser();
@@ -303,6 +308,47 @@ export default function Shop() {
 
   const filteredProducts = applyFiltersAndSort(products);
 
+  // Load more products when filters change
+  useEffect(() => {
+    setPage(1);
+    setDisplayedProducts(filteredProducts.slice(0, PRODUCTS_PER_PAGE));
+    setHasMore(filteredProducts.length > PRODUCTS_PER_PAGE);
+  }, [filteredProducts.length, searchQuery, selectedCategory, filters, sortBy]);
+
+  // Infinite scroll observer
+  useEffect(() => {
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries[0].isIntersecting && hasMore && !loadingMore) {
+          loadMoreProducts();
+        }
+      },
+      { threshold: 0.1 }
+    );
+
+    const sentinel = document.getElementById('scroll-sentinel');
+    if (sentinel) observer.observe(sentinel);
+
+    return () => observer.disconnect();
+  }, [hasMore, loadingMore, page, filteredProducts.length]);
+
+  const loadMoreProducts = () => {
+    if (loadingMore) return;
+    
+    setLoadingMore(true);
+    setTimeout(() => {
+      const nextPage = page + 1;
+      const startIndex = page * PRODUCTS_PER_PAGE;
+      const endIndex = startIndex + PRODUCTS_PER_PAGE;
+      const newProducts = filteredProducts.slice(startIndex, endIndex);
+      
+      setDisplayedProducts(prev => [...prev, ...newProducts]);
+      setPage(nextPage);
+      setHasMore(endIndex < filteredProducts.length);
+      setLoadingMore(false);
+    }, 300);
+  };
+
   return (
     <div className="max-w-7xl mx-auto space-y-8 pb-8">
       {/* Hostel Selector Modal */}
@@ -427,13 +473,13 @@ export default function Shop() {
               </div>
               <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
                 <AnimatePresence>
-                  {filteredProducts.map((product, index) => (
+                  {displayedProducts.map((product, index) => (
                     <Suspense key={product.id} fallback={<Skeleton className="h-80 rounded-2xl" />}>
                       <motion.div
                         initial={{ opacity: 0, scale: 0.9 }}
-                        animate={{ opacity: 1, scale: 1 }}
+                        animate={{ opacity: 1, y: 0 }}
                         exit={{ opacity: 0, scale: 0.9 }}
-                        transition={{ delay: index * 0.05 }}
+                        transition={{ duration: 0.2 }}
                       >
                         <ProductCard
                           product={product}
@@ -448,12 +494,28 @@ export default function Shop() {
                   ))}
                 </AnimatePresence>
               </div>
+
+              {/* Infinite Scroll Sentinel */}
+              <div id="scroll-sentinel" className="h-10 flex items-center justify-center">
+                {loadingMore && (
+                  <div className="flex items-center gap-2 text-gray-500">
+                    <Loader2 className="w-5 h-5 animate-spin" />
+                    <span>Loading more products...</span>
+                  </div>
+                )}
+              </div>
+
+              {!hasMore && displayedProducts.length > 0 && (
+                <div className="text-center py-8 text-gray-500">
+                  <p>You've reached the end!</p>
+                </div>
+              )}
             </>
           )}
         </motion.div>
       ) : (
         <div className="space-y-12">
-          {categories.filter(category => (categorizedProducts[category.id] || []).length > 0).map((category, idx) => (
+          {categories.filter(category => (categorizedProducts[category.id] || []).length > 0).slice(0, 3).map((category, idx) => (
             <Suspense key={category.id} fallback={<Skeleton className="w-full h-96 rounded-2xl" />}>
               <motion.div
                 initial={{ opacity: 0, y: 30 }}
@@ -462,7 +524,7 @@ export default function Shop() {
               >
                 <CategorySection
                   category={category}
-                  products={categorizedProducts[category.id] || []}
+                  products={categorizedProducts[category.id]?.slice(0, 10) || []}
                   onAddToCart={addToCart}
                   onUpdateQuantity={updateCartQuantity}
                   getCartQuantity={getCartQuantity}
