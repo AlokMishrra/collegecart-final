@@ -43,6 +43,7 @@ export default function Cart() {
         const [discountCode, setDiscountCode] = useState("");
         const [appliedCampaign, setAppliedCampaign] = useState(null);
         const [codeError, setCodeError] = useState("");
+        const [selectedDhaba, setSelectedDhaba] = useState({});
 
   const loadCart = useCallback(async (userId) => {
     setIsLoading(true);
@@ -144,7 +145,21 @@ export default function Cart() {
 
   const getProductPrice = (product) => {
     if (!product) return 0;
+    
+    // Check if dhaba is selected and product has dhaba options
+    if (selectedDhaba[product.id] && product.dhaba_options?.length > 0) {
+      const dhabaOption = product.dhaba_options.find(opt => opt.dhaba_name === selectedDhaba[product.id]);
+      if (dhabaOption) return dhabaOption.price;
+    }
+    
     return product.price || 0;
+  };
+
+  const hasDhabaProducts = () => {
+    return cartItems.some(item => {
+      const product = products[item.product_id];
+      return product?.dhaba_options?.length > 0;
+    });
   };
 
   const calculateSubtotal = () => {
@@ -344,12 +359,17 @@ export default function Cart() {
     setIsPlacingOrder(true);
     try {
       const orderNumber = `CC${Date.now()}`;
-      const orderItems = cartItems.map(item => ({
-        product_id: item.product_id,
-        product_name: products[item.product_id]?.name || "",
-        price: getProductPrice(products[item.product_id]) || 0,
-        quantity: item.quantity
-      }));
+      const orderItems = cartItems.map(item => {
+        const product = products[item.product_id];
+        const dhabaName = selectedDhaba[item.product_id];
+        return {
+          product_id: item.product_id,
+          product_name: product?.name || "",
+          price: getProductPrice(product) || 0,
+          quantity: item.quantity,
+          dhaba_name: dhabaName || null
+        };
+      });
       
       const fullAddress = selectedHostel === "Other" 
         ? customAddress 
@@ -600,7 +620,27 @@ export default function Cart() {
                         />
                         <div className="flex-1">
                           <h3 className="font-semibold text-gray-900">{product.name}</h3>
-                          <p className="text-emerald-600 font-medium">₹{getProductPrice(product)}/{product.unit}</p>
+                          {product.dhaba_options?.length > 0 ? (
+                            <div className="mt-1">
+                              <Select 
+                                value={selectedDhaba[product.id] || ""} 
+                                onValueChange={(value) => setSelectedDhaba({ ...selectedDhaba, [product.id]: value })}
+                              >
+                                <SelectTrigger className="h-8 text-xs">
+                                  <SelectValue placeholder="Select Dhaba" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                  {product.dhaba_options.map((option, idx) => (
+                                    <SelectItem key={idx} value={option.dhaba_name}>
+                                      {option.dhaba_name} - ₹{option.price}
+                                    </SelectItem>
+                                  ))}
+                                </SelectContent>
+                              </Select>
+                            </div>
+                          ) : (
+                            <p className="text-emerald-600 font-medium">₹{getProductPrice(product)}/{product.unit}</p>
+                          )}
                         </div>
                         <div className="flex items-center gap-3">
                           <Button
@@ -737,6 +777,17 @@ export default function Cart() {
                     rows={2}
                   />
                 </div>
+
+                {hasDhabaProducts() && (
+                  <div className="bg-amber-50 border border-amber-200 rounded-lg p-3">
+                    <Label className="text-sm font-medium text-amber-900 block mb-2">
+                      🍽️ Dhaba Selection Required
+                    </Label>
+                    <p className="text-xs text-amber-700">
+                      Some items have multiple dhaba options. Please select a dhaba for each item above to see final pricing.
+                    </p>
+                  </div>
+                )}
 
                 <div>
                   <Label htmlFor="payment">Payment Method <span className="text-red-500">*</span></Label>

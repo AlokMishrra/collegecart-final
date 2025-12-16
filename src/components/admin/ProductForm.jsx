@@ -5,7 +5,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
-import { Sparkles } from "lucide-react";
+import { Sparkles, Plus, Trash2 } from "lucide-react";
 import ImageUploader from "../shared/ImageUploader";
 import AIDescriptionGenerator from "./AIDescriptionGenerator";
 
@@ -26,6 +26,7 @@ export default function ProductForm({ product, categories, onSave, onCancel }) {
       Tendulkar: 0,
       Other: 0
     },
+    dhaba_options: product?.dhaba_options || [],
     unit: product?.unit || "piece",
     is_available: product?.is_available ?? true,
     delivery_charge: product?.delivery_charge || 0,
@@ -51,6 +52,10 @@ export default function ProductForm({ product, categories, onSave, onCancel }) {
         Tendulkar: formData.hostel_stock.Tendulkar !== "" ? parseInt(formData.hostel_stock.Tendulkar) : 0,
         Other: formData.hostel_stock.Other !== "" ? parseInt(formData.hostel_stock.Other) : 0
       },
+      dhaba_options: formData.dhaba_options.map(opt => ({
+        dhaba_name: opt.dhaba_name,
+        price: parseFloat(opt.price)
+      })),
       delivery_charge: parseFloat(formData.delivery_charge) || 0,
       profit_margin: parseFloat(formData.profit_margin) || 0,
       delivery_time: formData.delivery_time
@@ -268,6 +273,72 @@ export default function ProductForm({ product, categories, onSave, onCancel }) {
               </div>
             </div>
             <p className="text-xs text-gray-500 mt-1">Leave empty for 24/7 availability</p>
+          </div>
+
+          <div>
+            <Label className="mb-3 block">Dhaba Options (Optional)</Label>
+            <div className="space-y-3">
+              {formData.dhaba_options.map((option, index) => (
+                <div key={index} className="flex gap-2 items-end">
+                  <div className="flex-1">
+                    <Label htmlFor={`dhaba_${index}`} className="text-sm">Dhaba Name</Label>
+                    <Input
+                      id={`dhaba_${index}`}
+                      value={option.dhaba_name}
+                      onChange={(e) => {
+                        const newOptions = [...formData.dhaba_options];
+                        newOptions[index].dhaba_name = e.target.value;
+                        setFormData({ ...formData, dhaba_options: newOptions });
+                      }}
+                      placeholder="e.g., Dhaba 1, Canteen A"
+                    />
+                  </div>
+                  <div className="w-32">
+                    <Label htmlFor={`price_${index}`} className="text-sm">Price (₹)</Label>
+                    <Input
+                      id={`price_${index}`}
+                      type="number"
+                      step="0.01"
+                      value={option.price}
+                      onChange={(e) => {
+                        const newOptions = [...formData.dhaba_options];
+                        newOptions[index].price = e.target.value;
+                        setFormData({ ...formData, dhaba_options: newOptions });
+                      }}
+                    />
+                  </div>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="icon"
+                    onClick={() => {
+                      const newOptions = formData.dhaba_options.filter((_, i) => i !== index);
+                      setFormData({ ...formData, dhaba_options: newOptions });
+                    }}
+                    className="text-red-600"
+                  >
+                    <Trash2 className="w-4 h-4" />
+                  </Button>
+                </div>
+              ))}
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={() => {
+                  setFormData({
+                    ...formData,
+                    dhaba_options: [...formData.dhaba_options, { dhaba_name: "", price: "" }]
+                  });
+                }}
+              >
+                <Plus className="w-3 h-3 mr-1" />
+                Add Dhaba Option
+              </Button>
+            </div>
+            <p className="text-xs text-gray-500 mt-2">
+              Add different dhaba options with varying prices for this product
+            </p>
           </div>
 
           <div className="flex items-center space-x-2">
