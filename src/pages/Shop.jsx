@@ -1,10 +1,10 @@
-import React, { useState, useEffect, lazy, Suspense } from "react";
+import React, { useState, useEffect } from "react";
 import { Product } from "@/entities/Product";
 import { Category } from "@/entities/Category";
 import { CartItem } from "@/entities/CartItem";
 import { User } from "@/entities/User";
 import { Notification } from "@/entities/Notification";
-import { Search, Filter, ShoppingCart, Plus, Minus, Building2, ShoppingBag, Loader2 } from "lucide-react";
+import { Search, Filter, ShoppingCart, Plus, Minus, Building2, ShoppingBag } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -14,16 +14,15 @@ import { motion, AnimatePresence } from "framer-motion";
 import { Link } from "react-router-dom";
 import { createPageUrl } from "@/utils";
 
-// Lazy load heavy components
-const QuickAddToCart = lazy(() => import("../components/shop/QuickAddToCart"));
-const EnhancedShopHero = lazy(() => import("../components/shop/EnhancedShopHero"));
-const CategorySection = lazy(() => import("../components/shop/CategorySection"));
-const CategoryFilter = lazy(() => import("../components/shop/CategoryFilter"));
-const ProductCard = lazy(() => import("../components/shop/ProductCard"));
-const HostelSelector = lazy(() => import("../components/shop/HostelSelector"));
-const RecommendationEngine = lazy(() => import("../components/shop/RecommendationEngine"));
-const EnhancedSearch = lazy(() => import("../components/shop/EnhancedSearch"));
-const BannerCarousel = lazy(() => import("../components/shop/BannerCarousel"));
+import QuickAddToCart from "../components/shop/QuickAddToCart";
+  import EnhancedShopHero from "../components/shop/EnhancedShopHero";
+  import CategorySection from "../components/shop/CategorySection";
+  import CategoryFilter from "../components/shop/CategoryFilter";
+  import ProductCard from "../components/shop/ProductCard";
+  import HostelSelector from "../components/shop/HostelSelector";
+  import RecommendationEngine from "../components/shop/RecommendationEngine";
+  import EnhancedSearch from "../components/shop/EnhancedSearch";
+  import BannerCarousel from "../components/shop/BannerCarousel";
 
 export default function Shop() {
   const [products, setProducts] = useState([]);
@@ -41,11 +40,6 @@ export default function Shop() {
     priceRange: [0, 1000]
   });
   const [sortBy, setSortBy] = useState("relevance");
-  const [displayedProducts, setDisplayedProducts] = useState([]);
-  const [page, setPage] = useState(1);
-  const [hasMore, setHasMore] = useState(true);
-  const [loadingMore, setLoadingMore] = useState(false);
-  const PRODUCTS_PER_PAGE = 20;
 
   useEffect(() => {
     checkUser();
@@ -183,62 +177,65 @@ export default function Shop() {
 
     // Check hostel stock before adding
     if (quantityChange > 0 && !isProductInStock(product)) {
-      return;
-    }
-
-    const existingItem = cartItems.find(item => item.product_id === product.id);
-    const hostelStock = getHostelStock(product);
-    const currentQuantity = existingItem ? existingItem.quantity : 0;
-    const newQuantity = currentQuantity + quantityChange;
-
-    // Check stock limit
-    if (newQuantity > hostelStock) {
-      return;
-    }
-
-    // Optimistic UI update - update immediately
-    if (existingItem) {
-      if (newQuantity <= 0) {
-        setCartItems(prev => prev.filter(item => item.product_id !== product.id));
-      } else {
-        setCartItems(prev => prev.map(item => 
-          item.product_id === product.id 
-            ? { ...item, quantity: newQuantity }
-            : item
-        ));
-      }
-    } else if (quantityChange > 0) {
-      const newItem = {
-        id: Date.now().toString(),
-        product_id: product.id,
+      await Notification.create({
         user_id: user.id,
-        quantity: 1
-      };
-      setCartItems(prev => [...prev, newItem]);
+        title: "Out of Stock",
+        message: `${product.name} is currently out of stock in your hostel`,
+        type: "error"
+      });
+      return;
     }
 
-    // Background API update
     try {
+      const existingItem = cartItems.find(item => item.product_id === product.id);
+      const hostelStock = getHostelStock(product);
+      
       if (existingItem) {
+        const newQuantity = existingItem.quantity + quantityChange;
+        
+        // Check if new quantity exceeds hostel stock
+        if (newQuantity > hostelStock) {
+          await Notification.create({
+            user_id: user.id,
+            title: "Stock Limit Reached",
+            message: `Only ${hostelStock} units available in your hostel`,
+            type: "warning"
+          });
+          return;
+        }
+        
         if (newQuantity <= 0) {
-          CartItem.delete(existingItem.id).catch(err => console.error(err));
+          await CartItem.delete(existingItem.id);
         } else {
-          CartItem.update(existingItem.id, { quantity: newQuantity }).catch(err => console.error(err));
+          await CartItem.update(existingItem.id, {
+            quantity: newQuantity
+          });
         }
       } else if (quantityChange > 0) {
-        CartItem.create({
+        await CartItem.create({
           product_id: product.id,
           user_id: user.id,
           quantity: 1
-        }).then(() => loadCartItems(user.id)).catch(err => console.error(err));
+        });
       }
+
+      if (quantityChange > 0) {
+        await Notification.create({
+          user_id: user.id,
+          title: "Added to Cart",
+          message: `${product.name} has been added to your cart`,
+          type: "success"
+        });
+      }
+
+      loadCartItems(user.id);
     } catch (error) {
       console.error("Error updating cart:", error);
     }
   };
 
-  const addToCart = (product) => {
-    updateCartQuantity(product, 1);
+  const addToCart = async (product) => {
+    await updateCartQuantity(product, 1);
   };
 
   const getCartQuantity = (productId) => {
@@ -305,65 +302,16 @@ export default function Shop() {
 
   const filteredProducts = applyFiltersAndSort(products);
 
-  // Load more products when filters change
-  useEffect(() => {
-    setPage(1);
-    setDisplayedProducts(filteredProducts.slice(0, PRODUCTS_PER_PAGE));
-    setHasMore(filteredProducts.length > PRODUCTS_PER_PAGE);
-  }, [filteredProducts.length, searchQuery, selectedCategory, filters, sortBy]);
-
-  // Infinite scroll observer
-  useEffect(() => {
-    const observer = new IntersectionObserver(
-      (entries) => {
-        if (entries[0].isIntersecting && hasMore && !loadingMore) {
-          loadMoreProducts();
-        }
-      },
-      { threshold: 0.1 }
-    );
-
-    const sentinel = document.getElementById('scroll-sentinel');
-    if (sentinel) observer.observe(sentinel);
-
-    return () => observer.disconnect();
-  }, [hasMore, loadingMore, page, filteredProducts.length]);
-
-  const loadMoreProducts = () => {
-    if (loadingMore) return;
-    
-    setLoadingMore(true);
-    setTimeout(() => {
-      const nextPage = page + 1;
-      const startIndex = page * PRODUCTS_PER_PAGE;
-      const endIndex = startIndex + PRODUCTS_PER_PAGE;
-      const newProducts = filteredProducts.slice(startIndex, endIndex);
-      
-      setDisplayedProducts(prev => [...prev, ...newProducts]);
-      setPage(nextPage);
-      setHasMore(endIndex < filteredProducts.length);
-      setLoadingMore(false);
-    }, 300);
-  };
-
   return (
     <div className="max-w-7xl mx-auto space-y-8 pb-8">
       {/* Hostel Selector Modal */}
-      {showHostelSelector && (
-        <Suspense fallback={<div className="fixed inset-0 bg-black/50 flex items-center justify-center"><Skeleton className="w-96 h-64" /></div>}>
-          <HostelSelector onHostelSelected={handleHostelSelected} />
-        </Suspense>
-      )}
+      {showHostelSelector && <HostelSelector onHostelSelected={handleHostelSelected} />}
 
       {/* Enhanced Header */}
-      <Suspense fallback={<Skeleton className="w-full h-48 rounded-2xl" />}>
-        <EnhancedShopHero />
-      </Suspense>
+      <EnhancedShopHero />
 
       {/* Banner Carousel */}
-      <Suspense fallback={<Skeleton className="w-full h-48 rounded-2xl" />}>
-        <BannerCarousel />
-      </Suspense>
+      <BannerCarousel />
 
       {/* Change Hostel Button */}
       {user?.selected_hostel && (
@@ -395,42 +343,36 @@ export default function Shop() {
       )}
 
       {/* Enhanced Search */}
-      <Suspense fallback={<Skeleton className="w-full h-24 rounded-2xl" />}>
-        <EnhancedSearch
-          products={products}
-          onSearch={setSearchQuery}
-          filters={filters}
-          onFilterChange={setFilters}
-          sortBy={sortBy}
-          onSortChange={setSortBy}
-        />
-      </Suspense>
+      <EnhancedSearch
+        products={products}
+        onSearch={setSearchQuery}
+        filters={filters}
+        onFilterChange={setFilters}
+        sortBy={sortBy}
+        onSortChange={setSortBy}
+      />
 
       {/* Category Filter */}
-      <Suspense fallback={<Skeleton className="w-full h-16 rounded-xl" />}>
-        <CategoryFilter
-          categories={categories}
-          selectedCategory={selectedCategory}
-          onSelectCategory={setSelectedCategory}
-        />
-      </Suspense>
+      <CategoryFilter
+        categories={categories}
+        selectedCategory={selectedCategory}
+        onSelectCategory={setSelectedCategory}
+      />
 
       {/* Personalized Recommendations */}
       {!searchQuery.trim() && !selectedCategory && filters.availability === "all" && filters.rating === "all" && user && (
-        <Suspense fallback={<Skeleton className="w-full h-64 rounded-2xl" />}>
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.2 }}
-          >
-            <RecommendationEngine 
-              user={user} 
-              onAddToCart={addToCart}
-              getCartQuantity={getCartQuantity}
-              context="shop"
-            />
-          </motion.div>
-        </Suspense>
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.2 }}
+        >
+          <RecommendationEngine 
+            user={user} 
+            onAddToCart={addToCart}
+            getCartQuantity={getCartQuantity}
+            context="shop"
+          />
+        </motion.div>
       )}
 
       {/* Category Sections */}
@@ -470,75 +412,55 @@ export default function Shop() {
               </div>
               <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
                 <AnimatePresence>
-                  {displayedProducts.map((product, index) => (
-                    <Suspense key={product.id} fallback={<Skeleton className="h-80 rounded-2xl" />}>
-                      <motion.div
-                        initial={{ opacity: 0, scale: 0.9 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        exit={{ opacity: 0, scale: 0.9 }}
-                        transition={{ duration: 0.2 }}
-                      >
-                        <ProductCard
-                          product={product}
-                          cartQuantity={getCartQuantity(product.id)}
-                          onAddToCart={addToCart}
-                          onUpdateQuantity={updateCartQuantity}
-                          hostelStock={getHostelStock(product)}
-                          isInStock={isProductInStock(product)}
-                        />
-                      </motion.div>
-                    </Suspense>
+                  {filteredProducts.map((product, index) => (
+                    <motion.div
+                      key={product.id}
+                      initial={{ opacity: 0, scale: 0.9 }}
+                      animate={{ opacity: 1, scale: 1 }}
+                      exit={{ opacity: 0, scale: 0.9 }}
+                      transition={{ delay: index * 0.05 }}
+                    >
+                      <ProductCard
+                        product={product}
+                        cartQuantity={getCartQuantity(product.id)}
+                        onAddToCart={addToCart}
+                        onUpdateQuantity={updateCartQuantity}
+                        hostelStock={getHostelStock(product)}
+                        isInStock={isProductInStock(product)}
+                      />
+                    </motion.div>
                   ))}
                 </AnimatePresence>
               </div>
-
-              {/* Infinite Scroll Sentinel */}
-              <div id="scroll-sentinel" className="h-10 flex items-center justify-center">
-                {loadingMore && (
-                  <div className="flex items-center gap-2 text-gray-500">
-                    <Loader2 className="w-5 h-5 animate-spin" />
-                    <span>Loading more products...</span>
-                  </div>
-                )}
-              </div>
-
-              {!hasMore && displayedProducts.length > 0 && (
-                <div className="text-center py-8 text-gray-500">
-                  <p>You've reached the end!</p>
-                </div>
-              )}
             </>
           )}
         </motion.div>
       ) : (
         <div className="space-y-12">
-          {categories.filter(category => (categorizedProducts[category.id] || []).length > 0).slice(0, 3).map((category, idx) => (
-            <Suspense key={category.id} fallback={<Skeleton className="w-full h-96 rounded-2xl" />}>
-              <motion.div
-                initial={{ opacity: 0, y: 30 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: idx * 0.1 }}
-              >
-                <CategorySection
-                  category={category}
-                  products={categorizedProducts[category.id]?.slice(0, 10) || []}
-                  onAddToCart={addToCart}
-                  onUpdateQuantity={updateCartQuantity}
-                  getCartQuantity={getCartQuantity}
-                  getHostelStock={getHostelStock}
-                  isProductInStock={isProductInStock}
-                />
-              </motion.div>
-            </Suspense>
+          {categories.filter(category => (categorizedProducts[category.id] || []).length > 0).map((category, idx) => (
+            <motion.div
+              key={category.id}
+              initial={{ opacity: 0, y: 30 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: idx * 0.1 }}
+            >
+              <CategorySection
+                category={category}
+                products={categorizedProducts[category.id] || []}
+                onAddToCart={addToCart}
+                onUpdateQuantity={updateCartQuantity}
+                getCartQuantity={getCartQuantity}
+                getHostelStock={getHostelStock}
+                isProductInStock={isProductInStock}
+              />
+            </motion.div>
           ))}
         </div>
       )}
 
       {/* Quick Add to Cart */}
       {user && cartItems.length > 0 && (
-        <Suspense fallback={null}>
-          <QuickAddToCart cartItems={cartItems} />
-        </Suspense>
+        <QuickAddToCart cartItems={cartItems} />
       )}
     </div>
   );

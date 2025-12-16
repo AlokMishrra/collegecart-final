@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback, lazy, Suspense } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import { base44 } from "@/api/base44Client";
 import { Order } from "@/entities/Order";
 import { DeliveryPerson } from "@/entities/DeliveryPerson";
@@ -12,15 +12,12 @@ import { Label } from "@/components/ui/label";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
 import { motion, AnimatePresence } from "framer-motion";
-import { Skeleton } from "@/components/ui/skeleton";
-
-// Lazy load heavy components
-const DeliveryStats = lazy(() => import("../components/delivery/DeliveryStats"));
-const DeliveryNotifications = lazy(() => import("../components/delivery/DeliveryNotifications"));
-const CODQRGenerator = lazy(() => import("../components/delivery/CODQRGenerator"));
-const DeliveryAI = lazy(() => import("../components/delivery/DeliveryAI"));
-const SwipeToDeliver = lazy(() => import("../components/delivery/SwipeToDeliver"));
-const LiveLocationTracker = lazy(() => import("../components/delivery/LiveLocationTracker"));
+  import DeliveryStats from "../components/delivery/DeliveryStats";
+  import DeliveryNotifications from "../components/delivery/DeliveryNotifications";
+  import CODQRGenerator from "../components/delivery/CODQRGenerator";
+  import DeliveryAI from "../components/delivery/DeliveryAI";
+  import SwipeToDeliver from "../components/delivery/SwipeToDeliver";
+  import LiveLocationTracker from "../components/delivery/LiveLocationTracker";
 
 function DeliveryOrderItem({ item }) {
   const [product, setProduct] = useState(null);
@@ -680,9 +677,7 @@ export default function Delivery() {
   return (
     <div className="max-w-4xl mx-auto space-y-6">
       {/* Real-time Notifications */}
-      <Suspense fallback={<Skeleton className="w-full h-24 rounded-xl" />}>
-        <DeliveryNotifications deliveryPersonEmail={deliveryPerson.email} />
-      </Suspense>
+      <DeliveryNotifications deliveryPersonEmail={deliveryPerson.email} />
 
       {/* Browser Notification Prompt */}
       {!notificationsEnabled && 'Notification' in window && (
@@ -761,22 +756,16 @@ export default function Delivery() {
       )}
 
       {/* Delivery Statistics */}
-      <Suspense fallback={<Skeleton className="w-full h-32 rounded-xl" />}>
-        <DeliveryStats deliveryPerson={deliveryPerson} />
-      </Suspense>
+      <DeliveryStats deliveryPerson={deliveryPerson} />
 
       {/* Live Location Tracking */}
-      <Suspense fallback={<Skeleton className="w-full h-48 rounded-xl" />}>
-        <LiveLocationTracker 
-          deliveryPersonId={deliveryPerson.id}
-          orderId={assignedOrders.find(o => o.status === 'out_for_delivery')?.id}
-        />
-      </Suspense>
+      <LiveLocationTracker 
+        deliveryPersonId={deliveryPerson.id}
+        orderId={assignedOrders.find(o => o.status === 'out_for_delivery')?.id}
+      />
 
       {/* AI Delivery Assistant */}
-      <Suspense fallback={<Skeleton className="w-full h-48 rounded-xl" />}>
-        <DeliveryAI deliveryPerson={deliveryPerson} orders={assignedOrders} />
-      </Suspense>
+      <DeliveryAI deliveryPerson={deliveryPerson} orders={assignedOrders} />
 
       {/* Available Orders to Accept - Only show if available */}
       {deliveryPerson.is_available && availableOrders.length > 0 && (
@@ -1155,17 +1144,13 @@ export default function Delivery() {
                             </Button>
                           ) : (
                             <>
-                              <Suspense fallback={<Skeleton className="w-full h-12 rounded-lg" />}>
-                                <CODQRGenerator order={order} />
-                              </Suspense>
+                              <CODQRGenerator order={order} />
                               {/* Mobile: Swipe to Deliver */}
                               <div className="w-full lg:hidden">
-                                <Suspense fallback={<Skeleton className="w-full h-16 rounded-lg" />}>
-                                  <SwipeToDeliver
-                                    onDeliver={() => markOrderDelivered(order.id)}
-                                    isLoading={updatingOrderId === order.id}
-                                  />
-                                </Suspense>
+                                <SwipeToDeliver
+                                  onDeliver={() => markOrderDelivered(order.id)}
+                                  isLoading={updatingOrderId === order.id}
+                                />
                               </div>
                               {/* Desktop: Button */}
                               <Button
