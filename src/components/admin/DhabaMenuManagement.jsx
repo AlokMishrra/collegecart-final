@@ -8,6 +8,7 @@ import { Label } from "@/components/ui/label";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import * as XLSX from "xlsx";
 
 export default function DhabaMenuManagement() {
@@ -22,10 +23,36 @@ export default function DhabaMenuManagement() {
     is_available: true
   });
   const [openDhabas, setOpenDhabas] = useState({});
+  const [dhabaList, setDhabaList] = useState([]);
+  const [newDhabaName, setNewDhabaName] = useState("");
+  const [showAddDhabaDialog, setShowAddDhabaDialog] = useState(false);
 
   useEffect(() => {
     loadMenuItems();
+    loadDhabas();
   }, []);
+
+  const loadDhabas = async () => {
+    try {
+      const items = await base44.entities.DhabaMenu.list();
+      const uniqueDhabas = [...new Set(items.map(item => item.dhaba_name))];
+      setDhabaList(uniqueDhabas.sort());
+    } catch (error) {
+      console.error("Error loading dhabas:", error);
+    }
+  };
+
+  const handleAddDhaba = () => {
+    if (!newDhabaName.trim()) return;
+    if (dhabaList.includes(newDhabaName.trim())) {
+      alert("Dhaba already exists!");
+      return;
+    }
+    setDhabaList([...dhabaList, newDhabaName.trim()].sort());
+    setFormData({ ...formData, dhaba_name: newDhabaName.trim() });
+    setNewDhabaName("");
+    setShowAddDhabaDialog(false);
+  };
 
   const loadMenuItems = async () => {
     setIsLoading(true);
@@ -246,6 +273,32 @@ export default function DhabaMenuManagement() {
         ))
       )}
 
+      {/* Add Dhaba Dialog */}
+      <Dialog open={showAddDhabaDialog} onOpenChange={setShowAddDhabaDialog}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Add New Dhaba</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div>
+              <Label>Dhaba Name</Label>
+              <Input
+                value={newDhabaName}
+                onChange={(e) => setNewDhabaName(e.target.value)}
+                placeholder="e.g., Sharma Dhaba, Raju Canteen"
+                onKeyDown={(e) => e.key === 'Enter' && handleAddDhaba()}
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShowAddDhabaDialog(false)}>Cancel</Button>
+            <Button onClick={handleAddDhaba} className="bg-emerald-600 hover:bg-emerald-700">
+              Add Dhaba
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
       <Dialog open={showDialog} onOpenChange={setShowDialog}>
         <DialogContent>
           <DialogHeader>
@@ -254,11 +307,31 @@ export default function DhabaMenuManagement() {
           <div className="space-y-4">
             <div>
               <Label>Dhaba Name</Label>
-              <Input
-                value={formData.dhaba_name}
-                onChange={(e) => setFormData({ ...formData, dhaba_name: e.target.value })}
-                placeholder="e.g., Dhaba 1, Canteen A"
-              />
+              <div className="flex gap-2">
+                <Select 
+                  value={formData.dhaba_name} 
+                  onValueChange={(value) => {
+                    if (value === "add_new") {
+                      setShowAddDhabaDialog(true);
+                    } else {
+                      setFormData({ ...formData, dhaba_name: value });
+                    }
+                  }}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select Dhaba" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {dhabaList.map(dhaba => (
+                      <SelectItem key={dhaba} value={dhaba}>{dhaba}</SelectItem>
+                    ))}
+                    <SelectItem value="add_new" className="text-emerald-600 font-medium">
+                      <Plus className="w-3 h-3 inline mr-2" />
+                      Add New Dhaba
+                    </SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
             </div>
             <div>
               <Label>Item Name</Label>

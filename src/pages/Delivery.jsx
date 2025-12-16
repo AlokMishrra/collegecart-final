@@ -276,10 +276,15 @@ export default function Delivery() {
           
           if (matches.length > 0) {
             const dhabas = matches.map(m => ({ dhaba: m.dhaba_name, price: m.price }));
+            // Sort by price to show cheapest first
+            dhabas.sort((a, b) => a.price - b.price);
+            
             orderLocations.push({
               item_name: item.product_name,
               quantity: item.quantity,
-              available_at: dhabas
+              available_at: dhabas,
+              cheapest_dhaba: dhabas[0].dhaba,
+              cheapest_price: dhabas[0].price
             });
           }
         }
@@ -1000,33 +1005,46 @@ export default function Delivery() {
 
                           {/* Item Location Analysis */}
                           {itemLocations[order.id] && itemLocations[order.id].length > 0 && (
-                            <div className="bg-blue-50 border-l-4 border-blue-400 p-4 rounded-lg mb-4">
+                            <div className="bg-gradient-to-r from-green-50 to-emerald-50 border-l-4 border-green-500 p-4 rounded-lg mb-4">
                               <div className="flex items-start gap-3">
-                                <div className="flex-shrink-0 w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center">
-                                  <span className="text-blue-600 text-xl">📍</span>
+                                <div className="flex-shrink-0 w-10 h-10 bg-green-100 rounded-full flex items-center justify-center">
+                                  <span className="text-green-600 text-xl">🎯</span>
                                 </div>
                                 <div className="flex-1">
-                                  <h4 className="font-semibold text-blue-900 mb-2">Item Availability in Dhaba Menu</h4>
-                                  <div className="space-y-2">
+                                  <h4 className="font-semibold text-green-900 mb-2">💰 Smart Price Analysis - Get Best Deals!</h4>
+                                  <div className="space-y-3">
                                     {itemLocations[order.id].map((loc, idx) => (
-                                      <div key={idx} className="bg-white rounded-lg p-3 border border-blue-200">
+                                      <div key={idx} className="bg-white rounded-lg p-3 border-2 border-green-200 shadow-sm">
                                         <div className="flex items-center justify-between mb-2">
                                           <span className="font-medium text-gray-900">{loc.item_name} × {loc.quantity}</span>
+                                          <span className="text-xs bg-green-100 text-green-800 px-2 py-1 rounded-full font-bold">
+                                            ⭐ BEST: {loc.cheapest_dhaba}
+                                          </span>
+                                        </div>
+                                        <div className="bg-gradient-to-r from-green-100 to-emerald-100 p-2 rounded mb-2">
+                                          <div className="flex items-center justify-between">
+                                            <span className="text-sm font-bold text-green-900">
+                                              ✅ RECOMMENDED: Get from {loc.cheapest_dhaba}
+                                            </span>
+                                            <span className="text-lg font-bold text-green-700">
+                                              ₹{loc.cheapest_price.toFixed(2)}
+                                            </span>
+                                          </div>
                                         </div>
                                         <div className="space-y-1">
-                                          <p className="text-xs text-gray-600 font-medium">Available at:</p>
-                                          {loc.available_at.map((d, i) => (
-                                            <div key={i} className="flex items-center justify-between text-sm">
-                                              <span className="text-blue-700">🍽️ {d.dhaba}</span>
-                                              <span className="text-green-600 font-medium">₹{d.price.toFixed(2)}</span>
+                                          <p className="text-xs text-gray-600 font-medium">Also available at:</p>
+                                          {loc.available_at.slice(1).map((d, i) => (
+                                            <div key={i} className="flex items-center justify-between text-sm pl-2">
+                                              <span className="text-gray-600">🍽️ {d.dhaba}</span>
+                                              <span className="text-gray-500">₹{d.price.toFixed(2)}</span>
                                             </div>
                                           ))}
                                         </div>
                                       </div>
                                     ))}
                                   </div>
-                                  <p className="text-xs text-blue-700 mt-3">
-                                    💡 System analysis: These items are available at the listed dhabas
+                                  <p className="text-xs text-green-800 mt-3 font-medium bg-green-100 p-2 rounded">
+                                    💡 AI Analysis: Items sorted by lowest price. Get from recommended dhaba for best deal!
                                   </p>
                                 </div>
                               </div>
