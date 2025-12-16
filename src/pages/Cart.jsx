@@ -632,7 +632,7 @@ export default function Cart() {
                                 <SelectContent>
                                   {product.dhaba_options.map((option, idx) => (
                                     <SelectItem key={idx} value={option.dhaba_name}>
-                                      {option.dhaba_name} - ₹{option.price}
+                                      {option.dhaba_name}
                                     </SelectItem>
                                   ))}
                                 </SelectContent>

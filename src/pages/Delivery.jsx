@@ -35,6 +35,7 @@ export default function Delivery() {
   const [showCancelDialog, setShowCancelDialog] = useState(false);
   const [orderToCancel, setOrderToCancel] = useState(null);
   const [isTogglingAvailability, setIsTogglingAvailability] = useState(false);
+  const [cheaperOptions, setCheaperOptions] = useState({});
 
   const loadAssignedOrders = useCallback(async (deliveryPersonId) => {
     try {
@@ -208,6 +209,66 @@ export default function Delivery() {
       if (intervalId) clearInterval(intervalId);
     };
   }, [deliveryPerson?.id]);
+
+  useEffect(() => {
+    if (assignedOrders.length > 0) {
+      findCheaperOptions();
+    }
+  }, [assignedOrders]);
+
+  const findCheaperOptions = async () => {
+    try {
+      const menuItems = await base44.entities.DhabaMenu.filter({ is_available: true });
+      const products = await base44.entities.Product.list();
+      
+      const options = {};
+      
+      for (const order of assignedOrders) {
+        const orderOptions = [];
+        
+        for (const item of order.items || []) {
+          // Skip if user already selected a dhaba
+          if (item.dhaba_name) continue;
+          
+          // Find matching menu items
+          const matches = menuItems.filter(menu => 
+            menu.item_name.toLowerCase().includes(item.product_name.toLowerCase()) ||
+            item.product_name.toLowerCase().includes(menu.item_name.toLowerCase())
+          );
+          
+          if (matches.length > 0) {
+            // Find cheapest option
+            const cheapest = matches.reduce((min, curr) => 
+              curr.price < min.price ? curr : min
+            );
+            
+            // Get product info
+            const product = products.find(p => p.id === item.product_id);
+            const currentPrice = item.price;
+            
+            if (cheapest.price < currentPrice) {
+              orderOptions.push({
+                item_name: item.product_name,
+                current_price: currentPrice,
+                cheaper_dhaba: cheapest.dhaba_name,
+                cheaper_price: cheapest.price,
+                savings: currentPrice - cheapest.price,
+                source_dhaba: product?.source_dhaba
+              });
+            }
+          }
+        }
+        
+        if (orderOptions.length > 0) {
+          options[order.id] = orderOptions;
+        }
+      }
+      
+      setCheaperOptions(options);
+    } catch (error) {
+      console.error("Error finding cheaper options:", error);
+    }
+  };
 
   const handleLogin = async (e) => {
     e.preventDefault();

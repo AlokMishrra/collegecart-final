@@ -27,6 +27,7 @@ export default function ProductForm({ product, categories, onSave, onCancel }) {
       Other: 0
     },
     dhaba_options: product?.dhaba_options || [],
+    source_dhaba: product?.source_dhaba || "",
     unit: product?.unit || "piece",
     is_available: product?.is_available ?? true,
     delivery_charge: product?.delivery_charge || 0,
@@ -56,6 +57,7 @@ export default function ProductForm({ product, categories, onSave, onCancel }) {
         dhaba_name: opt.dhaba_name,
         price: parseFloat(opt.price)
       })),
+      source_dhaba: formData.source_dhaba || null,
       delivery_charge: parseFloat(formData.delivery_charge) || 0,
       profit_margin: parseFloat(formData.profit_margin) || 0,
       delivery_time: formData.delivery_time
@@ -273,6 +275,19 @@ export default function ProductForm({ product, categories, onSave, onCancel }) {
               </div>
             </div>
             <p className="text-xs text-gray-500 mt-1">Leave empty for 24/7 availability</p>
+          </div>
+
+          <div>
+            <Label htmlFor="source_dhaba">Source Dhaba (Admin/Delivery Only)</Label>
+            <Input
+              id="source_dhaba"
+              value={formData.source_dhaba}
+              onChange={(e) => handleInputChange("source_dhaba", e.target.value)}
+              placeholder="e.g., Dhaba 1, Main Canteen"
+            />
+            <p className="text-xs text-gray-500 mt-1">
+              This indicates which dhaba this product is sourced from (only visible to admin and delivery)
+            </p>
           </div>
 
           <div>
