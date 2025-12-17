@@ -237,27 +237,33 @@ export default function Delivery() {
 
   useEffect(() => {
     let intervalId;
-    if (deliveryPerson && !updatingOrderId && !acceptingOrderId && !cancellingOrderId) {
-      // Poll for new orders every 5 seconds for real-time updates
+    const personId = deliveryPerson?.id;
+    if (personId && !updatingOrderId && !acceptingOrderId && !cancellingOrderId) {
       intervalId = setInterval(() => {
-        loadAssignedOrders(deliveryPerson.id).catch(err => console.error("Error polling:", err));
+        loadAssignedOrders(personId).catch(err => console.error("Error polling:", err));
         loadAvailableOrders().catch(err => console.error("Error polling:", err));
       }, 5000);
     }
     return () => {
       if (intervalId) clearInterval(intervalId);
     };
-  }, [deliveryPerson?.id, updatingOrderId, acceptingOrderId, cancellingOrderId]);
+  }, [deliveryPerson?.id, updatingOrderId, acceptingOrderId, cancellingOrderId, loadAssignedOrders, loadAvailableOrders]);
 
+  const analysisRunRef = React.useRef(new Set());
+  
   useEffect(() => {
     if (assignedOrders.length > 0 && assignedOrders.length < 5) {
-      const timer = setTimeout(() => {
-        findCheaperOptions().catch(err => console.error("Analysis error:", err));
-        analyzeItemLocations().catch(err => console.error("Analysis error:", err));
-      }, 1000);
-      return () => clearTimeout(timer);
+      const orderIds = assignedOrders.map(o => o.id).sort().join(',');
+      if (!analysisRunRef.current.has(orderIds)) {
+        analysisRunRef.current.add(orderIds);
+        const timer = setTimeout(() => {
+          findCheaperOptions().catch(err => console.error("Analysis error:", err));
+          analyzeItemLocations().catch(err => console.error("Analysis error:", err));
+        }, 1000);
+        return () => clearTimeout(timer);
+      }
     }
-  }, [assignedOrders]);
+  }, [assignedOrders.map(o => o.id).join(',')]);
 
   const analyzeItemLocations = async () => {
     try {
@@ -473,12 +479,10 @@ export default function Delivery() {
     try {
       const order = availableOrders.find(o => o.id === orderId);
       
-      // Update UI immediately
       setAvailableOrders(prev => prev.filter(o => o.id !== orderId));
       setAssignedOrders(prev => [...prev, { ...order, status: "preparing", delivery_person_id: deliveryPerson.id }]);
       
-      // Background updates
-      Promise.all([
+      await Promise.all([
         Order.update(orderId, {
           delivery_person_id: deliveryPerson.id,
           status: "preparing"
@@ -486,10 +490,12 @@ export default function Delivery() {
         DeliveryPerson.update(deliveryPerson.id, {
           current_orders: [...(deliveryPerson.current_orders || []), orderId]
         })
-      ]).catch(error => console.error("Error in background update:", error));
+      ]);
 
     } catch (error) {
       console.error("Error accepting order:", error);
+      loadAssignedOrders(deliveryPerson.id);
+      loadAvailableOrders();
     } finally {
       setAcceptingOrderId(null);
     }
@@ -500,13 +506,11 @@ export default function Delivery() {
     try {
       const order = assignedOrders.find(o => o.id === orderId);
       
-      // Update UI immediately
       setAssignedOrders(prev => prev.map(o => 
         o.id === orderId ? { ...o, status: "out_for_delivery" } : o
       ));
       
-      // Background updates
-      Promise.all([
+      await Promise.all([
         Order.update(orderId, { status: "out_for_delivery" }),
         order && Notification.create({
           user_id: order.user_id,
@@ -514,10 +518,11 @@ export default function Delivery() {
           message: `Your order #${order.order_number} is on its way!`,
           type: "info"
         })
-      ]).catch(error => console.error("Error in background update:", error));
+      ]);
 
     } catch (error) {
       console.error("Error marking order out for delivery:", error);
+      loadAssignedOrders(deliveryPerson.id);
     } finally {
       setUpdatingOrderId(null);
     }
@@ -533,16 +538,16 @@ export default function Delivery() {
       const newTotalDeliveries = (deliveryPerson.total_deliveries || 0) + 1;
       const newTotalEarnings = (deliveryPerson.total_earnings || 0) + commission;
 
-      // Update UI immediately
       setAssignedOrders(prev => prev.filter(o => o.id !== orderId));
-      setDeliveryPerson(prev => ({
-        ...prev,
+      const updatedPerson = {
+        ...deliveryPerson,
         total_deliveries: newTotalDeliveries,
         total_earnings: newTotalEarnings
-      }));
+      };
+      setDeliveryPerson(updatedPerson);
+      localStorage.setItem('deliveryPerson', JSON.stringify(updatedPerson));
 
-      // All background updates in parallel
-      Promise.all([
+      await Promise.all([
         Order.update(orderId, { status: "delivered" }),
         DeliveryPerson.update(deliveryPerson.id, {
           total_deliveries: newTotalDeliveries,
@@ -555,10 +560,11 @@ export default function Delivery() {
           message: `Your order #${order.order_number} has been delivered. Thank you for choosing CollegeCart!`,
           type: "success"
         })
-      ]).catch(error => console.error("Error in background update:", error));
+      ]);
 
     } catch (error) {
       console.error("Error marking order as delivered:", error);
+      loadAssignedOrders(deliveryPerson.id);
     } finally {
       setUpdatingOrderId(null);
     }
