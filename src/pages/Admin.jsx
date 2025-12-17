@@ -40,6 +40,7 @@ import ProductManagement from "../components/admin/ProductManagement";
   import DeliveryPerformance from "../components/admin/DeliveryPerformance";
   import BannerManagement from "../components/admin/BannerManagement";
   import DhabaMenuManagement from "../components/admin/DhabaMenuManagement";
+  import ActivityLog from "../components/admin/ActivityLog";
 
 export default function Admin() {
   const navigate = useNavigate();
@@ -147,7 +148,8 @@ export default function Admin() {
     { value: "gamification", label: "Gamification", permission: "manage_settings", component: <GamificationConfig /> },
     { value: "qr-generator", label: "QR Generator", permission: "manage_orders", component: <CustomQRGenerator /> },
     { value: "settings", label: "Settings", permission: "manage_settings", component: <SettingsManagement /> },
-    { value: "roles", label: "Roles", permission: "manage_roles", component: <RoleManagement /> }
+    { value: "roles", label: "Roles", permission: "manage_roles", component: <RoleManagement /> },
+    { value: "activity-log", label: "Activity Log", permission: "manage_settings", component: <ActivityLog /> }
   ];
 
   // Filter tabs based on permissions
