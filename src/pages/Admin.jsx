@@ -41,6 +41,7 @@ import ProductManagement from "../components/admin/ProductManagement";
   import BannerManagement from "../components/admin/BannerManagement";
   import DhabaMenuManagement from "../components/admin/DhabaMenuManagement";
   import ActivityLog from "../components/admin/ActivityLog";
+  import DailyProfitCalculator from "../components/admin/DailyProfitCalculator";
 
 export default function Admin() {
   const navigate = useNavigate();
@@ -123,6 +124,7 @@ export default function Admin() {
     { value: "dashboard", label: "Dashboard", permission: "view_summary", component: <EnhancedDashboard /> },
     { value: "ai-insights", label: "AI Intelligence", permission: "view_summary", component: <UnifiedAIDashboard /> },
     { value: "summary", label: "Daily Summary", permission: "view_summary", component: <DailyOrderSummary /> },
+    { value: "profit", label: "Profit Analytics", permission: "view_summary", component: <DailyProfitCalculator /> },
     { value: "crm", label: "CRM", permission: "manage_crm", component: <CRMModule /> },
     { value: "retention", label: "Customer Retention", permission: "manage_crm", component: <CustomerRetention /> },
     { value: "marketing", label: "Marketing Automation", permission: "manage_campaigns", component: <MarketingAutomation /> },
