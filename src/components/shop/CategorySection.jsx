@@ -77,6 +77,16 @@ export default function CategorySection({ category, products, onAddToCart, onUpd
     );
   }
 
+  // Sort products: in-stock first, then out-of-stock
+  const sortedProducts = [...products].sort((a, b) => {
+    const aInStock = isProductInStock(a);
+    const bInStock = isProductInStock(b);
+    
+    if (aInStock && !bInStock) return -1;
+    if (!aInStock && bInStock) return 1;
+    return 0;
+  });
+
   return (
     <div className="mb-8">
       <div className="flex items-center justify-between mb-4">
@@ -92,7 +102,7 @@ export default function CategorySection({ category, products, onAddToCart, onUpd
       
       <div className="relative">
         <div className="flex gap-4 overflow-x-auto pb-4 scrollbar-hide snap-x snap-mandatory">
-          {products.slice(0, 10).map((product, index) => {
+          {sortedProducts.map((product, index) => {
             const cartQty = getCartQuantity(product.id);
             const hasDiscount = product.original_price && product.original_price > product.price;
             const hostelStock = getHostelStock(product);
