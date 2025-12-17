@@ -74,9 +74,6 @@ export default function Delivery() {
   const [showCancelDialog, setShowCancelDialog] = useState(false);
   const [orderToCancel, setOrderToCancel] = useState(null);
   const [isTogglingAvailability, setIsTogglingAvailability] = useState(false);
-  const [cheaperOptions, setCheaperOptions] = useState({});
-  const [itemLocations, setItemLocations] = useState({});
-  const analyzedOrdersRef = React.useRef(new Set());
 
 
   const loadAssignedOrders = useCallback(async (deliveryPersonId) => {
@@ -238,134 +235,17 @@ export default function Delivery() {
   useEffect(() => {
     let intervalId;
     const personId = deliveryPerson?.id;
-    if (personId && !updatingOrderId && !acceptingOrderId && !cancellingOrderId) {
+    // Only poll for new available orders if there are no assigned orders
+    // This prevents constant reloading when delivery partner is working on orders
+    if (personId && assignedOrders.length === 0 && !updatingOrderId && !acceptingOrderId && !cancellingOrderId) {
       intervalId = setInterval(() => {
-        loadAssignedOrders(personId).catch(err => console.error("Error polling:", err));
         loadAvailableOrders().catch(err => console.error("Error polling:", err));
-      }, 10000); // Increased to 10 seconds to reduce reload frequency
+      }, 8000);
     }
     return () => {
       if (intervalId) clearInterval(intervalId);
     };
-  }, [deliveryPerson?.id, updatingOrderId, acceptingOrderId, cancellingOrderId, loadAssignedOrders, loadAvailableOrders]);
-
-  useEffect(() => {
-    if (assignedOrders.length > 0 && assignedOrders.length < 5) {
-      const orderIds = assignedOrders.map(o => o.id).sort().join(',');
-      if (!analyzedOrdersRef.current.has(orderIds)) {
-        analyzedOrdersRef.current.add(orderIds);
-        const timer = setTimeout(() => {
-          findCheaperOptions().catch(err => console.error("Analysis error:", err));
-          analyzeItemLocations().catch(err => console.error("Analysis error:", err));
-        }, 1000);
-        return () => clearTimeout(timer);
-      }
-    }
-  }, [assignedOrders.map(o => o.id).join(',')]);
-
-  const analyzeItemLocations = async () => {
-    try {
-      const menuItems = await base44.entities.DhabaMenu.filter({ is_available: true });
-      const locations = {};
-      
-      const ordersToAnalyze = assignedOrders.slice(0, 5);
-      
-      for (const order of ordersToAnalyze) {
-        const orderLocations = [];
-        
-        for (const item of order.items || []) {
-          const matches = menuItems.filter(menu => 
-            menu.item_name.toLowerCase().includes(item.product_name.toLowerCase()) ||
-            item.product_name.toLowerCase().includes(menu.item_name.toLowerCase())
-          );
-          
-          if (matches.length > 0) {
-            const dhabas = matches.map(m => ({ dhaba: m.dhaba_name, price: m.price }));
-            dhabas.sort((a, b) => a.price - b.price);
-            
-            orderLocations.push({
-              item_name: item.product_name,
-              quantity: item.quantity,
-              available_at: dhabas.slice(0, 5),
-              cheapest_dhaba: dhabas[0].dhaba,
-              cheapest_price: dhabas[0].price
-            });
-          }
-        }
-        
-        if (orderLocations.length > 0) {
-          locations[order.id] = orderLocations;
-        }
-      }
-      
-      setItemLocations(locations);
-    } catch (error) {
-      console.error("Error analyzing item locations:", error);
-    }
-  };
-
-  const findCheaperOptions = async () => {
-    try {
-      const menuItems = await base44.entities.DhabaMenu.filter({ is_available: true });
-      const products = await base44.entities.Product.list();
-      
-      const options = {};
-      
-      const ordersToAnalyze = assignedOrders.slice(0, 5);
-      
-      for (const order of ordersToAnalyze) {
-        const orderAnalysis = [];
-        
-        for (const item of order.items || []) {
-          const matches = menuItems.filter(menu => 
-            menu.item_name.toLowerCase().includes(item.product_name.toLowerCase()) ||
-            item.product_name.toLowerCase().includes(menu.item_name.toLowerCase())
-          );
-          
-          if (matches.length > 0) {
-            const sortedMatches = matches.sort((a, b) => a.price - b.price).slice(0, 5);
-            const cheapest = sortedMatches[0];
-            
-            const product = products.find(p => p.id === item.product_id);
-            const customerPrice = item.price;
-            const customerDhaba = item.dhaba_name || product?.source_dhaba || "Not specified";
-            const savings = customerPrice - cheapest.price;
-            
-            orderAnalysis.push({
-              item_name: item.product_name,
-              quantity: item.quantity,
-              customer_selected: {
-                dhaba: customerDhaba,
-                price: customerPrice,
-                total: customerPrice * item.quantity
-              },
-              cheapest_option: {
-                dhaba: cheapest.dhaba_name,
-                price: cheapest.price,
-                total: cheapest.price * item.quantity
-              },
-              all_options: sortedMatches.map(m => ({
-                dhaba: m.dhaba_name,
-                price: m.price,
-                total: m.price * item.quantity
-              })),
-              savings_per_item: savings,
-              total_savings: savings * item.quantity,
-              recommendation: savings > 0 ? 'cheaper_available' : 'best_price'
-            });
-          }
-        }
-        
-        if (orderAnalysis.length > 0) {
-          options[order.id] = orderAnalysis;
-        }
-      }
-      
-      setCheaperOptions(options);
-    } catch (error) {
-      console.error("Error finding cheaper options:", error);
-    }
-  };
+  }, [deliveryPerson?.id, assignedOrders.length, updatingOrderId, acceptingOrderId, cancellingOrderId, loadAvailableOrders]);
 
 
 
@@ -940,166 +820,6 @@ export default function Delivery() {
                               ))}
                             </div>
                           </div>
-
-                          {/* Item Location Analysis */}
-                          {itemLocations[order.id] && itemLocations[order.id].length > 0 && (
-                            <div className="bg-gradient-to-r from-green-50 to-emerald-50 border-l-4 border-green-500 p-4 rounded-lg mb-4">
-                              <div className="flex items-start gap-3">
-                                <div className="flex-shrink-0 w-10 h-10 bg-green-100 rounded-full flex items-center justify-center">
-                                  <span className="text-green-600 text-xl">🎯</span>
-                                </div>
-                                <div className="flex-1">
-                                  <h4 className="font-semibold text-green-900 mb-2">💰 Smart Price Analysis - Get Best Deals!</h4>
-                                  <div className="space-y-3">
-                                    {itemLocations[order.id].map((loc, idx) => (
-                                      <div key={idx} className="bg-white rounded-lg p-3 border-2 border-green-200 shadow-sm">
-                                        <div className="flex items-center justify-between mb-2">
-                                          <span className="font-medium text-gray-900">{loc.item_name} × {loc.quantity}</span>
-                                          <span className="text-xs bg-green-100 text-green-800 px-2 py-1 rounded-full font-bold">
-                                            ⭐ BEST: {loc.cheapest_dhaba}
-                                          </span>
-                                        </div>
-                                        <div className="bg-gradient-to-r from-green-100 to-emerald-100 p-2 rounded mb-2">
-                                          <div className="flex items-center justify-between">
-                                            <span className="text-sm font-bold text-green-900">
-                                              ✅ RECOMMENDED: Get from {loc.cheapest_dhaba}
-                                            </span>
-                                            <span className="text-lg font-bold text-green-700">
-                                              ₹{loc.cheapest_price.toFixed(2)}
-                                            </span>
-                                          </div>
-                                        </div>
-                                        <div className="space-y-1">
-                                          <p className="text-xs text-gray-600 font-medium">Also available at:</p>
-                                          {loc.available_at.slice(1).map((d, i) => (
-                                            <div key={i} className="flex items-center justify-between text-sm pl-2">
-                                              <span className="text-gray-600">🍽️ {d.dhaba}</span>
-                                              <span className="text-gray-500">₹{d.price.toFixed(2)}</span>
-                                            </div>
-                                          ))}
-                                        </div>
-                                      </div>
-                                    ))}
-                                  </div>
-                                  <p className="text-xs text-green-800 mt-3 font-medium bg-green-100 p-2 rounded">
-                                    💡 AI Analysis: Items sorted by lowest price. Get from recommended dhaba for best deal!
-                                  </p>
-                                </div>
-                              </div>
-                            </div>
-                          )}
-
-                          {/* Smart Price Analysis & Recommendations */}
-                          {cheaperOptions[order.id] && cheaperOptions[order.id].length > 0 && (
-                            <div className="bg-gradient-to-r from-purple-50 to-pink-50 border-l-4 border-purple-500 p-4 rounded-lg mb-4 shadow-sm">
-                              <div className="flex items-start gap-3">
-                                <div className="flex-shrink-0 w-12 h-12 bg-gradient-to-br from-purple-500 to-pink-500 rounded-full flex items-center justify-center shadow-lg">
-                                  <span className="text-white text-2xl">💎</span>
-                                </div>
-                                <div className="flex-1">
-                                  <h4 className="font-bold text-purple-900 mb-1 text-lg">🎯 Smart Sourcing Guide</h4>
-                                  <p className="text-sm text-purple-700 mb-3">AI-powered price analysis for each item</p>
-
-                                  <div className="space-y-3">
-                                    {cheaperOptions[order.id].map((analysis, idx) => {
-                                      const hasCheaperOption = analysis.recommendation === 'cheaper_available';
-                                      const totalOrderSavings = analysis.total_savings;
-
-                                      return (
-                                        <div key={idx} className={`bg-white rounded-xl p-4 border-2 ${hasCheaperOption ? 'border-green-300 shadow-md' : 'border-gray-200'}`}>
-                                          <div className="flex items-center justify-between mb-3">
-                                            <div>
-                                              <h5 className="font-bold text-gray-900 text-base">{analysis.item_name}</h5>
-                                              <p className="text-xs text-gray-500">Quantity: {analysis.quantity} units</p>
-                                            </div>
-                                            {hasCheaperOption && (
-                                              <div className="bg-gradient-to-r from-green-500 to-emerald-500 text-white px-3 py-1 rounded-full text-xs font-bold shadow">
-                                                💰 Save ₹{totalOrderSavings.toFixed(2)}
-                                              </div>
-                                            )}
-                                          </div>
-
-                                          <div className="bg-blue-50 rounded-lg p-3 mb-3 border border-blue-200">
-                                            <p className="text-xs font-semibold text-blue-800 mb-1">📝 Customer Ordered:</p>
-                                            <div className="flex justify-between items-center">
-                                              <span className="text-sm text-blue-900">
-                                                <span className="font-medium">{analysis.customer_selected.dhaba}</span>
-                                              </span>
-                                              <span className="text-sm font-bold text-blue-900">
-                                                ₹{analysis.customer_selected.price.toFixed(2)} × {analysis.quantity} = ₹{analysis.customer_selected.total.toFixed(2)}
-                                              </span>
-                                            </div>
-                                          </div>
-
-                                          {hasCheaperOption ? (
-                                            <div className="bg-gradient-to-r from-green-100 to-emerald-100 rounded-lg p-3 mb-2 border-2 border-green-400">
-                                              <div className="flex items-center gap-2 mb-2">
-                                                <span className="text-lg">✅</span>
-                                                <p className="text-xs font-bold text-green-900 uppercase tracking-wide">RECOMMENDED - Pick From Here:</p>
-                                              </div>
-                                              <div className="flex justify-between items-center">
-                                                <span className="text-base font-bold text-green-900">
-                                                  🏪 {analysis.cheapest_option.dhaba}
-                                                </span>
-                                                <span className="text-base font-bold text-green-700">
-                                                  ₹{analysis.cheapest_option.price.toFixed(2)} × {analysis.quantity} = ₹{analysis.cheapest_option.total.toFixed(2)}
-                                                </span>
-                                              </div>
-                                              <div className="mt-2 bg-white rounded p-2 border border-green-300">
-                                                <p className="text-xs text-green-800 font-semibold">
-                                                  💵 You'll save: ₹{analysis.savings_per_item.toFixed(2)}/item × {analysis.quantity} = <span className="text-base font-bold">₹{totalOrderSavings.toFixed(2)} total</span>
-                                                </p>
-                                              </div>
-                                            </div>
-                                          ) : (
-                                            <div className="bg-green-50 rounded-lg p-3 mb-2 border border-green-200">
-                                              <div className="flex items-center gap-2">
-                                                <span className="text-lg">✅</span>
-                                                <p className="text-sm font-bold text-green-800">Already at best price!</p>
-                                              </div>
-                                            </div>
-                                          )}
-
-                                          {analysis.all_options.length > 1 && (
-                                            <details className="mt-2">
-                                              <summary className="text-xs text-gray-600 cursor-pointer hover:text-gray-900 font-medium">
-                                                📊 View all {analysis.all_options.length} available options
-                                              </summary>
-                                              <div className="mt-2 space-y-1">
-                                                {analysis.all_options.map((opt, i) => (
-                                                  <div key={i} className="flex justify-between items-center text-xs p-2 bg-gray-50 rounded border border-gray-200">
-                                                    <span className="text-gray-700">{i + 1}. {opt.dhaba}</span>
-                                                    <span className={`font-medium ${i === 0 ? 'text-green-600' : 'text-gray-600'}`}>
-                                                      ₹{opt.price.toFixed(2)} × {analysis.quantity} = ₹{opt.total.toFixed(2)}
-                                                    </span>
-                                                  </div>
-                                                ))}
-                                              </div>
-                                            </details>
-                                          )}
-                                        </div>
-                                      );
-                                    })}
-                                  </div>
-
-                                  {(() => {
-                                    const totalOrderSavings = cheaperOptions[order.id].reduce((sum, a) => sum + a.total_savings, 0);
-                                    return totalOrderSavings > 0 ? (
-                                      <div className="mt-4 bg-gradient-to-r from-yellow-100 to-orange-100 rounded-lg p-3 border-2 border-yellow-400">
-                                        <div className="flex items-center justify-between">
-                                          <span className="font-bold text-yellow-900 text-sm">🎉 TOTAL POTENTIAL SAVINGS:</span>
-                                          <span className="text-2xl font-black text-orange-600">₹{totalOrderSavings.toFixed(2)}</span>
-                                        </div>
-                                        <p className="text-xs text-yellow-800 mt-1">
-                                          💡 By sourcing from recommended dhabas, you can save this much!
-                                        </p>
-                                      </div>
-                                    ) : null;
-                                  })()}
-                                </div>
-                              </div>
-                            </div>
-                          )}
 
                           <div className="flex items-center justify-between">
                             <div>
