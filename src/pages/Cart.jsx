@@ -697,8 +697,8 @@ export default function Cart() {
             }
           />
 
-          {/* Personalized Recommendations - Disabled for performance */}
-          {false && user && (
+          {/* Personalized Recommendations at Checkout */}
+          {user && (
             <RecommendationEngine
               user={user}
               onAddToCart={addToCart}

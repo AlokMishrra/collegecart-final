@@ -360,8 +360,8 @@ export default function Shop() {
         onSelectCategory={setSelectedCategory}
       />
 
-      {/* Personalized Recommendations - Disabled for performance */}
-      {false && !searchQuery.trim() && !selectedCategory && filters.availability === "all" && filters.rating === "all" && user && (
+      {/* Personalized Recommendations */}
+      {!searchQuery.trim() && !selectedCategory && filters.availability === "all" && filters.rating === "all" && user && (
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}

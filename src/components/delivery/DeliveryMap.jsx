@@ -54,11 +54,10 @@ export default function DeliveryMap({ showAllDeliveryPersons = true, orderId = n
 
   useEffect(() => {
     loadLocations().catch(err => console.error("Map load error:", err));
-    // Disable auto-refresh for performance
-    // const interval = setInterval(() => {
-    //   loadLocations().catch(err => console.error("Map refresh error:", err));
-    // }, 30000);
-    // return () => clearInterval(interval);
+    const interval = setInterval(() => {
+      loadLocations().catch(err => console.error("Map refresh error:", err));
+    }, 60000); // Refresh every 60 seconds
+    return () => clearInterval(interval);
   }, []);
 
   const loadLocations = async () => {

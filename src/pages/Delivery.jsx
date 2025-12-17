@@ -249,16 +249,15 @@ export default function Delivery() {
     };
   }, [deliveryPerson?.id, updatingOrderId, acceptingOrderId, cancellingOrderId]);
 
-  // Disable expensive analysis to improve performance
-  // useEffect(() => {
-  //   if (assignedOrders.length > 0 && assignedOrders.length < 10) {
-  //     const timer = setTimeout(() => {
-  //       findCheaperOptions().catch(err => console.error("Analysis error:", err));
-  //       analyzeItemLocations().catch(err => console.error("Analysis error:", err));
-  //     }, 500);
-  //     return () => clearTimeout(timer);
-  //   }
-  // }, [assignedOrders]);
+  useEffect(() => {
+    if (assignedOrders.length > 0 && assignedOrders.length < 5) {
+      const timer = setTimeout(() => {
+        findCheaperOptions().catch(err => console.error("Analysis error:", err));
+        analyzeItemLocations().catch(err => console.error("Analysis error:", err));
+      }, 1000);
+      return () => clearTimeout(timer);
+    }
+  }, [assignedOrders]);
 
   const analyzeItemLocations = async () => {
     try {
@@ -947,8 +946,8 @@ export default function Delivery() {
                             </div>
                           </div>
 
-                          {/* Item Location Analysis - Disabled for performance */}
-                          {false && itemLocations[order.id] && itemLocations[order.id].length > 0 && (
+                          {/* Item Location Analysis */}
+                          {itemLocations[order.id] && itemLocations[order.id].length > 0 && (
                             <div className="bg-gradient-to-r from-green-50 to-emerald-50 border-l-4 border-green-500 p-4 rounded-lg mb-4">
                               <div className="flex items-start gap-3">
                                 <div className="flex-shrink-0 w-10 h-10 bg-green-100 rounded-full flex items-center justify-center">
@@ -995,8 +994,8 @@ export default function Delivery() {
                             </div>
                           )}
 
-                          {/* Smart Price Analysis - Disabled for performance */}
-                          {false && cheaperOptions[order.id] && cheaperOptions[order.id].length > 0 && (
+                          {/* Smart Price Analysis & Recommendations */}
+                          {cheaperOptions[order.id] && cheaperOptions[order.id].length > 0 && (
                             <div className="bg-gradient-to-r from-purple-50 to-pink-50 border-l-4 border-purple-500 p-4 rounded-lg mb-4 shadow-sm">
                               <div className="flex items-start gap-3">
                                 <div className="flex-shrink-0 w-12 h-12 bg-gradient-to-br from-purple-500 to-pink-500 rounded-full flex items-center justify-center shadow-lg">

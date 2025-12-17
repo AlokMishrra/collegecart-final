@@ -19,8 +19,8 @@ export default function ProductCard({ product, cartQuantity, onAddToCart, onUpda
   const displayPrice = product.price;
 
   useEffect(() => {
-    // Load reviews only, skip wishlist check for performance
     loadReviews();
+    checkWishlistStatus();
   }, [product.id]);
 
   const checkWishlistStatus = async () => {
