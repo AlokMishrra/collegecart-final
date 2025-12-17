@@ -138,16 +138,12 @@ export default function Shop() {
   const loadData = async () => {
     setIsLoading(true);
     try {
-      const [productsData, categoriesData, currentUser] = await Promise.all([
-        Product.filter({ is_available: true }, '-created_date'),
-        Category.filter({ is_active: true }, 'display_order'),
-        User.me().catch(() => null)
+      const [productsData, categoriesData] = await Promise.all([
+        Product.filter({ is_available: true }, '-created_date', 100).catch(() => []),
+        Category.filter({ is_active: true }, 'display_order', 20).catch(() => [])
       ]);
 
-      // Get active category IDs
       const activeCategoryIds = categoriesData.map(cat => cat.id);
-      
-      // Filter products to only show those with active categories
       const productsWithActiveCategories = productsData.filter(product => 
         activeCategoryIds.includes(product.category_id)
       );
@@ -156,16 +152,19 @@ export default function Shop() {
       setCategories(categoriesData);
     } catch (error) {
       console.error("Error loading data:", error);
+      setProducts([]);
+      setCategories([]);
     }
     setIsLoading(false);
   };
 
   const loadCartItems = async (userId) => {
     try {
-      const items = await CartItem.filter({ user_id: userId });
+      const items = await CartItem.filter({ user_id: userId }, '-created_date', 50).catch(() => []);
       setCartItems(items);
     } catch (error) {
       console.error("Error loading cart:", error);
+      setCartItems([]);
     }
   };
 
@@ -361,8 +360,8 @@ export default function Shop() {
         onSelectCategory={setSelectedCategory}
       />
 
-      {/* Personalized Recommendations */}
-      {!searchQuery.trim() && !selectedCategory && filters.availability === "all" && filters.rating === "all" && user && (
+      {/* Personalized Recommendations - Disabled for performance */}
+      {false && !searchQuery.trim() && !selectedCategory && filters.availability === "all" && filters.rating === "all" && user && (
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}

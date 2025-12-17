@@ -48,13 +48,18 @@ export default function Cart() {
   const loadCart = useCallback(async (userId) => {
     setIsLoading(true);
     try {
-      const items = await CartItem.filter({ user_id: userId });
+      const items = await CartItem.filter({ user_id: userId }, '-created_date', 50).catch(() => []);
       setCartItems(items);
 
-      // Load product details
-      const productIds = [...new Set(items.map(item => item.product_id))];
+      if (items.length === 0) {
+        setProducts({});
+        setIsLoading(false);
+        return;
+      }
+
+      const productIds = [...new Set(items.map(item => item.product_id))].slice(0, 50);
       const productPromises = productIds.map(id => 
-        Product.filter({ id }).then(results => results[0])
+        Product.filter({ id }).then(results => results[0]).catch(() => null)
       );
       const productsData = await Promise.all(productPromises);
       
@@ -65,6 +70,8 @@ export default function Cart() {
       setProducts(productsMap);
     } catch (error) {
       console.error("Error loading cart:", error);
+      setCartItems([]);
+      setProducts({});
     }
     setIsLoading(false);
   }, []); // Dependencies: empty as state setters and static imports are stable.
@@ -690,8 +697,8 @@ export default function Cart() {
             }
           />
 
-          {/* Personalized Recommendations at Checkout */}
-          {user && (
+          {/* Personalized Recommendations - Disabled for performance */}
+          {false && user && (
             <RecommendationEngine
               user={user}
               onAddToCart={addToCart}

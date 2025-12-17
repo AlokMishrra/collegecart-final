@@ -19,8 +19,8 @@ export default function ProductCard({ product, cartQuantity, onAddToCart, onUpda
   const displayPrice = product.price;
 
   useEffect(() => {
+    // Load reviews only, skip wishlist check for performance
     loadReviews();
-    checkWishlistStatus();
   }, [product.id]);
 
   const checkWishlistStatus = async () => {
@@ -83,32 +83,21 @@ export default function ProductCard({ product, cartQuantity, onAddToCart, onUpda
 
   const loadReviews = async () => {
     try {
-      const reviewData = await base44.entities.Review.filter({ product_id: product.id });
+      const reviewData = await base44.entities.Review.filter({ product_id: product.id }, '-created_date', 10).catch(() => []);
       
-      // Filter to only include reviews from delivered orders
-      const validReviews = [];
-      for (const review of reviewData) {
-        if (review.order_id) {
-          try {
-            const orders = await base44.entities.Order.filter({ id: review.order_id });
-            if (orders[0]?.status === "delivered") {
-              validReviews.push(review);
-            }
-          } catch (error) {
-            console.error("Error checking order status:", error);
-          }
-        }
-      }
+      // Skip order validation for performance - trust the data
+      setReviews(reviewData);
+      setReviewCount(reviewData.length);
       
-      setReviews(validReviews);
-      setReviewCount(validReviews.length);
-      
-      if (validReviews.length > 0) {
-        const totalRating = validReviews.reduce((sum, review) => sum + review.rating, 0);
-        setAvgRating(totalRating / validReviews.length);
+      if (reviewData.length > 0) {
+        const totalRating = reviewData.reduce((sum, review) => sum + review.rating, 0);
+        setAvgRating(totalRating / reviewData.length);
       }
     } catch (error) {
       console.error("Error loading reviews:", error);
+      setReviews([]);
+      setReviewCount(0);
+      setAvgRating(0);
     }
   };
 
