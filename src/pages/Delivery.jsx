@@ -15,9 +15,7 @@ import { motion, AnimatePresence } from "framer-motion";
   import DeliveryStats from "../components/delivery/DeliveryStats";
   import DeliveryNotifications from "../components/delivery/DeliveryNotifications";
   import CODQRGenerator from "../components/delivery/CODQRGenerator";
-  import DeliveryAI from "../components/delivery/DeliveryAI";
   import SwipeToDeliver from "../components/delivery/SwipeToDeliver";
-  import LiveLocationTracker from "../components/delivery/LiveLocationTracker";
 
 function DeliveryOrderItem({ item }) {
   const [product, setProduct] = useState(null);
@@ -244,7 +242,7 @@ export default function Delivery() {
       intervalId = setInterval(() => {
         loadAssignedOrders(personId).catch(err => console.error("Error polling:", err));
         loadAvailableOrders().catch(err => console.error("Error polling:", err));
-      }, 5000);
+      }, 10000); // Increased to 10 seconds to reduce reload frequency
     }
     return () => {
       if (intervalId) clearInterval(intervalId);
@@ -762,15 +760,6 @@ export default function Delivery() {
 
       {/* Delivery Statistics */}
       <DeliveryStats deliveryPerson={deliveryPerson} />
-
-      {/* Live Location Tracking */}
-      <LiveLocationTracker 
-        deliveryPersonId={deliveryPerson.id}
-        orderId={assignedOrders.find(o => o.status === 'out_for_delivery')?.id}
-      />
-
-      {/* AI Delivery Assistant */}
-      <DeliveryAI deliveryPerson={deliveryPerson} orders={assignedOrders} />
 
       {/* Available Orders to Accept - Only show if available */}
       {deliveryPerson.is_available && availableOrders.length > 0 && (
