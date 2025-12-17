@@ -139,8 +139,8 @@ export default function Shop() {
     setIsLoading(true);
     try {
       const [productsData, categoriesData] = await Promise.all([
-        Product.filter({ is_available: true }, '-created_date', 100).catch(() => []),
-        Category.filter({ is_active: true }, 'display_order', 20).catch(() => [])
+        Product.filter({ is_available: true }, '-created_date', 500).catch(() => []),
+        Category.filter({ is_active: true }, 'display_order', 50).catch(() => [])
       ]);
 
       const activeCategoryIds = categoriesData.map(cat => cat.id);

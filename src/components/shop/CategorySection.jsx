@@ -6,7 +6,7 @@ import { createPageUrl } from "@/utils";
 import { Button } from "@/components/ui/button";
 import { User } from "@/entities/User";
 
-export default function CategorySection({ category, products, onAddToCart, onUpdateQuantity, getCartQuantity }) {
+export default function CategorySection({ category, products, onAddToCart, onUpdateQuantity, getCartQuantity, getHostelStock, isProductInStock }) {
   const [user, setUser] = useState(null);
 
   useEffect(() => {
@@ -22,8 +22,12 @@ export default function CategorySection({ category, products, onAddToCart, onUpd
     }
   };
 
-  const isProductAvailableNow = (product) => {
-    if (!product.available_from || !product.available_to) return true;
+  // Use passed functions if available, otherwise define local ones
+  const checkProductInStock = isProductInStock || ((product) => {
+    if (!product.available_from || !product.available_to) {
+      const stock = getHostelStock ? getHostelStock(product) : (product.stock_quantity || 0);
+      return stock > 0;
+    }
     
     try {
       const now = new Date();
@@ -39,13 +43,17 @@ export default function CategorySection({ category, products, onAddToCart, onUpd
       const toMin = parseInt(toParts[1] || '0', 10);
       const toTime = toHour * 60 + toMin;
       
-      return currentTime >= fromTime && currentTime <= toTime;
+      const isTimeAvailable = currentTime >= fromTime && currentTime <= toTime;
+      if (!isTimeAvailable) return false;
+      
+      const stock = getHostelStock ? getHostelStock(product) : (product.stock_quantity || 0);
+      return stock > 0;
     } catch (error) {
       return true;
     }
-  };
+  });
 
-  const getHostelStock = (product) => {
+  const getStock = getHostelStock || ((product) => {
     if (!user?.selected_hostel || user.selected_hostel === 'Other') {
       return product.stock_quantity || 0;
     }
@@ -53,15 +61,7 @@ export default function CategorySection({ category, products, onAddToCart, onUpd
       return product.hostel_stock[user.selected_hostel];
     }
     return product.stock_quantity || 0;
-  };
-  
-  const isProductInStock = (product) => {
-    if (!isProductAvailableNow(product)) {
-      return false;
-    }
-    const hostelStock = getHostelStock(product);
-    return hostelStock > 0;
-  };
+  });
   
   // Show all categories even if empty
   if (!products || products.length === 0) {
@@ -79,8 +79,8 @@ export default function CategorySection({ category, products, onAddToCart, onUpd
 
   // Sort products: in-stock first, then out-of-stock
   const sortedProducts = [...products].sort((a, b) => {
-    const aInStock = isProductInStock(a);
-    const bInStock = isProductInStock(b);
+    const aInStock = checkProductInStock(a);
+    const bInStock = checkProductInStock(b);
     
     if (aInStock && !bInStock) return -1;
     if (!aInStock && bInStock) return 1;
@@ -105,8 +105,8 @@ export default function CategorySection({ category, products, onAddToCart, onUpd
           {sortedProducts.map((product, index) => {
             const cartQty = getCartQuantity(product.id);
             const hasDiscount = product.original_price && product.original_price > product.price;
-            const hostelStock = getHostelStock(product);
-            const inStock = isProductInStock(product);
+            const hostelStock = getStock(product);
+            const inStock = checkProductInStock(product);
             const isOutOfStock = !inStock;
             
             return (
