@@ -238,15 +238,19 @@ export default function Delivery() {
     let intervalId;
     const personId = deliveryPerson?.id;
     // Poll for new available orders continuously
-    if (personId && !updatingOrderId && !acceptingOrderId && !cancellingOrderId) {
+    if (personId) {
+      // Load immediately on mount
+      loadAvailableOrders().catch(err => console.error("Error loading:", err));
+      
+      // Then poll every 5 seconds
       intervalId = setInterval(() => {
         loadAvailableOrders().catch(err => console.error("Error polling:", err));
-      }, 3000); // Check every 3 seconds
+      }, 5000);
     }
     return () => {
       if (intervalId) clearInterval(intervalId);
     };
-  }, [deliveryPerson?.id, updatingOrderId, acceptingOrderId, cancellingOrderId, loadAvailableOrders]);
+  }, [deliveryPerson?.id, loadAvailableOrders]);
 
 
 
