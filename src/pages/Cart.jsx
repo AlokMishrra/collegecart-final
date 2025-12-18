@@ -44,6 +44,7 @@ export default function Cart() {
         const [appliedCampaign, setAppliedCampaign] = useState(null);
         const [codeError, setCodeError] = useState("");
         const [selectedDhaba, setSelectedDhaba] = useState({});
+        const [isProcessingPayment, setIsProcessingPayment] = useState(false);
 
   const loadCart = useCallback(async (userId) => {
     setIsLoading(true);
@@ -126,6 +127,18 @@ export default function Cart() {
   useEffect(() => {
     checkUser();
   }, [checkUser]); // Dependency: checkUser
+
+  useEffect(() => {
+    // Load Razorpay script
+    const script = document.createElement('script');
+    script.src = 'https://checkout.razorpay.com/v1/checkout.js';
+    script.async = true;
+    document.body.appendChild(script);
+    
+    return () => {
+      document.body.removeChild(script);
+    };
+  }, []);
 
   const updateQuantity = async (itemId, newQuantity) => {
     if (newQuantity <= 0) {
@@ -318,52 +331,87 @@ export default function Cart() {
     }
   };
 
-  const placeOrder = async () => {
-      // Check if cart is empty
-      if (cartItems.length === 0) {
-        await Notification.create({
-          user_id: user.id,
-          title: "Cart is Empty",
-          message: "Please add products to your cart before placing an order.",
-          type: "warning"
-        });
-        return;
+  const initiateRazorpayPayment = async (orderAmount) => {
+    try {
+      setIsProcessingPayment(true);
+
+      // Create Razorpay order via backend
+      const { data: razorpayOrderData } = await base44.functions.invoke('createRazorpayOrder', {
+        amount: orderAmount,
+        currency: 'INR',
+        receipt: `order_${Date.now()}`
+      });
+
+      if (!razorpayOrderData.orderId) {
+        throw new Error('Failed to create payment order');
       }
 
-      // Validate based on address type
-      if (!customerName.trim() || !phoneNumber.trim()) {
-        await Notification.create({
-          user_id: user.id,
-          title: "Missing Information",
-          message: "Please fill out name and phone number.",
-          type: "warning"
-        });
-        return;
-      }
+      // Initialize Razorpay checkout
+      const options = {
+        key: razorpayOrderData.keyId,
+        amount: razorpayOrderData.amount,
+        currency: razorpayOrderData.currency,
+        name: 'CollegeCart',
+        description: 'Order Payment',
+        order_id: razorpayOrderData.orderId,
+        prefill: {
+          name: customerName,
+          email: user.email || '',
+          contact: phoneNumber
+        },
+        theme: {
+          color: '#10b981'
+        },
+        handler: async function (response) {
+          // Verify payment
+          try {
+            const { data: verificationData } = await base44.functions.invoke('verifyRazorpayPayment', {
+              razorpay_order_id: response.razorpay_order_id,
+              razorpay_payment_id: response.razorpay_payment_id,
+              razorpay_signature: response.razorpay_signature
+            });
 
-      if (selectedHostel === "Other") {
-        if (!customAddress.trim()) {
-          await Notification.create({
-            user_id: user.id,
-            title: "Missing Address",
-            message: "Please enter your delivery address.",
-            type: "warning"
-          });
-          return;
+            if (verificationData.verified) {
+              // Payment successful, proceed with order creation
+              await createOrderAfterPayment(response.razorpay_payment_id, true);
+            } else {
+              throw new Error('Payment verification failed');
+            }
+          } catch (error) {
+            console.error('Payment verification error:', error);
+            await Notification.create({
+              user_id: user.id,
+              title: "Payment Verification Failed",
+              message: "Your payment could not be verified. Please contact support.",
+              type: "error"
+            });
+            setIsProcessingPayment(false);
+          }
+        },
+        modal: {
+          ondismiss: function() {
+            setIsProcessingPayment(false);
+            setIsPlacingOrder(false);
+          }
         }
-      } else {
-        if (!selectedHostel || !roomNumber.trim()) {
-          await Notification.create({
-            user_id: user.id,
-            title: "Missing Information",
-            message: "Please select hostel and enter room number.",
-            type: "warning"
-          });
-          return;
-        }
-      }
+      };
 
-    setIsPlacingOrder(true);
+      const razorpay = new window.Razorpay(options);
+      razorpay.open();
+    } catch (error) {
+      console.error('Razorpay error:', error);
+      await Notification.create({
+        user_id: user.id,
+        title: "Payment Failed",
+        message: "Unable to initiate payment. Please try again.",
+        type: "error"
+      });
+      setIsProcessingPayment(false);
+      setIsPlacingOrder(false);
+    }
+  };
+
+  const createOrderAfterPayment = async (paymentId = null, isPaid = false) => {
     try {
       const orderNumber = `CC${Date.now()}`;
       const orderItems = cartItems.map(item => {
@@ -383,6 +431,25 @@ export default function Cart() {
         : `${selectedHostel} Hostel, Room No: ${roomNumber}`;
 
       const finalAmount = calculateTotal();
+
+      // Store payment info if paid
+      const orderData = {
+        user_id: user.id,
+        order_number: orderNumber,
+        customer_name: customerName,
+        items: orderItems,
+        total_amount: finalAmount,
+        delivery_address: fullAddress,
+        phone_number: phoneNumber,
+        delivery_notes: deliveryNotes,
+        status: "confirmed",
+        payment_method: paymentMethod,
+        is_paid: isPaid
+      };
+
+      if (paymentId) {
+        orderData.razorpay_payment_id = paymentId;
+      }
       
       // Validate stock before creating order
       for (const item of cartItems) {
@@ -408,18 +475,7 @@ export default function Cart() {
         }
       }
 
-      const newOrder = await Order.create({
-        user_id: user.id,
-        order_number: orderNumber,
-        customer_name: customerName,
-        items: orderItems,
-        total_amount: finalAmount,
-        delivery_address: fullAddress,
-        phone_number: phoneNumber,
-        delivery_notes: deliveryNotes,
-        status: "confirmed",
-        payment_method: paymentMethod
-      });
+const newOrder = await Order.create(orderData);
 
       // Reduce stock for each item
       for (const item of cartItems) {
@@ -596,6 +652,63 @@ export default function Cart() {
       });
     }
     setIsPlacingOrder(false);
+    setIsProcessingPayment(false);
+  };
+
+  const placeOrder = async () => {
+    // Check if cart is empty
+    if (cartItems.length === 0) {
+      await Notification.create({
+        user_id: user.id,
+        title: "Cart is Empty",
+        message: "Please add products to your cart before placing an order.",
+        type: "warning"
+      });
+      return;
+    }
+
+    // Validate based on address type
+    if (!customerName.trim() || !phoneNumber.trim()) {
+      await Notification.create({
+        user_id: user.id,
+        title: "Missing Information",
+        message: "Please fill out name and phone number.",
+        type: "warning"
+      });
+      return;
+    }
+
+    if (selectedHostel === "Other") {
+      if (!customAddress.trim()) {
+        await Notification.create({
+          user_id: user.id,
+          title: "Missing Address",
+          message: "Please enter your delivery address.",
+          type: "warning"
+        });
+        return;
+      }
+    } else {
+      if (!selectedHostel || !roomNumber.trim()) {
+        await Notification.create({
+          user_id: user.id,
+          title: "Missing Information",
+          message: "Please select hostel and enter room number.",
+          type: "warning"
+        });
+        return;
+      }
+    }
+
+    setIsPlacingOrder(true);
+
+    // If online payment, initiate Razorpay
+    if (paymentMethod === "online") {
+      await initiateRazorpayPayment(calculateTotal());
+    } else {
+      // Cash on delivery
+      await createOrderAfterPayment(null, false);
+    }
   };
 
   if (isLoading) {
@@ -860,26 +973,17 @@ export default function Cart() {
 
                 {paymentMethod === "online" && (
                   <div className="bg-emerald-50 border border-emerald-200 rounded-lg p-4">
-                    <Label className="text-sm font-medium text-emerald-900">Pay ₹{calculateTotal().toFixed(2)} via UPI</Label>
-                    <div className="mt-3 flex flex-col items-center">
-                      <img
-                        src={`https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=upi://pay?pa=7248316506@okbizaxis%26pn=CollegeCart%26am=${calculateTotal().toFixed(2)}%26cu=INR`}
-                        alt="UPI QR Code"
-                        className="w-40 h-40 border-4 border-white rounded-lg shadow-md"
-                      />
-                      <p className="text-xs text-emerald-700 mt-2">Scan QR with any UPI app</p>
-                      <Button
-                        type="button"
-                        variant="outline"
-                        className="mt-3 w-full"
-                        onClick={() => {
-                          const upiUrl = `upi://pay?pa=7248316506@okbizaxis&pn=CollegeCart&am=${calculateTotal().toFixed(2)}&cu=INR`;
-                          window.location.href = upiUrl;
-                        }}
-                      >
-                        Open UPI App
-                      </Button>
-                      <p className="text-xs text-gray-500 mt-2">UPI ID: 7248316506@okbizaxis</p>
+                    <Label className="text-sm font-medium text-emerald-900 flex items-center gap-2">
+                      <span>💳</span>
+                      Secure Payment via Razorpay
+                    </Label>
+                    <p className="text-xs text-emerald-700 mt-2">
+                      Pay ₹{calculateTotal().toFixed(2)} securely using UPI, Cards, or Net Banking
+                    </p>
+                    <div className="mt-3 flex items-center justify-center gap-2 text-xs text-gray-600">
+                      <span>🔒 100% Secure</span>
+                      <span>•</span>
+                      <span>UPI/Cards/Net Banking</span>
                     </div>
                   </div>
                 )}
@@ -1025,10 +1129,10 @@ export default function Cart() {
               
               <Button
                 onClick={placeOrder}
-                disabled={isPlacingOrder || cartItems.length === 0 || calculateSubtotal() === 0}
+                disabled={isPlacingOrder || isProcessingPayment || cartItems.length === 0 || calculateSubtotal() === 0}
                 className="w-full bg-emerald-600 hover:bg-emerald-700 disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                {isPlacingOrder ? "Placing Order..." : "Place Order"}
+                {isProcessingPayment ? "Processing Payment..." : isPlacingOrder ? "Placing Order..." : paymentMethod === "online" ? "Proceed to Payment" : "Place Order"}
               </Button>
             </CardContent>
           </Card>
