@@ -42,8 +42,8 @@ export default function CODQRGenerator({ order, onPaymentReceived }) {
         key: razorpayOrderData.keyId,
         amount: razorpayOrderData.amount,
         currency: razorpayOrderData.currency,
-        name: 'CollegeCart',
-        description: `Order #${order.order_number}`,
+        name: 'GlobalServiceX',
+        description: `CollegeCart Order #${order.order_number}`,
         image: 'https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/6885ba54fc40d82179646aca/56f3d15ef_WhatsAppImage2025-12-13at111830AM.jpeg',
         order_id: razorpayOrderData.orderId,
         prefill: {
@@ -52,6 +52,10 @@ export default function CODQRGenerator({ order, onPaymentReceived }) {
         },
         theme: {
           color: '#10b981'
+        },
+        notes: {
+          merchant_domain: 'globalservicex.in',
+          order_domain: 'collegecart.base44.app'
         },
         handler: async function (response) {
           try {
