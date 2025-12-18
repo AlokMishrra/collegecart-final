@@ -11,6 +11,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
+import { Textarea } from "@/components/ui/textarea";
 import { motion, AnimatePresence } from "framer-motion";
   import DeliveryStats from "../components/delivery/DeliveryStats";
   import DeliveryNotifications from "../components/delivery/DeliveryNotifications";
@@ -73,6 +74,7 @@ export default function Delivery() {
   const [cancellingOrderId, setCancellingOrderId] = useState(null);
   const [showCancelDialog, setShowCancelDialog] = useState(false);
   const [orderToCancel, setOrderToCancel] = useState(null);
+  const [cancellationReason, setCancellationReason] = useState("");
   const [isTogglingAvailability, setIsTogglingAvailability] = useState(false);
 
 
@@ -450,11 +452,14 @@ export default function Delivery() {
 
   const handleCancelClick = (order) => {
     setOrderToCancel(order);
+    setCancellationReason("");
     setShowCancelDialog(true);
   };
 
   const cancelOrder = async () => {
-    if (!orderToCancel) return;
+    if (!orderToCancel || !cancellationReason.trim()) {
+      return;
+    }
 
     const orderId = orderToCancel.id;
     const order = assignedOrders.find(o => o.id === orderId);
@@ -471,7 +476,9 @@ export default function Delivery() {
       Promise.all([
         Order.update(orderId, { 
           status: "cancelled",
-          delivery_person_id: null
+          delivery_person_id: null,
+          cancellation_reason: cancellationReason,
+          cancelled_by: deliveryPerson.name || deliveryPerson.email
         }),
         DeliveryPerson.update(deliveryPerson.id, {
           current_orders: (deliveryPerson.current_orders || []).filter(id => id !== orderId)
@@ -479,7 +486,7 @@ export default function Delivery() {
         order && Notification.create({
           user_id: order.user_id,
           title: "Order Cancelled",
-          message: `Your order #${order.order_number} has been cancelled by the delivery partner. You will be contacted shortly.`,
+          message: `Your order #${order.order_number} has been cancelled. Reason: ${cancellationReason}`,
           type: "error"
         })
       ]).catch(error => console.error("Error in background update:", error));
@@ -489,6 +496,7 @@ export default function Delivery() {
     } finally {
       setCancellingOrderId(null);
       setOrderToCancel(null);
+      setCancellationReason("");
     }
   };
 
@@ -919,7 +927,7 @@ export default function Delivery() {
               <DialogTitle className="text-xl">Cancel Order?</DialogTitle>
             </div>
             <DialogDescription className="text-base pt-2">
-              Are you sure you want to cancel this order?
+              Please provide a reason for cancelling this order.
               {orderToCancel && (
                 <div className="mt-3 p-3 bg-gray-50 rounded-lg">
                   <p className="font-semibold text-gray-900">Order #{orderToCancel.order_number}</p>
@@ -927,6 +935,19 @@ export default function Delivery() {
                   <p className="text-sm text-gray-600">{orderToCancel.delivery_address}</p>
                 </div>
               )}
+              <div className="mt-4">
+                <Label htmlFor="cancellation-reason" className="text-sm font-medium text-gray-900">
+                  Cancellation Reason <span className="text-red-500">*</span>
+                </Label>
+                <Textarea
+                  id="cancellation-reason"
+                  placeholder="e.g., Customer not available, Wrong address, Out of delivery area..."
+                  value={cancellationReason}
+                  onChange={(e) => setCancellationReason(e.target.value)}
+                  rows={3}
+                  className="mt-2"
+                />
+              </div>
             </DialogDescription>
           </DialogHeader>
           <DialogFooter className="gap-2 sm:gap-0">
@@ -943,9 +964,10 @@ export default function Delivery() {
             <Button
               variant="destructive"
               onClick={cancelOrder}
-              className="w-full sm:w-auto bg-red-600 hover:bg-red-700"
+              disabled={!cancellationReason.trim()}
+              className="w-full sm:w-auto bg-red-600 hover:bg-red-700 disabled:opacity-50"
             >
-              Yes, Cancel Order
+              Confirm Cancellation
             </Button>
           </DialogFooter>
         </DialogContent>
