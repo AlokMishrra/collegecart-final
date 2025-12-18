@@ -4,7 +4,7 @@ import { Order } from "@/entities/Order";
 import { DeliveryPerson } from "@/entities/DeliveryPerson";
 import { Notification } from "@/entities/Notification";
 import { User } from "@/entities/User";
-import { Package, Clock, Truck, CheckCircle, XCircle, User as UserIcon, Trash2, RefreshCw, DollarSign, Search, Filter, FileText, FileSpreadsheet } from "lucide-react";
+import { Package, Clock, Truck, CheckCircle, XCircle, User as UserIcon, Trash2, RefreshCw, DollarSign, Search, Filter, FileText, FileSpreadsheet, AlertCircle, MapPin, Phone } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -638,6 +638,18 @@ export default function OrderManagement() {
                         <p className="text-sm text-gray-500 truncate max-w-xs">
                           {order.delivery_address}
                         </p>
+                        {order.status === "cancelled" && order.cancellation_reason && (
+                          <div className="mt-2 p-2 bg-red-50 border border-red-200 rounded text-xs">
+                            <p className="font-semibold text-red-900 flex items-center gap-1">
+                              <AlertCircle className="w-3 h-3" />
+                              Cancelled
+                            </p>
+                            <p className="text-red-700 mt-1">{order.cancellation_reason}</p>
+                            {order.cancelled_by && (
+                              <p className="text-red-600 mt-1">By: {order.cancelled_by}</p>
+                            )}
+                          </div>
+                        )}
                       </div>
                     </TableCell>
                     <TableCell>
