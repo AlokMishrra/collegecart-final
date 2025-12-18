@@ -237,17 +237,16 @@ export default function Delivery() {
   useEffect(() => {
     let intervalId;
     const personId = deliveryPerson?.id;
-    // Only poll for new available orders if there are no assigned orders
-    // This prevents constant reloading when delivery partner is working on orders
-    if (personId && assignedOrders.length === 0 && !updatingOrderId && !acceptingOrderId && !cancellingOrderId) {
+    // Poll for new available orders continuously
+    if (personId && !updatingOrderId && !acceptingOrderId && !cancellingOrderId) {
       intervalId = setInterval(() => {
         loadAvailableOrders().catch(err => console.error("Error polling:", err));
-      }, 8000);
+      }, 3000); // Check every 3 seconds
     }
     return () => {
       if (intervalId) clearInterval(intervalId);
     };
-  }, [deliveryPerson?.id, assignedOrders.length, updatingOrderId, acceptingOrderId, cancellingOrderId, loadAvailableOrders]);
+  }, [deliveryPerson?.id, updatingOrderId, acceptingOrderId, cancellingOrderId, loadAvailableOrders]);
 
 
 
