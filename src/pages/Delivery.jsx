@@ -242,7 +242,7 @@ export default function Delivery() {
     if (personId && assignedOrders.length === 0 && !updatingOrderId && !acceptingOrderId && !cancellingOrderId) {
       intervalId = setInterval(() => {
         loadAvailableOrders().catch(err => console.error("Error polling:", err));
-      }, 20000);
+      }, 8000);
     }
     return () => {
       if (intervalId) clearInterval(intervalId);
