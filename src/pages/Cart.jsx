@@ -351,8 +351,8 @@ export default function Cart() {
         key: razorpayOrderData.keyId,
         amount: razorpayOrderData.amount,
         currency: razorpayOrderData.currency,
-        name: 'CollegeCart',
-        description: 'Order Payment',
+        name: 'GlobalServiceX',
+        description: 'CollegeCart Order Payment',
         image: 'https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/6885ba54fc40d82179646aca/56f3d15ef_WhatsAppImage2025-12-13at111830AM.jpeg',
         order_id: razorpayOrderData.orderId,
         prefill: {
@@ -362,6 +362,10 @@ export default function Cart() {
         },
         theme: {
           color: '#10b981'
+        },
+        notes: {
+          merchant_domain: 'globalservicex.in',
+          order_domain: 'collegecart.base44.app'
         },
         handler: async function (response) {
           // Verify payment
@@ -985,6 +989,11 @@ const newOrder = await Order.create(orderData);
                     <p className="text-xs text-emerald-700 mt-2">
                       Pay ₹{calculateTotal().toFixed(2)} securely using UPI, Cards, or Net Banking
                     </p>
+                    <div className="mt-2 px-2 py-1 bg-blue-50 border border-blue-200 rounded">
+                      <p className="text-xs text-blue-800">
+                        Powered by GlobalServiceX (globalservicex.in)
+                      </p>
+                    </div>
                     <div className="mt-3 flex items-center justify-center gap-2 text-xs text-gray-600">
                       <span>🔒 100% Secure</span>
                       <span>•</span>
