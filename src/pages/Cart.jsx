@@ -384,6 +384,30 @@ export default function Cart() {
 
       const finalAmount = calculateTotal();
       
+      // Validate stock before creating order
+      for (const item of cartItems) {
+        const product = products[item.product_id];
+        if (!product) continue;
+
+        // Get hostel stock
+        let availableStock = product.stock_quantity || 0;
+        if (user.selected_hostel && user.selected_hostel !== 'Other' && product.hostel_stock) {
+          availableStock = product.hostel_stock[user.selected_hostel] || 0;
+        }
+
+        // Check if stock is sufficient
+        if (availableStock < item.quantity) {
+          await Notification.create({
+            user_id: user.id,
+            title: "Out of Stock",
+            message: `${product.name} is out of stock. Only ${availableStock} available.`,
+            type: "error"
+          });
+          setIsPlacingOrder(false);
+          return;
+        }
+      }
+
       const newOrder = await Order.create({
         user_id: user.id,
         order_number: orderNumber,
@@ -396,6 +420,31 @@ export default function Cart() {
         status: "confirmed",
         payment_method: paymentMethod
       });
+
+      // Reduce stock for each item
+      for (const item of cartItems) {
+        const product = products[item.product_id];
+        if (!product) continue;
+
+        // Reduce hostel-specific stock or total stock
+        if (user.selected_hostel && user.selected_hostel !== 'Other' && product.hostel_stock) {
+          const currentHostelStock = product.hostel_stock[user.selected_hostel] || 0;
+          const updatedHostelStock = {
+            ...product.hostel_stock,
+            [user.selected_hostel]: Math.max(0, currentHostelStock - item.quantity)
+          };
+          
+          await Product.update(product.id, {
+            hostel_stock: updatedHostelStock
+          });
+        } else {
+          // Reduce total stock
+          const newStock = Math.max(0, (product.stock_quantity || 0) - item.quantity);
+          await Product.update(product.id, {
+            stock_quantity: newStock
+          });
+        }
+      }
 
       // Redeem loyalty points if used
       if (pointsToRedeem > 0) {
