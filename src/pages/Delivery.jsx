@@ -237,20 +237,26 @@ export default function Delivery() {
   useEffect(() => {
     let intervalId;
     const personId = deliveryPerson?.id;
-    // Poll for new available orders continuously
+    // Poll for new available and assigned orders in real-time
     if (personId) {
       // Load immediately on mount
-      loadAvailableOrders().catch(err => console.error("Error loading:", err));
+      Promise.all([
+        loadAvailableOrders(),
+        loadAssignedOrders(personId)
+      ]).catch(err => console.error("Error loading:", err));
       
-      // Then poll every 5 seconds
+      // Then poll every 2 seconds for real-time updates
       intervalId = setInterval(() => {
-        loadAvailableOrders().catch(err => console.error("Error polling:", err));
-      }, 5000);
+        Promise.all([
+          loadAvailableOrders(),
+          loadAssignedOrders(personId)
+        ]).catch(err => console.error("Error polling:", err));
+      }, 2000);
     }
     return () => {
       if (intervalId) clearInterval(intervalId);
     };
-  }, [deliveryPerson?.id, loadAvailableOrders]);
+  }, [deliveryPerson?.id, loadAvailableOrders, loadAssignedOrders]);
 
 
 
