@@ -44,6 +44,7 @@ export default function CODQRGenerator({ order, onPaymentReceived }) {
         currency: razorpayOrderData.currency,
         name: 'CollegeCart',
         description: `Order #${order.order_number}`,
+        image: 'https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/6885ba54fc40d82179646aca/56f3d15ef_WhatsAppImage2025-12-13at111830AM.jpeg',
         order_id: razorpayOrderData.orderId,
         prefill: {
           name: order.customer_name,
