@@ -29,7 +29,9 @@ Deno.serve(async (req) => {
       receipt: receipt || `receipt_${Date.now()}`,
       notes: {
         user_id: user.id,
-        user_email: user.email
+        user_email: user.email,
+        source_domain: 'collegecart.base44.app',
+        registered_domain: 'globalservicex.in'
       }
     };
 

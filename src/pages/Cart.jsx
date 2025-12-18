@@ -401,10 +401,14 @@ export default function Cart() {
       razorpay.open();
     } catch (error) {
       console.error('Razorpay error:', error);
+      const errorMessage = error.message?.includes('not registered') || error.message?.includes('domain')
+        ? "Payment gateway not configured for this domain. Please contact support or try Cash on Delivery."
+        : "Unable to initiate payment. Please try again or use Cash on Delivery.";
+      
       await Notification.create({
         user_id: user.id,
         title: "Payment Failed",
-        message: "Unable to initiate payment. Please try again.",
+        message: errorMessage,
         type: "error"
       });
       setIsProcessingPayment(false);

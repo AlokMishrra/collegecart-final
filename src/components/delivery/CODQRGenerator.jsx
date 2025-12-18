@@ -90,7 +90,10 @@ export default function CODQRGenerator({ order, onPaymentReceived }) {
       razorpay.open();
     } catch (error) {
       console.error('Razorpay error:', error);
-      alert('Unable to initiate payment. Please try again.');
+      const errorMessage = error.message?.includes('not registered') || error.message?.includes('domain')
+        ? 'Payment gateway domain issue. Please use "Mark as Cash Paid" option instead.'
+        : 'Unable to initiate payment. Please try again or mark as cash paid.';
+      alert(errorMessage);
       setIsProcessingPayment(false);
     }
   };
