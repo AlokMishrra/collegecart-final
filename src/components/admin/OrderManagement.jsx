@@ -63,10 +63,10 @@ export default function OrderManagement() {
   useEffect(() => {
     loadData();
     
-    // Poll for new orders every 5 seconds
+    // Poll for new orders every 15 seconds to avoid rate limits
     const interval = setInterval(() => {
       checkForNewOrders();
-    }, 5000);
+    }, 15000);
 
     return () => clearInterval(interval);
   }, []);
@@ -88,16 +88,19 @@ export default function OrderManagement() {
     try {
       const ordersData = await Order.list('-created_date');
       const pendingOrders = ordersData.filter(o => o.status === 'pending' || o.status === 'confirmed');
-      
+
       if (lastOrderCount > 0 && pendingOrders.length > lastOrderCount) {
         // New order detected, play sound 3 times
         playNotificationSound(3);
       }
-      
+
       setLastOrderCount(pendingOrders.length);
       setOrders(ordersData);
     } catch (error) {
-      console.error("Error checking for new orders:", error);
+      // Silently handle rate limit errors to avoid spam
+      if (!error.message?.includes('Rate limit')) {
+        console.error("Error checking for new orders:", error);
+      }
     }
   };
 
