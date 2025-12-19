@@ -238,10 +238,14 @@ export default function Delivery() {
     let intervalId;
     const personId = deliveryPerson?.id;
     
+    if (!personId) return;
+    
     // Only poll when not performing any actions
-    if (personId && !updatingOrderId && !acceptingOrderId && !cancellingOrderId) {
-      // Load immediately on mount
-      const loadData = async () => {
+    const isInteracting = updatingOrderId || acceptingOrderId || cancellingOrderId;
+    
+    if (!isInteracting) {
+      // Poll every 5 seconds for real-time updates (slower to reduce flicker)
+      intervalId = setInterval(async () => {
         try {
           await Promise.all([
             loadAvailableOrders(),
@@ -250,18 +254,13 @@ export default function Delivery() {
         } catch (err) {
           console.error("Error loading:", err);
         }
-      };
-      
-      loadData();
-      
-      // Then poll every 3 seconds for stable real-time updates
-      intervalId = setInterval(loadData, 3000);
+      }, 5000);
     }
     
     return () => {
       if (intervalId) clearInterval(intervalId);
     };
-  }, [deliveryPerson?.id, updatingOrderId, acceptingOrderId, cancellingOrderId]);
+  }, [deliveryPerson?.id, updatingOrderId, acceptingOrderId, cancellingOrderId, loadAvailableOrders, loadAssignedOrders]);
 
 
 
