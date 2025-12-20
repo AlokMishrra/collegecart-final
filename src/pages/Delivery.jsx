@@ -234,31 +234,8 @@ export default function Delivery() {
     }
   };
 
-  useEffect(() => {
-    let intervalId;
-    const personId = deliveryPerson?.id;
-    
-    if (!personId) return;
-    
-    // Only poll when not performing any actions
-    const isInteracting = updatingOrderId || acceptingOrderId || cancellingOrderId;
-    
-    if (!isInteracting) {
-      // Only poll for new available orders, NOT assigned orders
-      // Assigned orders should only update when user performs actions
-      intervalId = setInterval(async () => {
-        try {
-          await loadAvailableOrders();
-        } catch (err) {
-          console.error("Error loading:", err);
-        }
-      }, 5000);
-    }
-    
-    return () => {
-      if (intervalId) clearInterval(intervalId);
-    };
-  }, [deliveryPerson?.id, updatingOrderId, acceptingOrderId, cancellingOrderId, loadAvailableOrders]);
+  // No auto-polling - only load data on mount and when actions are performed
+  // This prevents constant re-rendering of assigned orders
 
 
 
