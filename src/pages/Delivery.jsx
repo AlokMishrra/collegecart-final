@@ -385,8 +385,8 @@ export default function Delivery() {
 
     } catch (error) {
       console.error("Error accepting order:", error);
-      loadAssignedOrders(deliveryPerson.id);
-      loadAvailableOrders();
+      await loadAssignedOrders(deliveryPerson.id);
+      await loadAvailableOrders();
     } finally {
       setAcceptingOrderId(null);
     }
