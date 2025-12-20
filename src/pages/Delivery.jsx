@@ -455,7 +455,7 @@ export default function Delivery() {
 
     } catch (error) {
       console.error("Error marking order as delivered:", error);
-      loadAssignedOrders(deliveryPerson.id);
+      await loadAssignedOrders(deliveryPerson.id);
     } finally {
       setUpdatingOrderId(null);
     }
