@@ -176,6 +176,17 @@ export default function Delivery() {
     checkDeliveryLogin();
   }, [checkDeliveryLogin]);
 
+  // Auto-refresh available orders every 5 seconds (only new unassigned orders)
+  useEffect(() => {
+    if (!deliveryPerson) return;
+
+    const interval = setInterval(() => {
+      loadAvailableOrders();
+    }, 5000);
+
+    return () => clearInterval(interval);
+  }, [deliveryPerson, loadAvailableOrders]);
+
   useEffect(() => {
     // Auto-request notification permission when delivery person logs in
     if (deliveryPerson) {
