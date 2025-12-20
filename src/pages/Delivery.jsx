@@ -244,13 +244,11 @@ export default function Delivery() {
     const isInteracting = updatingOrderId || acceptingOrderId || cancellingOrderId;
     
     if (!isInteracting) {
-      // Poll every 5 seconds for real-time updates (slower to reduce flicker)
+      // Only poll for new available orders, NOT assigned orders
+      // Assigned orders should only update when user performs actions
       intervalId = setInterval(async () => {
         try {
-          await Promise.all([
-            loadAvailableOrders(),
-            loadAssignedOrders(personId)
-          ]);
+          await loadAvailableOrders();
         } catch (err) {
           console.error("Error loading:", err);
         }
@@ -260,7 +258,7 @@ export default function Delivery() {
     return () => {
       if (intervalId) clearInterval(intervalId);
     };
-  }, [deliveryPerson?.id, updatingOrderId, acceptingOrderId, cancellingOrderId, loadAvailableOrders, loadAssignedOrders]);
+  }, [deliveryPerson?.id, updatingOrderId, acceptingOrderId, cancellingOrderId, loadAvailableOrders]);
 
 
 
