@@ -87,24 +87,25 @@ export default function Shop() {
       const currentMinutes = now.getMinutes();
       const currentTime = currentHours * 60 + currentMinutes;
       
-      // Parse available_from
-      const fromParts = product.available_from.split(':');
-      const fromHour = parseInt(fromParts[0], 10);
-      const fromMin = parseInt(fromParts[1] || '0', 10);
-      const fromTime = fromHour * 60 + fromMin;
+      // Parse 12-hour format with AM/PM (e.g., "08:00 AM" or "11:00 PM")
+      const parseTime12Hour = (timeStr) => {
+        const match = timeStr.match(/(\d+):(\d+)\s*(AM|PM)/i);
+        if (!match) return null;
+        
+        let hours = parseInt(match[1], 10);
+        const minutes = parseInt(match[2], 10);
+        const period = match[3].toUpperCase();
+        
+        if (period === 'PM' && hours !== 12) hours += 12;
+        if (period === 'AM' && hours === 12) hours = 0;
+        
+        return hours * 60 + minutes;
+      };
       
-      // Parse available_to
-      const toParts = product.available_to.split(':');
-      const toHour = parseInt(toParts[0], 10);
-      const toMin = parseInt(toParts[1] || '0', 10);
-      const toTime = toHour * 60 + toMin;
+      const fromTime = parseTime12Hour(product.available_from);
+      const toTime = parseTime12Hour(product.available_to);
       
-      // Debug logging
-      console.log(`Product: ${product.name}`);
-      console.log(`Current time: ${currentHours}:${currentMinutes} (${currentTime} mins)`);
-      console.log(`Available from: ${product.available_from} (${fromTime} mins)`);
-      console.log(`Available to: ${product.available_to} (${toTime} mins)`);
-      console.log(`Is available: ${currentTime >= fromTime && currentTime <= toTime}`);
+      if (fromTime === null || toTime === null) return true;
       
       return currentTime >= fromTime && currentTime <= toTime;
     } catch (error) {
