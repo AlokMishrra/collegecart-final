@@ -177,44 +177,23 @@ export default function Layout({ children, currentPageName }) {
             </div>
           </div>
           <div className="flex items-center gap-2">
-            {!user && (
-              <>
-                <Button
-                  onClick={() => User.login()}
-                  size="sm"
-                  className="bg-emerald-600 hover:bg-emerald-700 text-xs"
-                >
-                  Login
+            <NotificationCenter />
+            {user && !isDeliveryOnlyRole && (
+              <Link to={createPageUrl("Cart")}>
+                <Button variant="ghost" size="icon" className="relative">
+                  <ShoppingCart className="w-5 h-5" />
+                  {cartItemCount > 0 && (
+                    <Badge className="absolute -top-1 -right-1 h-5 w-5 flex items-center justify-center p-0 bg-emerald-600 text-white text-xs">
+                      {cartItemCount}
+                    </Badge>
+                  )}
                 </Button>
-                <Button
-                  onClick={() => User.login({ email: 'testuser@collegecart.com', password: 'Test@12345' })}
-                  variant="outline"
-                  size="sm"
-                  className="border-emerald-600 text-emerald-600 hover:bg-emerald-50 text-xs"
-                >
-                  Test
-                </Button>
-              </>
+              </Link>
             )}
             {user && (
-              <>
-                <NotificationCenter />
-                {!isDeliveryOnlyRole && (
-                  <Link to={createPageUrl("Cart")}>
-                    <Button variant="ghost" size="icon" className="relative">
-                      <ShoppingCart className="w-5 h-5" />
-                      {cartItemCount > 0 && (
-                        <Badge className="absolute -top-1 -right-1 h-5 w-5 flex items-center justify-center p-0 bg-emerald-600 text-white text-xs">
-                          {cartItemCount}
-                        </Badge>
-                      )}
-                    </Button>
-                  </Link>
-                )}
-                <Button variant="ghost" size="icon" onClick={handleLogout}>
-                  <LogOut className="w-4 h-4" />
-                </Button>
-              </>
+              <Button variant="ghost" size="icon" onClick={handleLogout}>
+                <LogOut className="w-4 h-4" />
+              </Button>
             )}
           </div>
         </div>
@@ -348,21 +327,12 @@ export default function Layout({ children, currentPageName }) {
                 </Link>
               )}
               {!user && (
-                <div className="flex gap-2">
-                  <Button
-                    onClick={() => User.login()}
-                    className="bg-emerald-600 hover:bg-emerald-700"
-                  >
-                    Login
-                  </Button>
-                  <Button
-                    onClick={() => User.login({ email: 'testuser@collegecart.com', password: 'Test@12345' })}
-                    variant="outline"
-                    className="border-emerald-600 text-emerald-600 hover:bg-emerald-50"
-                  >
-                    Test Login
-                  </Button>
-                </div>
+                <Button
+                  onClick={() => User.login()}
+                  className="bg-emerald-600 hover:bg-emerald-700"
+                >
+                  Login
+                </Button>
               )}
             </div>
           </div>
