@@ -11,6 +11,34 @@ import AIDescriptionGenerator from "./AIDescriptionGenerator";
 
 export default function ProductForm({ product, categories, onSave, onCancel }) {
   const [showAIGenerator, setShowAIGenerator] = useState(false);
+  // Convert 12-hour format to 24-hour for input, and vice versa
+  const convert12to24 = (time12) => {
+    if (!time12) return "";
+    const match = time12.match(/(\d+):(\d+)\s*(AM|PM)/i);
+    if (!match) return "";
+    
+    let hours = parseInt(match[1], 10);
+    const minutes = match[2];
+    const period = match[3].toUpperCase();
+    
+    if (period === 'PM' && hours !== 12) hours += 12;
+    if (period === 'AM' && hours === 12) hours = 0;
+    
+    return `${hours.toString().padStart(2, '0')}:${minutes}`;
+  };
+
+  const convert24to12 = (time24) => {
+    if (!time24) return "";
+    const [hours24, minutes] = time24.split(':');
+    let hours = parseInt(hours24, 10);
+    const period = hours >= 12 ? 'PM' : 'AM';
+    
+    if (hours > 12) hours -= 12;
+    if (hours === 0) hours = 12;
+    
+    return `${hours.toString().padStart(2, '0')}:${minutes} ${period}`;
+  };
+
   const [formData, setFormData] = useState({
     name: product?.name || "",
     description: product?.description || "",
@@ -33,8 +61,8 @@ export default function ProductForm({ product, categories, onSave, onCancel }) {
     delivery_charge: product?.delivery_charge || 0,
     profit_margin: product?.profit_margin || 0,
     delivery_time: product?.delivery_time || "13 mins",
-    available_from: product?.available_from || "",
-    available_to: product?.available_to || ""
+    available_from: convert12to24(product?.available_from || ""),
+    available_to: convert12to24(product?.available_to || "")
   });
 
   const handleSubmit = (e) => {
@@ -60,7 +88,9 @@ export default function ProductForm({ product, categories, onSave, onCancel }) {
       source_dhaba: formData.source_dhaba || null,
       delivery_charge: parseFloat(formData.delivery_charge) || 0,
       profit_margin: parseFloat(formData.profit_margin) || 0,
-      delivery_time: formData.delivery_time
+      delivery_time: formData.delivery_time,
+      available_from: convert24to12(formData.available_from) || "",
+      available_to: convert24to12(formData.available_to) || ""
     });
   };
 
@@ -254,7 +284,7 @@ export default function ProductForm({ product, categories, onSave, onCancel }) {
             <Label className="mb-3 block">Availability Timing (Optional)</Label>
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <Label htmlFor="available_from" className="text-sm">From (24-hour)</Label>
+                <Label htmlFor="available_from" className="text-sm">From (12-hour)</Label>
                 <Input
                   id="available_from"
                   type="time"
@@ -262,9 +292,14 @@ export default function ProductForm({ product, categories, onSave, onCancel }) {
                   onChange={(e) => handleInputChange("available_from", e.target.value)}
                   placeholder="08:00"
                 />
+                {formData.available_from && (
+                  <p className="text-xs text-emerald-600 mt-1">
+                    Saves as: {convert24to12(formData.available_from)}
+                  </p>
+                )}
               </div>
               <div>
-                <Label htmlFor="available_to" className="text-sm">To (24-hour)</Label>
+                <Label htmlFor="available_to" className="text-sm">To (12-hour)</Label>
                 <Input
                   id="available_to"
                   type="time"
@@ -272,9 +307,14 @@ export default function ProductForm({ product, categories, onSave, onCancel }) {
                   onChange={(e) => handleInputChange("available_to", e.target.value)}
                   placeholder="22:00"
                 />
+                {formData.available_to && (
+                  <p className="text-xs text-emerald-600 mt-1">
+                    Saves as: {convert24to12(formData.available_to)}
+                  </p>
+                )}
               </div>
             </div>
-            <p className="text-xs text-gray-500 mt-1">Leave empty for 24/7 availability</p>
+            <p className="text-xs text-gray-500 mt-1">Leave empty for 24/7 availability. Will be saved in 12-hour format (AM/PM)</p>
           </div>
 
           <div>
