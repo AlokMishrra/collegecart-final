@@ -97,8 +97,8 @@ export default function RazorpayPayment({ amount, onSuccess, onError, orderNumbe
   };
 
   return (
-    <div className="bg-gradient-to-br from-emerald-50 to-green-50 border-2 border-emerald-200 rounded-xl p-4 sm:p-6 shadow-sm">
-      <div className="flex items-start sm:items-center gap-3 mb-4">
+    <div className="w-full bg-gradient-to-br from-emerald-50 to-green-50 border-2 border-emerald-200 rounded-xl p-4 sm:p-6 shadow-sm">
+      <div className="flex items-center gap-3 mb-4">
         <div className="w-10 h-10 sm:w-12 sm:h-12 bg-white rounded-full flex items-center justify-center flex-shrink-0 p-1.5">
           <img 
             src="https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/6885ba54fc40d82179646aca/56f3d15ef_WhatsAppImage2025-12-13at111830AM.jpeg"
@@ -107,19 +107,19 @@ export default function RazorpayPayment({ amount, onSuccess, onError, orderNumbe
           />
         </div>
         <div className="flex-1 min-w-0">
-          <h3 className="text-base sm:text-lg font-bold text-gray-900 leading-tight">Secure Online Payment</h3>
-          <p className="text-xs sm:text-sm text-gray-600 mt-0.5">Pay with Cards, UPI, Wallet & More</p>
+          <h3 className="text-base sm:text-lg font-bold text-gray-900">Secure Online Payment</h3>
+          <p className="text-xs sm:text-sm text-gray-600">Pay with Cards, UPI, Wallet & More</p>
         </div>
       </div>
 
-      <div className="bg-white rounded-lg p-3 sm:p-4 mb-4 border border-emerald-100">
-        <div className="flex justify-between items-center mb-1">
+      <div className="w-full bg-white rounded-lg p-4 mb-4 border border-emerald-100">
+        <div className="flex justify-between items-center mb-2">
           <span className="text-sm sm:text-base text-gray-600">Amount to Pay:</span>
-          <span className="text-xl sm:text-2xl font-bold text-emerald-600">₹{amount.toFixed(2)}</span>
+          <span className="text-2xl sm:text-3xl font-bold text-emerald-600">₹{amount.toFixed(2)}</span>
         </div>
         <div className="flex items-center gap-1 justify-end">
-          <Shield className="w-3 h-3 text-gray-400" />
-          <p className="text-xs text-gray-500">Powered by Razorpay - 100% Secure</p>
+          <Shield className="w-3 h-3 sm:w-4 sm:h-4 text-gray-400" />
+          <p className="text-xs sm:text-sm text-gray-500">Powered by Razorpay - 100% Secure</p>
         </div>
       </div>
 
