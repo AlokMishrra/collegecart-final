@@ -10,6 +10,7 @@ import { Trash2, Plus, Minus, ShoppingBag } from "lucide-react";
 import DeliveryProgressBar from "../components/cart/DeliveryProgressBar";
 import RecommendedProducts from "../components/cart/RecommendedProducts";
 import RecommendationEngine from "../components/shop/RecommendationEngine";
+import RazorpayPayment from "../components/cart/RazorpayPayment";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -44,6 +45,7 @@ export default function Cart() {
         const [appliedCampaign, setAppliedCampaign] = useState(null);
         const [codeError, setCodeError] = useState("");
         const [selectedDhaba, setSelectedDhaba] = useState({});
+        const [razorpayPaymentId, setRazorpayPaymentId] = useState(null);
 
   const loadCart = useCallback(async (userId) => {
     setIsLoading(true);
@@ -318,7 +320,7 @@ export default function Cart() {
     }
   };
 
-  const placeOrder = async () => {
+  const placeOrder = async (paymentId = null) => {
       // Check if cart is empty
       if (cartItems.length === 0) {
         await Notification.create({
@@ -361,6 +363,17 @@ export default function Cart() {
           });
           return;
         }
+      }
+
+      // For online payment, wait for Razorpay payment completion
+      if (paymentMethod === "online" && !paymentId) {
+        await Notification.create({
+          user_id: user.id,
+          title: "Complete Payment",
+          message: "Please complete the payment using the Razorpay button below.",
+          type: "info"
+        });
+        return;
       }
 
     setIsPlacingOrder(true);
@@ -418,7 +431,8 @@ export default function Cart() {
         phone_number: phoneNumber,
         delivery_notes: deliveryNotes,
         status: "confirmed",
-        payment_method: paymentMethod
+        payment_method: paymentMethod,
+        is_paid: paymentMethod === "online" ? true : false
       });
 
       // Reduce stock for each item
@@ -859,29 +873,22 @@ export default function Cart() {
                 </div>
 
                 {paymentMethod === "online" && (
-                  <div className="bg-emerald-50 border border-emerald-200 rounded-lg p-4">
-                    <Label className="text-sm font-medium text-emerald-900">Pay ₹{calculateTotal().toFixed(2)} via UPI</Label>
-                    <div className="mt-3 flex flex-col items-center">
-                      <img
-                        src={`https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=upi://pay?pa=7248316506@okbizaxis%26pn=CollegeCart%26am=${calculateTotal().toFixed(2)}%26cu=INR`}
-                        alt="UPI QR Code"
-                        className="w-40 h-40 border-4 border-white rounded-lg shadow-md"
-                      />
-                      <p className="text-xs text-emerald-700 mt-2">Scan QR with any UPI app</p>
-                      <Button
-                        type="button"
-                        variant="outline"
-                        className="mt-3 w-full"
-                        onClick={() => {
-                          const upiUrl = `upi://pay?pa=7248316506@okbizaxis&pn=CollegeCart&am=${calculateTotal().toFixed(2)}&cu=INR`;
-                          window.location.href = upiUrl;
-                        }}
-                      >
-                        Open UPI App
-                      </Button>
-                      <p className="text-xs text-gray-500 mt-2">UPI ID: 7248316506@okbizaxis</p>
-                    </div>
-                  </div>
+                  <RazorpayPayment
+                    amount={calculateTotal()}
+                    orderNumber={`CC${Date.now()}`}
+                    onSuccess={(paymentId) => {
+                      setRazorpayPaymentId(paymentId);
+                      placeOrder(paymentId);
+                    }}
+                    onError={async (error) => {
+                      await Notification.create({
+                        user_id: user.id,
+                        title: "Payment Failed",
+                        message: error || "Payment was unsuccessful. Please try again.",
+                        type: "error"
+                      });
+                    }}
+                  />
                 )}
 
                 {/* Discount Code */}
@@ -1024,11 +1031,11 @@ export default function Cart() {
               </div>
               
               <Button
-                onClick={placeOrder}
+                onClick={() => placeOrder()}
                 disabled={isPlacingOrder || cartItems.length === 0 || calculateSubtotal() === 0}
                 className="w-full bg-emerald-600 hover:bg-emerald-700 disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                {isPlacingOrder ? "Placing Order..." : "Place Order"}
+                {isPlacingOrder ? "Placing Order..." : paymentMethod === "online" ? "Confirm Order Details" : "Place Order"}
               </Button>
             </CardContent>
           </Card>
