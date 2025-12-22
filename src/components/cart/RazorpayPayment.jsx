@@ -1,31 +1,37 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { base44 } from "@/api/base44Client";
 import { Button } from "@/components/ui/button";
-import { Loader2, CreditCard } from "lucide-react";
+import { Loader2, CreditCard, Shield } from "lucide-react";
 
 export default function RazorpayPayment({ amount, onSuccess, onError, orderNumber }) {
   const [isLoading, setIsLoading] = useState(false);
+  const [scriptLoaded, setScriptLoaded] = useState(false);
 
-  const loadRazorpayScript = () => {
-    return new Promise((resolve) => {
+  useEffect(() => {
+    // Pre-load Razorpay script for faster checkout
+    const loadRazorpayScript = () => {
+      if (document.querySelector('script[src="https://checkout.razorpay.com/v1/checkout.js"]')) {
+        setScriptLoaded(true);
+        return;
+      }
       const script = document.createElement('script');
       script.src = 'https://checkout.razorpay.com/v1/checkout.js';
-      script.onload = () => resolve(true);
-      script.onerror = () => resolve(false);
+      script.onload = () => setScriptLoaded(true);
+      script.onerror = () => setScriptLoaded(false);
       document.body.appendChild(script);
-    });
-  };
+    };
+    loadRazorpayScript();
+  }, []);
 
   const handlePayment = async () => {
+    if (!scriptLoaded) {
+      onError('Payment system is loading, please try again');
+      return;
+    }
+
     setIsLoading(true);
 
     try {
-      // Load Razorpay script
-      const scriptLoaded = await loadRazorpayScript();
-      if (!scriptLoaded) {
-        throw new Error('Failed to load Razorpay script');
-      }
-
       // Create order on backend
       const { data: orderData } = await base44.functions.invoke('createRazorpayOrder', {
         amount: amount,
@@ -60,6 +66,7 @@ export default function RazorpayPayment({ amount, onSuccess, onError, orderNumbe
               throw new Error('Payment verification failed');
             }
           } catch (error) {
+            setIsLoading(false);
             onError(error.message);
           }
         },
@@ -69,12 +76,12 @@ export default function RazorpayPayment({ amount, onSuccess, onError, orderNumbe
           contact: ''
         },
         theme: {
-          color: '#10b981' // Emerald color matching CollegeCart branding
+          color: '#10b981'
         },
         modal: {
           ondismiss: function() {
             setIsLoading(false);
-            onError('Payment cancelled by user');
+            onError('Payment cancelled');
           }
         }
       };
@@ -84,54 +91,62 @@ export default function RazorpayPayment({ amount, onSuccess, onError, orderNumbe
 
     } catch (error) {
       console.error('Payment error:', error);
-      onError(error.message);
+      onError(error.message || 'Payment failed');
       setIsLoading(false);
     }
   };
 
   return (
-    <div className="bg-gradient-to-br from-emerald-50 to-green-50 border-2 border-emerald-200 rounded-xl p-6 shadow-sm">
-      <div className="flex items-center gap-3 mb-4">
-        <div className="w-12 h-12 bg-emerald-500 rounded-full flex items-center justify-center">
-          <CreditCard className="w-6 h-6 text-white" />
+    <div className="bg-gradient-to-br from-emerald-50 to-green-50 border-2 border-emerald-200 rounded-xl p-4 sm:p-6 shadow-sm">
+      <div className="flex items-start sm:items-center gap-3 mb-4">
+        <div className="w-10 h-10 sm:w-12 sm:h-12 bg-emerald-500 rounded-full flex items-center justify-center flex-shrink-0">
+          <CreditCard className="w-5 h-5 sm:w-6 sm:h-6 text-white" />
         </div>
-        <div>
-          <h3 className="text-lg font-bold text-gray-900">Secure Online Payment</h3>
-          <p className="text-sm text-gray-600">Pay with Cards, UPI, Wallet & More</p>
+        <div className="flex-1 min-w-0">
+          <h3 className="text-base sm:text-lg font-bold text-gray-900 leading-tight">Secure Online Payment</h3>
+          <p className="text-xs sm:text-sm text-gray-600 mt-0.5">Pay with Cards, UPI, Wallet & More</p>
         </div>
       </div>
 
-      <div className="bg-white rounded-lg p-4 mb-4 border border-emerald-100">
-        <div className="flex justify-between items-center mb-2">
-          <span className="text-gray-600">Amount to Pay:</span>
-          <span className="text-2xl font-bold text-emerald-600">₹{amount.toFixed(2)}</span>
+      <div className="bg-white rounded-lg p-3 sm:p-4 mb-4 border border-emerald-100">
+        <div className="flex justify-between items-center mb-1">
+          <span className="text-sm sm:text-base text-gray-600">Amount to Pay:</span>
+          <span className="text-xl sm:text-2xl font-bold text-emerald-600">₹{amount.toFixed(2)}</span>
         </div>
-        <p className="text-xs text-gray-500">Powered by Razorpay - 100% Secure</p>
+        <div className="flex items-center gap-1 justify-end">
+          <Shield className="w-3 h-3 text-gray-400" />
+          <p className="text-xs text-gray-500">Powered by Razorpay - 100% Secure</p>
+        </div>
       </div>
 
       <Button
         onClick={handlePayment}
-        disabled={isLoading}
-        className="w-full h-12 bg-emerald-600 hover:bg-emerald-700 text-white font-semibold text-base shadow-md"
+        disabled={isLoading || !scriptLoaded}
+        className="w-full h-11 sm:h-12 bg-emerald-600 hover:bg-emerald-700 text-white font-semibold text-sm sm:text-base shadow-md disabled:opacity-50"
       >
         {isLoading ? (
           <>
-            <Loader2 className="w-5 h-5 mr-2 animate-spin" />
+            <Loader2 className="w-4 h-4 sm:w-5 sm:h-5 mr-2 animate-spin" />
             Processing...
+          </>
+        ) : !scriptLoaded ? (
+          <>
+            <Loader2 className="w-4 h-4 sm:w-5 sm:h-5 mr-2 animate-spin" />
+            Loading...
           </>
         ) : (
           <>
-            <CreditCard className="w-5 h-5 mr-2" />
+            <CreditCard className="w-4 h-4 sm:w-5 sm:h-5 mr-2" />
             Pay ₹{amount.toFixed(2)}
           </>
         )}
       </Button>
 
-      <div className="mt-4 flex items-center justify-center gap-3 flex-wrap">
-        <img src="https://cdn.razorpay.com/static/assets/pay_methods_branding/card.svg" alt="Cards" className="h-5" />
-        <img src="https://cdn.razorpay.com/static/assets/pay_methods_branding/upi.svg" alt="UPI" className="h-5" />
-        <img src="https://cdn.razorpay.com/static/assets/pay_methods_branding/wallet.svg" alt="Wallet" className="h-5" />
-        <img src="https://cdn.razorpay.com/static/assets/pay_methods_branding/nb.svg" alt="Net Banking" className="h-5" />
+      <div className="mt-3 sm:mt-4 flex items-center justify-center gap-2 sm:gap-3 flex-wrap">
+        <img src="https://cdn.razorpay.com/static/assets/pay_methods_branding/card.svg" alt="Cards" className="h-4 sm:h-5" />
+        <img src="https://cdn.razorpay.com/static/assets/pay_methods_branding/upi.svg" alt="UPI" className="h-4 sm:h-5" />
+        <img src="https://cdn.razorpay.com/static/assets/pay_methods_branding/wallet.svg" alt="Wallet" className="h-4 sm:h-5" />
+        <img src="https://cdn.razorpay.com/static/assets/pay_methods_branding/nb.svg" alt="Net Banking" className="h-4 sm:h-5" />
       </div>
     </div>
   );
