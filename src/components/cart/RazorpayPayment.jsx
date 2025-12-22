@@ -99,8 +99,12 @@ export default function RazorpayPayment({ amount, onSuccess, onError, orderNumbe
   return (
     <div className="bg-gradient-to-br from-emerald-50 to-green-50 border-2 border-emerald-200 rounded-xl p-4 sm:p-6 shadow-sm">
       <div className="flex items-start sm:items-center gap-3 mb-4">
-        <div className="w-10 h-10 sm:w-12 sm:h-12 bg-emerald-500 rounded-full flex items-center justify-center flex-shrink-0">
-          <CreditCard className="w-5 h-5 sm:w-6 sm:h-6 text-white" />
+        <div className="w-10 h-10 sm:w-12 sm:h-12 bg-white rounded-full flex items-center justify-center flex-shrink-0 p-1.5">
+          <img 
+            src="https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/6885ba54fc40d82179646aca/56f3d15ef_WhatsAppImage2025-12-13at111830AM.jpeg"
+            alt="CollegeCart"
+            className="w-full h-full object-contain"
+          />
         </div>
         <div className="flex-1 min-w-0">
           <h3 className="text-base sm:text-lg font-bold text-gray-900 leading-tight">Secure Online Payment</h3>
