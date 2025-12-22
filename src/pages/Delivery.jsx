@@ -176,13 +176,20 @@ export default function Delivery() {
     checkDeliveryLogin();
   }, [checkDeliveryLogin]);
 
-  // Auto-refresh available orders every 5 seconds (only new unassigned orders)
+  // Auto-refresh available orders every 15 seconds (only new unassigned orders)
   useEffect(() => {
     if (!deliveryPerson) return;
 
-    const interval = setInterval(() => {
-      loadAvailableOrders();
-    }, 5000);
+    const interval = setInterval(async () => {
+      try {
+        await loadAvailableOrders();
+      } catch (error) {
+        // Silently handle rate limit errors to prevent breaking the app
+        if (!error.message?.includes('Rate limit')) {
+          console.error("Error loading orders:", error);
+        }
+      }
+    }, 15000);
 
     return () => clearInterval(interval);
   }, [deliveryPerson, loadAvailableOrders]);
