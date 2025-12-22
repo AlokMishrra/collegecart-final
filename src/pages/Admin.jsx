@@ -42,6 +42,8 @@ import ProductManagement from "../components/admin/ProductManagement";
   import DhabaMenuManagement from "../components/admin/DhabaMenuManagement";
   import ActivityLog from "../components/admin/ActivityLog";
   import DailyProfitCalculator from "../components/admin/DailyProfitCalculator";
+  import HostelManagement from "../components/admin/HostelManagement";
+  import HostelPerformanceMetrics from "../components/admin/HostelPerformanceMetrics";
 
 export default function Admin() {
   const navigate = useNavigate();
@@ -143,6 +145,8 @@ export default function Admin() {
     { value: "campaigns", label: "Campaigns", permission: "manage_campaigns", component: <CampaignManagement /> },
     { value: "recommendations", label: "AI Recommendations", permission: "manage_settings", component: <RecommendationConfig /> },
     { value: "reviews", label: "Reviews", permission: "manage_reviews", component: <ReviewModeration /> },
+    { value: "hostels", label: "Hostels", permission: "manage_delivery", component: <HostelManagement /> },
+    { value: "hostel-performance", label: "Hostel Performance", permission: "manage_delivery", component: <HostelPerformanceMetrics /> },
     { value: "delivery", label: "Delivery", permission: "manage_delivery", component: <DeliveryPersonManagement /> },
     { value: "delivery-performance", label: "Performance", permission: "manage_delivery", component: <DeliveryPerformance /> },
     { value: "orders", label: "Orders", permission: "manage_orders", component: <OrderManagement /> },
