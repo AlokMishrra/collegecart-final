@@ -660,9 +660,9 @@ export default function Cart() {
         isFirstOrder={isFirstOrder}
       />
 
-      <h1 className="text-3xl font-bold text-gray-900">Shopping Cart</h1>
+      <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">Shopping Cart</h1>
 
-      <div className="grid lg:grid-cols-3 gap-6">
+      <div className="grid lg:grid-cols-3 gap-4 sm:gap-6">
         {/* Cart Items */}
         <div className="lg:col-span-2 space-y-4">
           <AnimatePresence>
@@ -678,25 +678,25 @@ export default function Cart() {
                   exit={{ opacity: 0, y: -20 }}
                 >
                   <Card>
-                    <CardContent className="p-6">
-                      <div className="flex items-center gap-4">
+                    <CardContent className="p-3 sm:p-6">
+                      <div className="flex items-center gap-3 sm:gap-4">
                         <img
                           src={product.image_url || "https://images.unsplash.com/photo-1542838132-92c53300491e?w=150"}
                           alt={product.name}
-                          className="w-20 h-20 object-cover rounded-lg"
+                          className="w-16 h-16 sm:w-20 sm:h-20 object-cover rounded-lg flex-shrink-0"
                           onError={(e) => {
                             e.target.src = "https://images.unsplash.com/photo-1542838132-92c53300491e?w=150";
                           }}
                         />
-                        <div className="flex-1">
-                          <h3 className="font-semibold text-gray-900">{product.name}</h3>
+                        <div className="flex-1 min-w-0">
+                          <h3 className="font-semibold text-gray-900 text-sm sm:text-base truncate">{product.name}</h3>
                           {product.dhaba_options?.length > 0 ? (
                             <div className="mt-1">
                               <Select 
                                 value={selectedDhaba[product.id] || ""} 
                                 onValueChange={(value) => setSelectedDhaba({ ...selectedDhaba, [product.id]: value })}
                               >
-                                <SelectTrigger className="h-8 text-xs">
+                                <SelectTrigger className="h-7 sm:h-8 text-xs">
                                   <SelectValue placeholder="Select Dhaba" />
                                 </SelectTrigger>
                                 <SelectContent>
@@ -709,37 +709,39 @@ export default function Cart() {
                               </Select>
                             </div>
                           ) : (
-                            <p className="text-emerald-600 font-medium">₹{getProductPrice(product)}/{product.unit}</p>
+                            <p className="text-emerald-600 font-medium text-sm">₹{getProductPrice(product)}/{product.unit}</p>
                           )}
                         </div>
-                        <div className="flex items-center gap-3">
-                          <Button
-                            variant="outline"
-                            size="icon"
-                            onClick={() => updateQuantity(item.id, item.quantity - 1)}
-                            className="h-8 w-8"
-                          >
-                            <Minus className="w-4 h-4" />
-                          </Button>
-                          <span className="font-semibold px-3">{item.quantity}</span>
-                          <Button
-                            size="icon"
-                            onClick={() => updateQuantity(item.id, item.quantity + 1)}
-                            className="h-8 w-8 bg-emerald-600 hover:bg-emerald-700"
-                          >
-                            <Plus className="w-4 h-4" />
-                          </Button>
-                        </div>
-                        <div className="text-right">
-                          <p className="font-semibold">₹{(getProductPrice(product) * item.quantity).toFixed(2)}</p>
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            onClick={() => removeItem(item.id)}
-                            className="text-red-500 hover:text-red-700 hover:bg-red-50"
-                          >
-                            <Trash2 className="w-4 h-4" />
-                          </Button>
+                        <div className="flex flex-col sm:flex-row items-end sm:items-center gap-2 sm:gap-3">
+                          <div className="flex items-center gap-2">
+                            <Button
+                              variant="outline"
+                              size="icon"
+                              onClick={() => updateQuantity(item.id, item.quantity - 1)}
+                              className="h-7 w-7 sm:h-8 sm:w-8"
+                            >
+                              <Minus className="w-3 h-3 sm:w-4 sm:h-4" />
+                            </Button>
+                            <span className="font-semibold px-2 text-sm sm:text-base">{item.quantity}</span>
+                            <Button
+                              size="icon"
+                              onClick={() => updateQuantity(item.id, item.quantity + 1)}
+                              className="h-7 w-7 sm:h-8 sm:w-8 bg-emerald-600 hover:bg-emerald-700"
+                            >
+                              <Plus className="w-3 h-3 sm:w-4 sm:h-4" />
+                            </Button>
+                          </div>
+                          <div className="text-right">
+                            <p className="font-semibold text-sm sm:text-base">₹{(getProductPrice(product) * item.quantity).toFixed(2)}</p>
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              onClick={() => removeItem(item.id)}
+                              className="text-red-500 hover:text-red-700 hover:bg-red-50 h-7 w-7"
+                            >
+                              <Trash2 className="w-3 h-3 sm:w-4 sm:h-4" />
+                            </Button>
+                          </div>
                         </div>
                       </div>
                     </CardContent>
@@ -772,12 +774,12 @@ export default function Cart() {
         </div>
 
         {/* Order Summary */}
-        <div className="space-y-6">
-          <Card className="sticky top-6">
-            <CardHeader>
-              <CardTitle>Delivery Details</CardTitle>
+        <div className="space-y-4 sm:space-y-6">
+          <Card className="lg:sticky lg:top-6">
+            <CardHeader className="pb-3 sm:pb-6">
+              <CardTitle className="text-lg sm:text-xl">Delivery Details</CardTitle>
             </CardHeader>
-            <CardContent className="space-y-4">
+            <CardContent className="space-y-3 sm:space-y-4">
               <div className="space-y-4">
                 <div>
                   <Label htmlFor="name">Full Name <span className="text-red-500">*</span></Label>
@@ -981,12 +983,12 @@ export default function Cart() {
                 )}
                 </div>
 
-                <div className="border-t pt-4 space-y-2">
-                <div className="flex justify-between text-sm">
+                <div className="border-t pt-3 sm:pt-4 space-y-2">
+                <div className="flex justify-between text-xs sm:text-sm">
                   <span className="text-gray-600">Subtotal:</span>
                   <span className="font-medium">₹{calculateSubtotal().toFixed(2)}</span>
                 </div>
-                <div className="flex justify-between text-sm">
+                <div className="flex justify-between text-xs sm:text-sm">
                   <span className="text-gray-600">Delivery Charge:</span>
                   <span className="font-medium">
                     {calculateShippingCharge() === 0 ? (
@@ -997,29 +999,29 @@ export default function Cart() {
                   </span>
                 </div>
                 {settings && settings.free_delivery_above && calculateShippingCharge() > 0 && (
-                  <p className="text-xs text-gray-500">
+                  <p className="text-[10px] sm:text-xs text-gray-500">
                     Add ₹{(settings.free_delivery_above - calculateSubtotal()).toFixed(2)} more for free delivery
                   </p>
                 )}
                 {appliedCampaign && calculateCampaignDiscount() > 0 && (
-                  <div className="flex justify-between text-sm text-blue-600">
+                  <div className="flex justify-between text-xs sm:text-sm text-blue-600">
                     <span>Campaign Discount ({appliedCampaign.code}):</span>
                     <span className="font-medium">-₹{calculateCampaignDiscount().toFixed(2)}</span>
                   </div>
                 )}
                 {appliedCampaign?.discount_type === 'free_shipping' && calculateShippingCharge() > 0 && (
-                  <div className="flex justify-between text-sm text-blue-600">
+                  <div className="flex justify-between text-xs sm:text-sm text-blue-600">
                     <span>Free Shipping ({appliedCampaign.code}):</span>
                     <span className="font-medium">-₹{calculateShippingCharge().toFixed(2)}</span>
                   </div>
                 )}
                 {pointsToRedeem > 0 && (
-                  <div className="flex justify-between text-sm text-emerald-600">
+                  <div className="flex justify-between text-xs sm:text-sm text-emerald-600">
                     <span>Points Discount:</span>
                     <span className="font-medium">-₹{calculatePointsDiscount().toFixed(2)}</span>
                   </div>
                 )}
-                <div className="flex justify-between items-center text-lg font-bold pt-2 border-t">
+                <div className="flex justify-between items-center text-base sm:text-lg font-bold pt-2 border-t">
                   <span>Total:</span>
                   <span className="text-emerald-600">₹{calculateTotal().toFixed(2)}</span>
                 </div>
@@ -1033,7 +1035,7 @@ export default function Cart() {
               <Button
                 onClick={() => placeOrder()}
                 disabled={isPlacingOrder || cartItems.length === 0 || calculateSubtotal() === 0}
-                className="w-full bg-emerald-600 hover:bg-emerald-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                className="w-full h-11 sm:h-12 bg-emerald-600 hover:bg-emerald-700 disabled:opacity-50 disabled:cursor-not-allowed text-sm sm:text-base font-semibold"
               >
                 {isPlacingOrder ? "Placing Order..." : paymentMethod === "online" ? "Confirm Order Details" : "Place Order"}
               </Button>

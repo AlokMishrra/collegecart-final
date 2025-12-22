@@ -148,17 +148,36 @@ export default function RazorpayPayment({ amount, onSuccess, onError, orderNumbe
 
       <div className="mt-3 sm:mt-4">
         <p className="text-xs text-gray-500 text-center mb-2">Accepted Payment Methods</p>
-        <div className="flex items-center justify-center gap-2 sm:gap-3 flex-wrap">
-          <img src="https://cdn.razorpay.com/static/assets/pay_methods_branding/card.svg" alt="Cards" className="h-5 sm:h-6" />
-          <img src="https://cdn.razorpay.com/static/assets/pay_methods_branding/upi.svg" alt="UPI" className="h-5 sm:h-6" />
-          <img src="https://cdn.razorpay.com/static/assets/pay_methods_branding/wallet.svg" alt="Wallet" className="h-5 sm:h-6" />
-          <img src="https://cdn.razorpay.com/static/assets/pay_methods_branding/nb.svg" alt="Net Banking" className="h-5 sm:h-6" />
+        <div className="flex items-center justify-center gap-2 sm:gap-3 flex-wrap mb-2">
+          <div className="flex items-center justify-center w-10 h-10 sm:w-12 sm:h-12 bg-white rounded-lg border border-gray-200 p-1.5">
+            <img src="https://cdn.razorpay.com/static/assets/pay_methods_branding/card.svg" alt="Cards" className="w-full h-full object-contain" />
+          </div>
+          <div className="flex items-center justify-center w-10 h-10 sm:w-12 sm:h-12 bg-white rounded-lg border border-gray-200 p-1.5">
+            <img src="https://cdn.razorpay.com/static/assets/pay_methods_branding/upi.svg" alt="UPI" className="w-full h-full object-contain" />
+          </div>
+          <div className="flex items-center justify-center w-10 h-10 sm:w-12 sm:h-12 bg-white rounded-lg border border-gray-200 p-1.5">
+            <img src="https://cdn.razorpay.com/static/assets/pay_methods_branding/wallet.svg" alt="Wallet" className="w-full h-full object-contain" />
+          </div>
+          <div className="flex items-center justify-center w-10 h-10 sm:w-12 sm:h-12 bg-white rounded-lg border border-gray-200 p-1.5">
+            <img src="https://cdn.razorpay.com/static/assets/pay_methods_branding/nb.svg" alt="Net Banking" className="w-full h-full object-contain" />
+          </div>
         </div>
-        <div className="flex items-center justify-center gap-2 sm:gap-3 flex-wrap mt-2">
-          <img src="https://cdn.razorpay.com/static/assets/logo/payment/googlepay.svg" alt="Google Pay" className="h-4 sm:h-5" />
-          <img src="https://cdn.razorpay.com/static/assets/logo/payment/phonepe.svg" alt="PhonePe" className="h-4 sm:h-5" />
-          <img src="https://cdn.razorpay.com/static/assets/logo/payment/paytm.svg" alt="Paytm" className="h-4 sm:h-5" />
-          <img src="https://upload.wikimedia.org/wikipedia/commons/e/e1/UPI-Logo-vector.svg" alt="UPI" className="h-4 sm:h-5" />
+        <div className="flex items-center justify-center gap-2 flex-wrap">
+          <div className="flex items-center justify-center w-12 h-8 bg-white rounded border border-gray-200 p-1">
+            <img src="https://logos-world.net/wp-content/uploads/2020/11/Google-Pay-Logo.png" alt="Google Pay" className="w-full h-full object-contain" />
+          </div>
+          <div className="flex items-center justify-center w-12 h-8 bg-white rounded border border-gray-200 p-1">
+            <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/f/fe/PhonePe_Logo.svg/1200px-PhonePe_Logo.svg.png" alt="PhonePe" className="w-full h-full object-contain" />
+          </div>
+          <div className="flex items-center justify-center w-12 h-8 bg-white rounded border border-gray-200 p-1">
+            <img src="https://upload.wikimedia.org/wikipedia/commons/4/42/Paytm_logo.png" alt="Paytm" className="w-full h-full object-contain" />
+          </div>
+          <div className="flex items-center justify-center w-12 h-8 bg-white rounded border border-gray-200 p-1">
+            <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/e/e1/UPI-Logo-vector.svg/1200px-UPI-Logo-vector.svg.png" alt="UPI" className="w-full h-full object-contain" />
+          </div>
+          <div className="flex items-center justify-center w-12 h-8 bg-white rounded border border-gray-200 p-1">
+            <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/9/91/Bhim-upi-logo.png/1200px-Bhim-upi-logo.png" alt="BHIM" className="w-full h-full object-contain" />
+          </div>
         </div>
       </div>
     </div>
