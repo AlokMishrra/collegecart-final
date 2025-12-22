@@ -146,11 +146,20 @@ export default function RazorpayPayment({ amount, onSuccess, onError, orderNumbe
         )}
       </Button>
 
-      <div className="mt-3 sm:mt-4 flex items-center justify-center gap-2 sm:gap-3 flex-wrap">
-        <img src="https://cdn.razorpay.com/static/assets/pay_methods_branding/card.svg" alt="Cards" className="h-4 sm:h-5" />
-        <img src="https://cdn.razorpay.com/static/assets/pay_methods_branding/upi.svg" alt="UPI" className="h-4 sm:h-5" />
-        <img src="https://cdn.razorpay.com/static/assets/pay_methods_branding/wallet.svg" alt="Wallet" className="h-4 sm:h-5" />
-        <img src="https://cdn.razorpay.com/static/assets/pay_methods_branding/nb.svg" alt="Net Banking" className="h-4 sm:h-5" />
+      <div className="mt-3 sm:mt-4">
+        <p className="text-xs text-gray-500 text-center mb-2">Accepted Payment Methods</p>
+        <div className="flex items-center justify-center gap-2 sm:gap-3 flex-wrap">
+          <img src="https://cdn.razorpay.com/static/assets/pay_methods_branding/card.svg" alt="Cards" className="h-5 sm:h-6" />
+          <img src="https://cdn.razorpay.com/static/assets/pay_methods_branding/upi.svg" alt="UPI" className="h-5 sm:h-6" />
+          <img src="https://cdn.razorpay.com/static/assets/pay_methods_branding/wallet.svg" alt="Wallet" className="h-5 sm:h-6" />
+          <img src="https://cdn.razorpay.com/static/assets/pay_methods_branding/nb.svg" alt="Net Banking" className="h-5 sm:h-6" />
+        </div>
+        <div className="flex items-center justify-center gap-2 sm:gap-3 flex-wrap mt-2">
+          <img src="https://cdn.razorpay.com/static/assets/logo/payment/googlepay.svg" alt="Google Pay" className="h-4 sm:h-5" />
+          <img src="https://cdn.razorpay.com/static/assets/logo/payment/phonepe.svg" alt="PhonePe" className="h-4 sm:h-5" />
+          <img src="https://cdn.razorpay.com/static/assets/logo/payment/paytm.svg" alt="Paytm" className="h-4 sm:h-5" />
+          <img src="https://upload.wikimedia.org/wikipedia/commons/e/e1/UPI-Logo-vector.svg" alt="UPI" className="h-4 sm:h-5" />
+        </div>
       </div>
     </div>
   );
