@@ -41,10 +41,10 @@ export default function DailyOrderSummary() {
         return orderDate >= startOfWeek && orderDate <= endOfWeek;
       });
 
-      // Calculate total revenue from delivered orders only
+      // Calculate total revenue from delivered orders only, minus 65 Rs
       const totalRevenue = weekOrders
         .filter(order => order.status === 'delivered')
-        .reduce((sum, order) => sum + order.total_amount, 0);
+        .reduce((sum, order) => sum + order.total_amount, 0) - 65;
 
       const ordersByStatus = weekOrders.reduce((acc, order) => {
         acc[order.status] = (acc[order.status] || 0) + 1;
@@ -146,10 +146,10 @@ export default function DailyOrderSummary() {
         return orderDate >= startOfDay && orderDate <= endOfDay;
       });
 
-      // Calculate total revenue from delivered orders only
+      // Calculate total revenue from delivered orders only, minus 65 Rs
       const totalRevenue = dayOrders
         .filter(order => order.status === 'delivered')
-        .reduce((sum, order) => sum + order.total_amount, 0);
+        .reduce((sum, order) => sum + order.total_amount, 0) - 65;
 
       // Group orders by status
       const ordersByStatus = dayOrders.reduce((acc, order) => {

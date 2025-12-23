@@ -25,10 +25,10 @@ export default function AdminStats() {
         DeliveryPerson.list()
       ]);
 
-      // Calculate total revenue from delivered orders only
+      // Calculate total revenue from delivered orders only, minus 65 Rs
       const totalRevenue = orders
         .filter(order => order.status === "delivered")
-        .reduce((sum, order) => sum + (parseFloat(order.total_amount) || 0), 0);
+        .reduce((sum, order) => sum + (parseFloat(order.total_amount) || 0), 0) - 65;
 
       setStats({
         totalProducts: products.length,
