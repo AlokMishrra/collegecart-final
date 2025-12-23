@@ -1,24 +1,20 @@
-import React, { useState, useEffect } from "react";
+import React from "react";
 import { Product } from "@/entities/Product";
 import { Order } from "@/entities/Order";
 import { DeliveryPerson } from "@/entities/DeliveryPerson";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Package, ShoppingCart, Truck, DollarSign } from "lucide-react";
+import { useQuery } from "@tanstack/react-query";
 
 export default function AdminStats() {
-  const [stats, setStats] = useState({
+  const { data: stats = {
     totalProducts: 0,
     totalOrders: 0,
     totalDeliveryPersons: 0,
     totalRevenue: 0
-  });
-
-  useEffect(() => {
-    loadStats();
-  }, []);
-
-  const loadStats = async () => {
-    try {
+  } } = useQuery({
+    queryKey: ['admin-stats'],
+    queryFn: async () => {
       const [products, orders, deliveryPersons] = await Promise.all([
         Product.list(),
         Order.list(),
@@ -30,16 +26,18 @@ export default function AdminStats() {
         .filter(order => order.status === "delivered")
         .reduce((sum, order) => sum + (parseFloat(order.total_amount) || 0), 0) - 65;
 
-      setStats({
+      return {
         totalProducts: products.length,
         totalOrders: orders.length,
         totalDeliveryPersons: deliveryPersons.length,
         totalRevenue
-      });
-    } catch (error) {
-      console.error("Error loading stats:", error);
-    }
-  };
+      };
+    },
+    staleTime: 30000, // Cache for 30 seconds
+    refetchInterval: 60000, // Refetch every 60 seconds
+    retry: 3,
+    retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 30000)
+  });
 
   const statCards = [
     {

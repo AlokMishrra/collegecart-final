@@ -32,7 +32,10 @@ export default function HostelManagement() {
   });
 
   useEffect(() => {
-    loadData();
+    const timer = setTimeout(() => {
+      loadData();
+    }, 500); // Delay initial load by 500ms
+    return () => clearTimeout(timer);
   }, []);
 
   const loadData = async () => {
@@ -46,6 +49,10 @@ export default function HostelManagement() {
       setDeliveryPersons(deliveryData);
     } catch (error) {
       console.error("Error loading data:", error);
+      // Retry after delay if rate limited
+      if (error.message?.includes('Rate limit')) {
+        setTimeout(() => loadData(), 3000);
+      }
     }
     setIsLoading(false);
   };

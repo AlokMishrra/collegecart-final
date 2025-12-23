@@ -11,7 +11,10 @@ export default function HostelPerformanceMetrics() {
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    loadMetrics();
+    const timer = setTimeout(() => {
+      loadMetrics();
+    }, 1000); // Delay initial load by 1 second
+    return () => clearTimeout(timer);
   }, []);
 
   const loadMetrics = async () => {
@@ -69,6 +72,10 @@ export default function HostelPerformanceMetrics() {
       setMetrics(hostelMetrics);
     } catch (error) {
       console.error("Error loading metrics:", error);
+      // Retry after delay if rate limited
+      if (error.message?.includes('Rate limit')) {
+        setTimeout(() => loadMetrics(), 5000);
+      }
     }
     setIsLoading(false);
   };
