@@ -42,9 +42,9 @@ export default function DailyOrderSummary() {
       });
 
       // Calculate total revenue from delivered orders only, minus 65 Rs
-      const totalRevenue = weekOrders
+      const totalRevenue = Math.max(0, weekOrders
         .filter(order => order.status === 'delivered')
-        .reduce((sum, order) => sum + order.total_amount, 0) - 65;
+        .reduce((sum, order) => sum + order.total_amount, 0) - 65);
 
       const ordersByStatus = weekOrders.reduce((acc, order) => {
         acc[order.status] = (acc[order.status] || 0) + 1;
@@ -147,9 +147,9 @@ export default function DailyOrderSummary() {
       });
 
       // Calculate total revenue from delivered orders only, minus 65 Rs
-      const totalRevenue = dayOrders
+      const totalRevenue = Math.max(0, dayOrders
         .filter(order => order.status === 'delivered')
-        .reduce((sum, order) => sum + order.total_amount, 0) - 65;
+        .reduce((sum, order) => sum + order.total_amount, 0) - 65);
 
       // Group orders by status
       const ordersByStatus = dayOrders.reduce((acc, order) => {

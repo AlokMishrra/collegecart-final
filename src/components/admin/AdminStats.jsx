@@ -22,9 +22,9 @@ export default function AdminStats() {
       ]);
 
       // Calculate total revenue from delivered orders only, minus 65 Rs
-      const totalRevenue = orders
+      const totalRevenue = Math.max(0, orders
         .filter(order => order.status === "delivered")
-        .reduce((sum, order) => sum + (parseFloat(order.total_amount) || 0), 0) - 65;
+        .reduce((sum, order) => sum + (parseFloat(order.total_amount) || 0), 0) - 65);
 
       return {
         totalProducts: products.length,
