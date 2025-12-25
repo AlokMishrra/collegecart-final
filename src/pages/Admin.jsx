@@ -104,7 +104,10 @@ export default function Admin() {
   }, [navigate]);
 
   useEffect(() => {
-    checkAdminAccess();
+    const timer = setTimeout(() => {
+      checkAdminAccess();
+    }, 300);
+    return () => clearTimeout(timer);
   }, [checkAdminAccess]);
 
   if (isLoading) {

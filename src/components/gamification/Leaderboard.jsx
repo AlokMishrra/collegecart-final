@@ -8,7 +8,10 @@ export default function Leaderboard() {
   const [leaders, setLeaders] = useState([]);
 
   useEffect(() => {
-    loadLeaderboard();
+    const timer = setTimeout(() => {
+      loadLeaderboard();
+    }, 2000);
+    return () => clearTimeout(timer);
   }, []);
 
   const loadLeaderboard = async () => {
