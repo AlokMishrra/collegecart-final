@@ -97,7 +97,7 @@ export default function RazorpayPayment({ amount, onSuccess, onError, orderNumbe
   };
 
   return (
-    <div className="w-full bg-gradient-to-br from-emerald-50 to-green-50 border-2 border-emerald-200 rounded-xl p-4 sm:p-6 shadow-sm">
+    <div className="w-full max-w-full bg-gradient-to-br from-emerald-50 to-green-50 border-2 border-emerald-200 rounded-xl p-3 sm:p-6 shadow-sm">
       <div className="flex items-center gap-3 mb-4">
         <div className="w-10 h-10 sm:w-12 sm:h-12 bg-white rounded-full flex items-center justify-center flex-shrink-0 p-1.5">
           <img 
