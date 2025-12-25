@@ -673,7 +673,7 @@ export default function Cart() {
   }
 
   return (
-    <div className="max-w-4xl mx-auto space-y-6">
+    <div className="max-w-4xl mx-auto px-3 py-4 sm:px-6 space-y-3 sm:space-y-6">
       {/* Progress Bar at Top */}
       <DeliveryProgressBar 
         subtotal={calculateSubtotal()} 
@@ -681,11 +681,21 @@ export default function Cart() {
         isFirstOrder={isFirstOrder}
       />
 
-      <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">Shopping Cart</h1>
+      <div className="flex items-center justify-between">
+        <h1 className="text-xl sm:text-2xl font-bold text-gray-900">My Cart</h1>
+        <Button
+          variant="ghost"
+          size="icon"
+          onClick={() => navigate(createPageUrl('Shop'))}
+          className="h-8 w-8"
+        >
+          <span className="text-xl">×</span>
+        </Button>
+      </div>
 
-      <div className="grid lg:grid-cols-3 gap-4 sm:gap-6">
+      <div className="grid lg:grid-cols-3 gap-3 sm:gap-6">
         {/* Cart Items */}
-        <div className="lg:col-span-2 space-y-4">
+        <div className="lg:col-span-2 space-y-2 sm:space-y-4">
           <AnimatePresence>
             {cartItems.map((item) => {
               const product = products[item.product_id];
@@ -698,26 +708,26 @@ export default function Cart() {
                   animate={{ opacity: 1, y: 0 }}
                   exit={{ opacity: 0, y: -20 }}
                 >
-                  <Card>
-                    <CardContent className="p-3 sm:p-6">
-                      <div className="flex items-center gap-3 sm:gap-4">
+                  <Card className="shadow-sm">
+                    <CardContent className="p-2 sm:p-4">
+                      <div className="flex items-start gap-2 sm:gap-3">
                         <img
                           src={product.image_url || "https://images.unsplash.com/photo-1542838132-92c53300491e?w=150"}
                           alt={product.name}
-                          className="w-16 h-16 sm:w-20 sm:h-20 object-cover rounded-lg flex-shrink-0"
+                          className="w-14 h-14 sm:w-16 sm:h-16 object-cover rounded flex-shrink-0"
                           onError={(e) => {
                             e.target.src = "https://images.unsplash.com/photo-1542838132-92c53300491e?w=150";
                           }}
                         />
                         <div className="flex-1 min-w-0">
-                          <h3 className="font-semibold text-gray-900 text-sm sm:text-base truncate">{product.name}</h3>
+                          <h3 className="font-semibold text-gray-900 text-xs sm:text-sm leading-tight mb-1">{product.name}</h3>
                           {product.dhaba_options?.length > 0 ? (
                             <div className="mt-1">
                               <Select 
                                 value={selectedDhaba[product.id] || ""} 
                                 onValueChange={(value) => setSelectedDhaba({ ...selectedDhaba, [product.id]: value })}
                               >
-                                <SelectTrigger className="h-7 sm:h-8 text-xs">
+                                <SelectTrigger className="h-6 text-[10px] sm:text-xs">
                                   <SelectValue placeholder="Select Dhaba" />
                                 </SelectTrigger>
                                 <SelectContent>
@@ -730,38 +740,38 @@ export default function Cart() {
                               </Select>
                             </div>
                           ) : (
-                            <p className="text-emerald-600 font-medium text-sm">₹{getProductPrice(product)}/{product.unit}</p>
+                            <p className="text-emerald-600 font-medium text-[10px] sm:text-xs">{product.quantity} × ₹{getProductPrice(product)}</p>
                           )}
-                        </div>
-                        <div className="flex flex-col sm:flex-row items-end sm:items-center gap-2 sm:gap-3">
-                          <div className="flex items-center gap-2">
-                            <Button
-                              variant="outline"
-                              size="icon"
-                              onClick={() => updateQuantity(item.id, item.quantity - 1)}
-                              className="h-7 w-7 sm:h-8 sm:w-8"
-                            >
-                              <Minus className="w-3 h-3 sm:w-4 sm:h-4" />
-                            </Button>
-                            <span className="font-semibold px-2 text-sm sm:text-base">{item.quantity}</span>
-                            <Button
-                              size="icon"
-                              onClick={() => updateQuantity(item.id, item.quantity + 1)}
-                              className="h-7 w-7 sm:h-8 sm:w-8 bg-emerald-600 hover:bg-emerald-700"
-                            >
-                              <Plus className="w-3 h-3 sm:w-4 sm:h-4" />
-                            </Button>
-                          </div>
-                          <div className="text-right">
-                            <p className="font-semibold text-sm sm:text-base">₹{(getProductPrice(product) * item.quantity).toFixed(2)}</p>
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              onClick={() => removeItem(item.id)}
-                              className="text-red-500 hover:text-red-700 hover:bg-red-50 h-7 w-7"
-                            >
-                              <Trash2 className="w-3 h-3 sm:w-4 sm:h-4" />
-                            </Button>
+                          <div className="flex items-center justify-between mt-2">
+                            <div className="flex items-center gap-1 sm:gap-1.5">
+                              <Button
+                                variant="outline"
+                                size="icon"
+                                onClick={() => updateQuantity(item.id, item.quantity - 1)}
+                                className="h-6 w-6 sm:h-7 sm:w-7 rounded-sm"
+                              >
+                                <Minus className="w-2.5 h-2.5 sm:w-3 sm:h-3" />
+                              </Button>
+                              <span className="font-bold px-1.5 sm:px-2 text-xs sm:text-sm min-w-[20px] text-center">{item.quantity}</span>
+                              <Button
+                                size="icon"
+                                onClick={() => updateQuantity(item.id, item.quantity + 1)}
+                                className="h-6 w-6 sm:h-7 sm:w-7 bg-emerald-600 hover:bg-emerald-700 rounded-sm"
+                              >
+                                <Plus className="w-2.5 h-2.5 sm:w-3 sm:h-3" />
+                              </Button>
+                            </div>
+                            <div className="flex items-center gap-2">
+                              <p className="font-bold text-xs sm:text-sm text-gray-900">₹{(getProductPrice(product) * item.quantity).toFixed(0)}</p>
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                onClick={() => removeItem(item.id)}
+                                className="text-red-500 hover:text-red-700 hover:bg-red-50 h-6 w-6"
+                              >
+                                <Trash2 className="w-3 h-3" />
+                              </Button>
+                            </div>
                           </div>
                         </div>
                       </div>
@@ -795,102 +805,103 @@ export default function Cart() {
         </div>
 
         {/* Order Summary */}
-        <div className="space-y-4 sm:space-y-6">
-          <Card className="lg:sticky lg:top-6">
-            <CardHeader className="pb-3 sm:pb-6">
-              <CardTitle className="text-lg sm:text-xl">Delivery Details</CardTitle>
+        <div className="space-y-3 sm:space-y-4">
+          <Card className="lg:sticky lg:top-6 shadow-sm">
+            <CardHeader className="pb-2 sm:pb-4 p-3 sm:p-6">
+              <CardTitle className="text-base sm:text-lg">Delivery Details</CardTitle>
             </CardHeader>
-            <CardContent className="space-y-3 sm:space-y-4">
-              <div className="space-y-4">
+            <CardContent className="space-y-2 sm:space-y-3 p-3 sm:p-6 pt-0">
+              <div className="space-y-2 sm:space-y-3">
                 <div>
-                  <Label htmlFor="name">Full Name <span className="text-red-500">*</span></Label>
+                  <Label htmlFor="name" className="text-xs sm:text-sm">Name <span className="text-red-500">*</span></Label>
                   <Input
                     id="name"
                     value={customerName}
                     onChange={(e) => setCustomerName(e.target.value)}
-                    placeholder="Enter your full name"
+                    placeholder="Your name"
+                    className="h-8 sm:h-10 text-xs sm:text-sm"
                     required
                   />
                 </div>
                 <div>
-                  <Label htmlFor="phone">Phone Number <span className="text-red-500">*</span></Label>
+                  <Label htmlFor="phone" className="text-xs sm:text-sm">Phone <span className="text-red-500">*</span></Label>
                   <Input
                     id="phone"
                     value={phoneNumber}
                     onChange={(e) => setPhoneNumber(e.target.value)}
-                    placeholder="Enter your phone number"
+                    placeholder="Your phone"
+                    className="h-8 sm:h-10 text-xs sm:text-sm"
                     required
                   />
                 </div>
                  <div>
-                  <Label>Delivery Location <span className="text-red-500">*</span></Label>
-                  <div className="bg-emerald-50 border border-emerald-200 rounded-lg p-3 flex items-center justify-between">
+                  <Label className="text-xs sm:text-sm">Location <span className="text-red-500">*</span></Label>
+                  <div className="bg-emerald-50 border border-emerald-200 rounded p-2 flex items-center justify-between">
                     <div>
-                      <p className="text-sm text-gray-600">Delivering to</p>
-                      <p className="text-base font-semibold text-gray-900">
-                        {selectedHostel === "Other" ? "Other Location" : `${selectedHostel} Hostel`}
+                      <p className="text-[10px] sm:text-xs text-gray-600">Delivering to</p>
+                      <p className="text-xs sm:text-sm font-semibold text-gray-900">
+                        {selectedHostel === "Other" ? "Other" : `${selectedHostel}`}
                       </p>
                     </div>
                   </div>
-                  <p className="text-xs text-gray-500 mt-1">Delivery location is set from your shop preferences</p>
                  </div>
 
                  {selectedHostel === "Other" ? (
                   <div>
-                    <Label htmlFor="customAddress">Delivery Address <span className="text-red-500">*</span></Label>
+                    <Label htmlFor="customAddress" className="text-xs sm:text-sm">Address <span className="text-red-500">*</span></Label>
                     <Textarea
                       id="customAddress"
                       value={customAddress}
                       onChange={(e) => setCustomAddress(e.target.value)}
-                      placeholder="Enter your complete delivery address"
-                      rows={3}
+                      placeholder="Complete address"
+                      rows={2}
+                      className="text-xs sm:text-sm"
                       required
                     />
                   </div>
                  ) : (
                   <div>
-                    <Label htmlFor="room">Room Number <span className="text-red-500">*</span></Label>
+                    <Label htmlFor="room" className="text-xs sm:text-sm">Room No. <span className="text-red-500">*</span></Label>
                     <Input
                       id="room"
                       value={roomNumber}
                       onChange={(e) => setRoomNumber(e.target.value)}
-                      placeholder="Enter room number"
+                      placeholder="Room number"
+                      className="h-8 sm:h-10 text-xs sm:text-sm"
                       disabled={!selectedHostel || selectedHostel === "Other"}
                       required={selectedHostel !== "Other"}
                     />
                   </div>
                  )}
                 <div>
-                  <Label htmlFor="notes">Delivery Notes (Optional)</Label>
+                  <Label htmlFor="notes" className="text-xs sm:text-sm">Notes (Optional)</Label>
                   <Textarea
                     id="notes"
                     value={deliveryNotes}
                     onChange={(e) => setDeliveryNotes(e.target.value)}
-                    placeholder="Any special instructions..."
+                    placeholder="Special instructions..."
                     rows={2}
+                    className="text-xs sm:text-sm"
                   />
                 </div>
 
                 {hasDhabaProducts() && (
-                  <div className="bg-amber-50 border border-amber-200 rounded-lg p-3">
-                    <Label className="text-sm font-medium text-amber-900 block mb-2">
-                      🍽️ Dhaba Selection Required
-                    </Label>
-                    <p className="text-xs text-amber-700">
-                      Some items have multiple dhaba options. Please select a dhaba for each item above to see final pricing.
+                  <div className="bg-amber-50 border border-amber-200 rounded p-2">
+                    <p className="text-[10px] sm:text-xs text-amber-800 font-medium">
+                      🍽️ Select dhaba for items above
                     </p>
                   </div>
                 )}
 
                 <div>
-                  <Label htmlFor="payment">Payment Method <span className="text-red-500">*</span></Label>
+                  <Label htmlFor="payment" className="text-xs sm:text-sm">Payment <span className="text-red-500">*</span></Label>
                   <Select onValueChange={setPaymentMethod} value={paymentMethod} required>
-                    <SelectTrigger id="payment">
-                      <SelectValue placeholder="Select payment method" />
+                    <SelectTrigger id="payment" className="h-8 sm:h-10 text-xs sm:text-sm">
+                      <SelectValue placeholder="Payment method" />
                     </SelectTrigger>
                     <SelectContent>
                       <SelectItem value="cash">Cash on Delivery</SelectItem>
-                      <SelectItem value="online">Online Payment (UPI)</SelectItem>
+                      <SelectItem value="online">Online (UPI)</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
@@ -915,31 +926,32 @@ export default function Cart() {
                 )}
 
                 {/* Discount Code */}
-                <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-                  <Label className="text-sm font-semibold text-blue-900 mb-2 block">Discount Code</Label>
-                  <div className="flex gap-2">
+                <div className="bg-blue-50 border border-blue-200 rounded p-2">
+                  <Label className="text-[10px] sm:text-xs font-semibold text-blue-900 mb-1.5 block">Discount Code</Label>
+                  <div className="flex gap-1.5">
                     <Input
-                      placeholder="Enter code"
+                      placeholder="Code"
                       value={discountCode}
                       onChange={(e) => {
                         setDiscountCode(e.target.value.toUpperCase());
                         setCodeError("");
                       }}
                       disabled={!!appliedCampaign}
-                      className="border-blue-300"
+                      className="border-blue-300 h-7 sm:h-8 text-xs"
                     />
                     <Button
                       type="button"
                       onClick={appliedCampaign ? () => { setAppliedCampaign(null); setDiscountCode(""); } : applyDiscountCode}
                       variant="outline"
-                      className={appliedCampaign ? "bg-red-50 text-red-600" : "bg-blue-50 text-blue-600"}
+                      size="sm"
+                      className={`h-7 sm:h-8 text-[10px] sm:text-xs px-2 ${appliedCampaign ? "bg-red-50 text-red-600" : "bg-blue-50 text-blue-600"}`}
                     >
                       {appliedCampaign ? "Remove" : "Apply"}
                     </Button>
                   </div>
-                  {codeError && <p className="text-xs text-red-600 mt-1">{codeError}</p>}
+                  {codeError && <p className="text-[9px] sm:text-xs text-red-600 mt-0.5">{codeError}</p>}
                   {appliedCampaign && (
-                    <p className="text-xs text-green-600 mt-1 font-medium">
+                    <p className="text-[9px] sm:text-xs text-green-600 mt-0.5 font-medium">
                       ✓ {appliedCampaign.name} applied!
                     </p>
                   )}
@@ -947,17 +959,17 @@ export default function Cart() {
 
                 {/* Loyalty Points Redemption */}
                 {loyaltyPoints >= 100 && (
-                  <div className="bg-emerald-50 border border-emerald-200 rounded-lg p-4">
-                    <div className="flex items-center gap-2 mb-3">
-                      <div className="w-8 h-8 bg-emerald-100 rounded-full flex items-center justify-center">
-                        <span className="text-emerald-600 font-bold text-sm">★</span>
+                  <div className="bg-emerald-50 border border-emerald-200 rounded p-2">
+                    <div className="flex items-center gap-1.5 mb-2">
+                      <div className="w-6 h-6 bg-emerald-100 rounded-full flex items-center justify-center flex-shrink-0">
+                        <span className="text-emerald-600 font-bold text-xs">★</span>
                       </div>
-                      <div className="flex-1">
-                        <Label className="text-sm font-semibold text-emerald-900">Use Loyalty Points</Label>
-                        <p className="text-xs text-emerald-700">Available: {loyaltyPoints} points (₹{(loyaltyPoints / 10).toFixed(2)})</p>
+                      <div className="flex-1 min-w-0">
+                        <Label className="text-[10px] sm:text-xs font-semibold text-emerald-900 block">Loyalty Points</Label>
+                        <p className="text-[9px] sm:text-[10px] text-emerald-700">{loyaltyPoints} pts (₹{(loyaltyPoints / 10).toFixed(2)})</p>
                       </div>
                     </div>
-                    <div className="space-y-2">
+                    <div className="space-y-1.5">
                       <Input
                         type="number"
                         min="0"
@@ -968,16 +980,16 @@ export default function Cart() {
                           const maxPoints = Math.min(loyaltyPoints, Math.floor((calculateSubtotal() + calculateShippingCharge()) * 10));
                           setPointsToRedeem(Math.min(value, maxPoints));
                         }}
-                        placeholder="Enter points to redeem"
-                        className="border-emerald-300"
+                        placeholder="Points"
+                        className="border-emerald-300 h-7 text-xs"
                       />
-                      <div className="flex gap-2">
+                      <div className="flex gap-1.5">
                         <Button
                           type="button"
                           variant="outline"
                           size="sm"
                           onClick={() => setPointsToRedeem(Math.min(100, loyaltyPoints))}
-                          className="flex-1 text-xs"
+                          className="flex-1 text-[10px] h-6"
                         >
                           Use 100
                         </Button>
@@ -989,14 +1001,14 @@ export default function Cart() {
                             const maxPoints = Math.min(loyaltyPoints, Math.floor((calculateSubtotal() + calculateShippingCharge()) * 10));
                             setPointsToRedeem(maxPoints);
                           }}
-                          className="flex-1 text-xs"
+                          className="flex-1 text-[10px] h-6"
                         >
-                          Use Max
+                          Max
                         </Button>
                       </div>
                       {pointsToRedeem > 0 && (
-                        <p className="text-xs text-emerald-700 font-medium">
-                          You'll save ₹{calculatePointsDiscount().toFixed(2)} on this order
+                        <p className="text-[9px] sm:text-xs text-emerald-700 font-medium">
+                          Save ₹{calculatePointsDiscount().toFixed(2)}
                         </p>
                       )}
                     </div>
@@ -1004,61 +1016,51 @@ export default function Cart() {
                 )}
                 </div>
 
-                <div className="border-t pt-3 sm:pt-4 space-y-2">
-                <div className="flex justify-between text-xs sm:text-sm">
-                  <span className="text-gray-600">Subtotal:</span>
-                  <span className="font-medium">₹{calculateSubtotal().toFixed(2)}</span>
+                <div className="border-t pt-2 space-y-1.5">
+                <div className="flex justify-between text-[10px] sm:text-xs">
+                  <span className="text-gray-600">Subtotal</span>
+                  <span className="font-medium">₹{calculateSubtotal().toFixed(0)}</span>
                 </div>
-                <div className="flex justify-between text-xs sm:text-sm">
-                  <span className="text-gray-600">Delivery Charge:</span>
+                <div className="flex justify-between text-[10px] sm:text-xs">
+                  <span className="text-gray-600">Delivery</span>
                   <span className="font-medium">
                     {calculateShippingCharge() === 0 ? (
                       <span className="text-green-600">FREE</span>
                     ) : (
-                      `₹${calculateShippingCharge().toFixed(2)}`
+                      `₹${calculateShippingCharge().toFixed(0)}`
                     )}
                   </span>
                 </div>
-                {settings && settings.free_delivery_above && calculateShippingCharge() > 0 && (
-                  <p className="text-[10px] sm:text-xs text-gray-500">
-                    Add ₹{(settings.free_delivery_above - calculateSubtotal()).toFixed(2)} more for free delivery
-                  </p>
-                )}
                 {appliedCampaign && calculateCampaignDiscount() > 0 && (
-                  <div className="flex justify-between text-xs sm:text-sm text-blue-600">
-                    <span>Campaign Discount ({appliedCampaign.code}):</span>
-                    <span className="font-medium">-₹{calculateCampaignDiscount().toFixed(2)}</span>
+                  <div className="flex justify-between text-[10px] sm:text-xs text-blue-600">
+                    <span>Discount ({appliedCampaign.code})</span>
+                    <span className="font-medium">-₹{calculateCampaignDiscount().toFixed(0)}</span>
                   </div>
                 )}
                 {appliedCampaign?.discount_type === 'free_shipping' && calculateShippingCharge() > 0 && (
-                  <div className="flex justify-between text-xs sm:text-sm text-blue-600">
-                    <span>Free Shipping ({appliedCampaign.code}):</span>
-                    <span className="font-medium">-₹{calculateShippingCharge().toFixed(2)}</span>
+                  <div className="flex justify-between text-[10px] sm:text-xs text-blue-600">
+                    <span>Free Shipping</span>
+                    <span className="font-medium">-₹{calculateShippingCharge().toFixed(0)}</span>
                   </div>
                 )}
                 {pointsToRedeem > 0 && (
-                  <div className="flex justify-between text-xs sm:text-sm text-emerald-600">
-                    <span>Points Discount:</span>
-                    <span className="font-medium">-₹{calculatePointsDiscount().toFixed(2)}</span>
+                  <div className="flex justify-between text-[10px] sm:text-xs text-emerald-600">
+                    <span>Points</span>
+                    <span className="font-medium">-₹{calculatePointsDiscount().toFixed(0)}</span>
                   </div>
                 )}
-                <div className="flex justify-between items-center text-base sm:text-lg font-bold pt-2 border-t">
-                  <span>Total:</span>
-                  <span className="text-emerald-600">₹{calculateTotal().toFixed(2)}</span>
+                <div className="flex justify-between items-center text-sm sm:text-base font-bold pt-1.5 border-t">
+                  <span>Total</span>
+                  <span className="text-emerald-600">₹{calculateTotal().toFixed(0)}</span>
                 </div>
-                {pointsToRedeem > 0 && (
-                  <p className="text-xs text-emerald-600 font-medium">
-                    🎉 Saved ₹{calculatePointsDiscount().toFixed(2)} with loyalty points!
-                  </p>
-                )}
               </div>
               
               <Button
                 onClick={() => placeOrder()}
                 disabled={isPlacingOrder || cartItems.length === 0 || calculateSubtotal() === 0}
-                className="w-full h-11 sm:h-12 bg-emerald-600 hover:bg-emerald-700 disabled:opacity-50 disabled:cursor-not-allowed text-sm sm:text-base font-semibold"
+                className="w-full h-9 sm:h-10 bg-emerald-600 hover:bg-emerald-700 disabled:opacity-50 disabled:cursor-not-allowed text-xs sm:text-sm font-semibold"
               >
-                {isPlacingOrder ? "Placing Order..." : paymentMethod === "online" ? "Confirm Order Details" : "Place Order"}
+                {isPlacingOrder ? "Processing..." : paymentMethod === "online" ? "Continue to Pay" : "Place Order"}
               </Button>
             </CardContent>
           </Card>
