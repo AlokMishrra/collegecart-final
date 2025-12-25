@@ -71,48 +71,50 @@ export default function RecommendedProducts({ onAddToCart, cartItems, amountNeed
   if (recommendedProducts.length === 0) return null;
 
   return (
-    <Card className="mt-6 border-2 border-emerald-200 bg-gradient-to-br from-emerald-50 to-white">
-      <CardHeader>
-        <CardTitle className="flex items-center gap-2 text-emerald-800">
-          <Sparkles className="w-5 h-5" />
-          {amountNeededForFreeDelivery > 0 
-            ? `Add ₹${amountNeededForFreeDelivery.toFixed(0)} more for FREE Delivery!`
-            : 'Recommended for You'}
-          <Badge className="ml-auto bg-emerald-600">
-            {amountNeededForFreeDelivery > 0 ? 'Perfect Match' : 'Best Deals'}
+    <Card className="mt-2 sm:mt-4 border border-emerald-200 bg-gradient-to-br from-emerald-50 to-white shadow-sm">
+      <CardHeader className="p-2 sm:p-4 pb-1 sm:pb-2">
+        <CardTitle className="flex items-center gap-1.5 sm:gap-2 text-emerald-800 text-xs sm:text-sm">
+          <Sparkles className="w-3.5 h-3.5 sm:w-4 sm:h-4 flex-shrink-0" />
+          <span className="flex-1 truncate">
+            {amountNeededForFreeDelivery > 0 
+              ? `Add ₹${amountNeededForFreeDelivery.toFixed(0)} for FREE Delivery!`
+              : 'Recommended'}
+          </span>
+          <Badge className="bg-emerald-600 text-[9px] sm:text-xs px-1.5 py-0 h-4 sm:h-5">
+            {amountNeededForFreeDelivery > 0 ? 'Match' : 'Deals'}
           </Badge>
         </CardTitle>
       </CardHeader>
-      <CardContent>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+      <CardContent className="p-2 sm:p-4 pt-1">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
           {recommendedProducts.map((product, index) => (
             <motion.div
               key={product.id}
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: index * 0.1 }}
-              className="flex gap-3 bg-white p-3 rounded-lg border border-emerald-100 hover:shadow-md transition-all"
+              className="flex gap-2 bg-white p-2 rounded border border-emerald-100 hover:shadow-md transition-all"
             >
               <img
                 src={product.image_url || "https://images.unsplash.com/photo-1542838132-92c53300491e?w=100"}
                 alt={product.name}
-                className="w-20 h-20 object-cover rounded-lg"
+                className="w-12 h-12 sm:w-14 sm:h-14 object-cover rounded flex-shrink-0"
                 onError={(e) => e.target.src = "https://images.unsplash.com/photo-1542838132-92c53300491e?w=100"}
               />
-              <div className="flex-1">
-                <h4 className="font-semibold text-sm text-gray-900 mb-1 line-clamp-1">
+              <div className="flex-1 min-w-0">
+                <h4 className="font-semibold text-[10px] sm:text-xs text-gray-900 mb-0.5 line-clamp-1">
                   {product.name}
                 </h4>
-                <p className="text-emerald-600 font-bold text-lg">
+                <p className="text-emerald-600 font-bold text-xs sm:text-sm">
                   ₹{product.price}
-                  <span className="text-xs text-gray-500">/{product.unit}</span>
+                  <span className="text-[9px] sm:text-xs text-gray-500">/{product.unit}</span>
                 </p>
                 <Button
                   size="sm"
                   onClick={() => onAddToCart(product)}
-                  className="mt-2 bg-emerald-600 hover:bg-emerald-700 w-full"
+                  className="mt-1 bg-emerald-600 hover:bg-emerald-700 w-full h-6 text-[10px] sm:text-xs"
                 >
-                  Add to Cart
+                  Add
                 </Button>
               </div>
             </motion.div>
