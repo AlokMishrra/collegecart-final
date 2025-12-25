@@ -376,7 +376,18 @@ export default function Cart() {
         return;
       }
 
+    // Set loading state immediately
     setIsPlacingOrder(true);
+
+    // Show processing notification immediately for online payments
+    if (paymentMethod === "online" && paymentId) {
+      await Notification.create({
+        user_id: user.id,
+        title: "Processing Your Order...",
+        message: "Payment successful! Creating your order now...",
+        type: "info"
+      });
+    }
     try {
       const orderNumber = `CC${Date.now()}`;
       const orderItems = cartItems.map(item => {
@@ -397,28 +408,38 @@ export default function Cart() {
 
       const finalAmount = calculateTotal();
       
-      // Validate stock before creating order
-      for (const item of cartItems) {
+      // Validate stock before creating order (async operations)
+      const stockPromises = cartItems.map(async (item) => {
         const product = products[item.product_id];
-        if (!product) continue;
+        if (!product) return { valid: true };
 
-        // Get hostel stock
         let availableStock = product.stock_quantity || 0;
         if (user.selected_hostel && user.selected_hostel !== 'Other' && product.hostel_stock) {
           availableStock = product.hostel_stock[user.selected_hostel] || 0;
         }
 
-        // Check if stock is sufficient
         if (availableStock < item.quantity) {
-          await Notification.create({
-            user_id: user.id,
-            title: "Out of Stock",
-            message: `${product.name} is out of stock. Only ${availableStock} available.`,
-            type: "error"
-          });
-          setIsPlacingOrder(false);
-          return;
+          return { 
+            valid: false, 
+            productName: product.name, 
+            availableStock 
+          };
         }
+        return { valid: true };
+      });
+
+      const stockResults = await Promise.all(stockPromises);
+      const invalidStock = stockResults.find(result => !result.valid);
+      
+      if (invalidStock) {
+        await Notification.create({
+          user_id: user.id,
+          title: "Out of Stock",
+          message: `${invalidStock.productName} is out of stock. Only ${invalidStock.availableStock} available.`,
+          type: "error"
+        });
+        setIsPlacingOrder(false);
+        return;
       }
 
       const newOrder = await Order.create({
@@ -435,12 +456,11 @@ export default function Cart() {
         is_paid: paymentMethod === "online" ? true : false
       });
 
-      // Reduce stock for each item
-      for (const item of cartItems) {
+      // Reduce stock for each item (parallel operations for speed)
+      const stockUpdatePromises = cartItems.map(async (item) => {
         const product = products[item.product_id];
-        if (!product) continue;
+        if (!product) return;
 
-        // Reduce hostel-specific stock or total stock
         if (user.selected_hostel && user.selected_hostel !== 'Other' && product.hostel_stock) {
           const currentHostelStock = product.hostel_stock[user.selected_hostel] || 0;
           const updatedHostelStock = {
@@ -448,17 +468,18 @@ export default function Cart() {
             [user.selected_hostel]: Math.max(0, currentHostelStock - item.quantity)
           };
           
-          await Product.update(product.id, {
+          return Product.update(product.id, {
             hostel_stock: updatedHostelStock
           });
         } else {
-          // Reduce total stock
           const newStock = Math.max(0, (product.stock_quantity || 0) - item.quantity);
-          await Product.update(product.id, {
+          return Product.update(product.id, {
             stock_quantity: newStock
           });
         }
-      }
+      });
+
+      await Promise.all(stockUpdatePromises);
 
       // Redeem loyalty points if used
       if (pointsToRedeem > 0) {
@@ -542,14 +563,14 @@ export default function Cart() {
         console.error("Error sending email notification:", emailError);
       }
 
-      // Clear cart
-      await Promise.all(cartItems.map(item => CartItem.delete(item.id)));
-
-      // Update user info
-      await User.updateMyUserData({
-        full_name: customerName,
-        phone_number: phoneNumber
-      });
+      // Clear cart and update user info (parallel)
+      await Promise.all([
+        ...cartItems.map(item => CartItem.delete(item.id)),
+        User.updateMyUserData({
+          full_name: customerName,
+          phone_number: phoneNumber
+        })
+      ]);
 
       // Award loyalty points with tier-based multiplier
       const tierMultipliers = {
