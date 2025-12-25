@@ -874,7 +874,6 @@ export default function Delivery() {
                                   onPaymentSuccess={() => loadAssignedOrders(deliveryPerson.id)}
                                 />
                               )}
-                              <CODQRGenerator order={order} />
                               {/* Mobile: Swipe to Deliver */}
                               <div className="w-full lg:hidden">
                                 <SwipeToDeliver
