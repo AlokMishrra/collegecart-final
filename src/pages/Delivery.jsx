@@ -17,6 +17,7 @@ import { motion, AnimatePresence } from "framer-motion";
   import DeliveryNotifications from "../components/delivery/DeliveryNotifications";
   import CODQRGenerator from "../components/delivery/CODQRGenerator";
   import SwipeToDeliver from "../components/delivery/SwipeToDeliver";
+  import CODPaymentCollector from "../components/delivery/CODPaymentCollector";
 
 function DeliveryOrderItem({ item }) {
   const [product, setProduct] = useState(null);
@@ -867,6 +868,12 @@ export default function Delivery() {
                             </Button>
                           ) : (
                             <>
+                              {!order.is_paid && order.payment_method === "cash" && (
+                                <CODPaymentCollector 
+                                  order={order} 
+                                  onPaymentSuccess={() => loadAssignedOrders(deliveryPerson.id)}
+                                />
+                              )}
                               <CODQRGenerator order={order} />
                               {/* Mobile: Swipe to Deliver */}
                               <div className="w-full lg:hidden">

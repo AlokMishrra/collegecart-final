@@ -1,29 +1,31 @@
-import Shop from './pages/Shop';
-import ProductDetails from './pages/ProductDetails';
-import Cart from './pages/Cart';
-import Orders from './pages/Orders';
 import Admin from './pages/Admin';
-import Delivery from './pages/Delivery';
+import Cart from './pages/Cart';
 import CategoryProducts from './pages/CategoryProducts';
-import Profile from './pages/Profile';
+import Delivery from './pages/Delivery';
+import Home from './pages/Home';
 import LoyaltyRewards from './pages/LoyaltyRewards';
-import Wishlist from './pages/Wishlist';
+import Orders from './pages/Orders';
+import ProductDetails from './pages/ProductDetails';
+import Profile from './pages/Profile';
+import Shop from './pages/Shop';
 import UserManagement from './pages/UserManagement';
+import Wishlist from './pages/Wishlist';
 import __Layout from './Layout.jsx';
 
 
 export const PAGES = {
-    "Shop": Shop,
-    "ProductDetails": ProductDetails,
-    "Cart": Cart,
-    "Orders": Orders,
     "Admin": Admin,
-    "Delivery": Delivery,
+    "Cart": Cart,
     "CategoryProducts": CategoryProducts,
-    "Profile": Profile,
+    "Delivery": Delivery,
+    "Home": Home,
     "LoyaltyRewards": LoyaltyRewards,
-    "Wishlist": Wishlist,
+    "Orders": Orders,
+    "ProductDetails": ProductDetails,
+    "Profile": Profile,
+    "Shop": Shop,
     "UserManagement": UserManagement,
+    "Wishlist": Wishlist,
 }
 
 export const pagesConfig = {
