@@ -130,6 +130,11 @@ export default function OrderManagement() {
   };
 
   const updateOrderStatus = async (orderId, newStatus, deliveryPersonId = null) => {
+    // Update UI immediately (optimistic update)
+    setOrders(prev => prev.map(o => 
+      o.id === orderId ? { ...o, status: newStatus, delivery_person_id: deliveryPersonId || o.delivery_person_id } : o
+    ));
+
     try {
       const updateData = { status: newStatus };
       if (deliveryPersonId) {
@@ -187,9 +192,12 @@ export default function OrderManagement() {
         console.error("Error creating admin success notification:", err);
       }
 
+      // Refresh data in background
       loadData();
     } catch (error) {
       console.error("Error updating order status:", error);
+      // Revert optimistic update on error
+      loadData();
       
       // Show error notification to admin if user is available
       try {
@@ -207,6 +215,11 @@ export default function OrderManagement() {
   };
 
   const assignDeliveryPerson = async (orderId, deliveryPersonId) => {
+    // Update UI immediately (optimistic update)
+    setOrders(prev => prev.map(o => 
+      o.id === orderId ? { ...o, delivery_person_id: deliveryPersonId, status: "out_for_delivery" } : o
+    ));
+
     try {
       await Order.update(orderId, {
         delivery_person_id: deliveryPersonId,
@@ -285,9 +298,12 @@ export default function OrderManagement() {
         console.error("Error creating admin success notification:", err);
       }
 
+      // Refresh data in background
       loadData();
     } catch (error) {
       console.error("Error assigning delivery person:", error);
+      // Revert optimistic update on error
+      loadData();
       
       // Show error notification to admin
       try {
@@ -336,6 +352,11 @@ export default function OrderManagement() {
   };
 
   const cancelOrder = async (orderId) => {
+    // Update UI immediately (optimistic update)
+    setOrders(prev => prev.map(o => 
+      o.id === orderId ? { ...o, status: "cancelled" } : o
+    ));
+
     try {
       const order = orders.find(o => o.id === orderId);
       
@@ -352,18 +373,27 @@ export default function OrderManagement() {
         });
       }
 
+      // Refresh data in background
       loadData();
     } catch (error) {
       console.error("Error cancelling order:", error);
+      // Revert optimistic update on error
+      loadData();
     }
   };
 
   const deleteOrder = async (orderId) => {
+    // Update UI immediately (optimistic update)
+    setOrders(prev => prev.filter(o => o.id !== orderId));
+
     try {
       await Order.delete(orderId);
+      // Refresh data in background
       loadData();
     } catch (error) {
       console.error("Error deleting order:", error);
+      // Revert optimistic update on error
+      loadData();
     }
   };
 
@@ -375,6 +405,11 @@ export default function OrderManagement() {
     try {
       const order = orders.find(o => o.id === orderId);
       if (!order) return;
+
+      // Update UI immediately (optimistic update)
+      setOrders(prev => prev.map(o => 
+        o.id === orderId ? { ...o, status: "refunded" } : o
+      ));
 
       // Update order status to refunded
       await Order.update(orderId, { status: "refunded" });
@@ -409,9 +444,12 @@ export default function OrderManagement() {
         console.error("Error creating admin notification:", err);
       }
 
+      // Refresh data in background
       loadData();
     } catch (error) {
       console.error("Error processing refund:", error);
+      // Revert optimistic update on error
+      loadData();
       
       // Show error notification to admin
       try {
