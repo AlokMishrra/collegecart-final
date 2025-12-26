@@ -602,7 +602,7 @@ export default function Delivery() {
                 className="mt-2 bg-yellow-600 hover:bg-yellow-700 text-white"
               >
                 <Bell className="w-4 h-4 mr-2" />
-                {Notification.permission === 'denied' ? 'Check Browser Settings' : 'Enable Notifications'}
+                {Notification.permission === 'Allow' ? 'Check Browser Settings' : 'Enable Notifications'}
               </Button>
             </div>
           </div>
