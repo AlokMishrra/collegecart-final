@@ -15,7 +15,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { motion, AnimatePresence } from "framer-motion";
   import DeliveryStats from "../components/delivery/DeliveryStats";
   import DeliveryNotifications from "../components/delivery/DeliveryNotifications";
-import CODQRGenerator from "../components/delivery/CODQRGenerator";
+  import CODQRGenerator from "../components/delivery/CODQRGenerator";
   import SwipeToDeliver from "../components/delivery/SwipeToDeliver";
   import CODPaymentCollector from "../components/delivery/CODPaymentCollector";
 
