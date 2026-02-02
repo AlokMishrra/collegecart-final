@@ -202,26 +202,19 @@ Return ONLY a JSON array of product names: ["Product Name 1", "Product Name 2", 
         )}
       </div>
       
-      <Card className="bg-white border-gray-200 shadow-sm">
-        <CardContent className="p-4 sm:p-6">
-          <p className="text-sm text-gray-600 mb-4">
-            {settings?.strategy === "ai_powered" 
-              ? "✨ Personalized recommendations powered by AI"
-              : "📦 Handpicked products based on your preferences"}
-          </p>
-          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-4 gap-3 sm:gap-4">
-            {recommendations.map((product) => (
-              <div key={product.id}>
-                <ProductCard
-                  product={product}
-                  cartQuantity={getCartQuantity(product.id)}
-                  onAddToCart={() => onAddToCart(product)}
-                />
-              </div>
-            ))}
-          </div>
-        </CardContent>
-      </Card>
+      <div className="relative">
+        <div className="flex gap-3 overflow-x-auto pb-4 snap-x snap-mandatory scrollbar-hide">
+          {recommendations.map((product) => (
+            <div key={product.id} className="flex-shrink-0 w-[180px] sm:w-[200px] snap-start">
+              <ProductCard
+                product={product}
+                cartQuantity={getCartQuantity(product.id)}
+                onAddToCart={() => onAddToCart(product)}
+              />
+            </div>
+          ))}
+        </div>
+      </div>
     </div>
   );
 }
