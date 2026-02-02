@@ -194,7 +194,7 @@ Return ONLY a JSON array of product names: ["Product Name 1", "Product Name 2", 
     <div className="space-y-3 sm:space-y-4">
       <div className="flex items-center gap-2">
         <Sparkles className="w-5 h-5 text-emerald-600" />
-        <h2 className="text-xl font-semibold text-gray-900">
+        <h2 className="text-lg sm:text-xl font-semibold text-gray-900">
           {context === "checkout" ? "You May Also Like" : "Recommended For You"}
         </h2>
         {settings?.strategy === "ai_powered" && (
@@ -202,16 +202,16 @@ Return ONLY a JSON array of product names: ["Product Name 1", "Product Name 2", 
         )}
       </div>
       
-      <Card className="bg-white border-gray-200 shadow-sm">
-        <CardContent className="p-4 sm:p-6">
-          <p className="text-sm text-gray-600 mb-4">
-            {settings?.strategy === "ai_powered" 
-              ? "✨ Personalized recommendations powered by AI"
-              : "📦 Handpicked products based on your preferences"}
-          </p>
-          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-4 gap-3 sm:gap-4">
+      <div className="bg-gradient-to-r from-emerald-50 to-blue-50 border border-emerald-200 rounded-xl p-4 sm:p-6 shadow-sm">
+        <p className="text-sm text-gray-600 mb-4">
+          {settings?.strategy === "ai_powered" 
+            ? "✨ Personalized recommendations powered by AI"
+            : "📦 Handpicked products based on your preferences"}
+        </p>
+        <div className="relative">
+          <div className="flex gap-3 sm:gap-4 overflow-x-auto pb-3 scrollbar-hide scroll-smooth snap-x snap-mandatory">
             {recommendations.map((product) => (
-              <div key={product.id}>
+              <div key={product.id} className="flex-shrink-0 w-40 sm:w-48 snap-start">
                 <ProductCard
                   product={product}
                   cartQuantity={getCartQuantity(product.id)}
@@ -220,8 +220,8 @@ Return ONLY a JSON array of product names: ["Product Name 1", "Product Name 2", 
               </div>
             ))}
           </div>
-        </CardContent>
-      </Card>
+        </div>
+      </div>
     </div>
   );
 }
