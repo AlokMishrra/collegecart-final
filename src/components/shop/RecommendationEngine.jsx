@@ -208,10 +208,10 @@ Return ONLY a JSON array of product names: ["Product Name 1", "Product Name 2", 
             ? "✨ Personalized recommendations powered by AI"
             : "📦 Handpicked products based on your preferences"}
         </p>
-        <div className="relative">
-          <div className="flex gap-3 sm:gap-4 overflow-x-auto pb-3 scrollbar-hide scroll-smooth snap-x snap-mandatory">
+        <div className="relative -mx-1">
+          <div className="flex gap-2 sm:gap-3 overflow-x-auto pb-2 scrollbar-hide scroll-smooth snap-x snap-mandatory px-1">
             {recommendations.map((product) => (
-              <div key={product.id} className="flex-shrink-0 w-40 sm:w-48 snap-start">
+              <div key={product.id} className="flex-shrink-0 w-32 sm:w-36 snap-start">
                 <ProductCard
                   product={product}
                   cartQuantity={getCartQuantity(product.id)}
