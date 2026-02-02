@@ -191,36 +191,34 @@ Return ONLY a JSON array of product names: ["Product Name 1", "Product Name 2", 
   }
 
   return (
-    <div className="space-y-2 sm:space-y-3">
-      <div className="flex items-center gap-1.5 sm:gap-2">
-        <Sparkles className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-emerald-600 flex-shrink-0" />
-        <h2 className="text-sm sm:text-base font-bold text-gray-900">
-          {context === "checkout" ? "You May Also Like" : "For You"}
+    <div className="space-y-3 sm:space-y-4">
+      <div className="flex items-center gap-2">
+        <Sparkles className="w-5 h-5 text-emerald-600" />
+        <h2 className="text-xl font-semibold text-gray-900">
+          {context === "checkout" ? "You May Also Like" : "Recommended For You"}
         </h2>
         {settings?.strategy === "ai_powered" && (
-          <span className="text-[9px] sm:text-xs bg-purple-100 text-purple-700 px-1.5 py-0.5 rounded-full">AI</span>
+          <span className="text-xs bg-purple-100 text-purple-700 px-2 py-1 rounded-full font-medium">AI Powered</span>
         )}
       </div>
       
-      <Card className="bg-gradient-to-r from-emerald-50 to-blue-50 border-emerald-200 shadow-sm">
-        <CardContent className="p-2 sm:p-3">
-          <p className="text-[10px] sm:text-xs text-gray-600 mb-2">
+      <Card className="bg-white border-gray-200 shadow-sm">
+        <CardContent className="p-4 sm:p-6">
+          <p className="text-sm text-gray-600 mb-4">
             {settings?.strategy === "ai_powered" 
-              ? "Personalized by AI"
-              : "Based on your preferences"}
+              ? "✨ Personalized recommendations powered by AI"
+              : "📦 Handpicked products based on your preferences"}
           </p>
-          <div className="relative">
-            <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-hide snap-x snap-mandatory">
-              {recommendations.map((product, index) => (
-                <div key={product.id} className="flex-shrink-0 w-28 sm:w-32 snap-start">
-                  <ProductCard
-                    product={product}
-                    cartQuantity={getCartQuantity(product.id)}
-                    onAddToCart={() => onAddToCart(product)}
-                  />
-                </div>
-              ))}
-            </div>
+          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-4 gap-3 sm:gap-4">
+            {recommendations.map((product) => (
+              <div key={product.id}>
+                <ProductCard
+                  product={product}
+                  cartQuantity={getCartQuantity(product.id)}
+                  onAddToCart={() => onAddToCart(product)}
+                />
+              </div>
+            ))}
           </div>
         </CardContent>
       </Card>
