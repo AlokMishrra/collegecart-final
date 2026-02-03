@@ -77,6 +77,11 @@ export default function Delivery() {
   const [orderToCancel, setOrderToCancel] = useState(null);
   const [cancellationReason, setCancellationReason] = useState("");
   const [isTogglingAvailability, setIsTogglingAvailability] = useState(false);
+  const [showCODConfirm, setShowCODConfirm] = useState(false);
+  const [codOrder, setCodOrder] = useState(null);
+  const [codAmount, setCodAmount] = useState("");
+  const [codProofImage, setCodProofImage] = useState(null);
+  const [uploadingProof, setUploadingProof] = useState(false);
 
 
   const loadAssignedOrders = useCallback(async (deliveryPersonId) => {
@@ -330,33 +335,40 @@ export default function Delivery() {
     setAvailableOrders([]);
   };
 
-  const toggleAvailability = async () => {
+  const toggleShift = async () => {
     setIsTogglingAvailability(true);
     try {
-      const newAvailability = !deliveryPerson.is_available;
-      await DeliveryPerson.update(deliveryPerson.id, {
-        is_available: newAvailability
-      });
+      const newShiftStatus = !deliveryPerson.is_on_shift;
+      const updates = {
+        is_on_shift: newShiftStatus,
+        is_available: newShiftStatus
+      };
+      
+      if (newShiftStatus) {
+        updates.last_shift_start = new Date().toISOString();
+      } else {
+        updates.last_shift_end = new Date().toISOString();
+      }
 
-      // Update local state
-      const updatedPerson = { ...deliveryPerson, is_available: newAvailability };
+      await DeliveryPerson.update(deliveryPerson.id, updates);
+
+      const updatedPerson = { ...deliveryPerson, ...updates };
       setDeliveryPerson(updatedPerson);
       localStorage.setItem('deliveryPerson', JSON.stringify(updatedPerson));
 
-      // Show notification about status change
-      if (newAvailability) {
+      if (newShiftStatus) {
         showBrowserNotification(
-          '✅ You are now ONLINE',
-          'You will receive notifications for new orders'
+          '✅ Shift Started',
+          'You are now on shift and can accept orders'
         );
       } else {
         showBrowserNotification(
-          '⏸️ You are now OFFLINE',
-          'You will not receive new order notifications'
+          '⏸️ Shift Ended',
+          'You are now off shift'
         );
       }
     } catch (error) {
-      console.error("Error toggling availability:", error);
+      console.error("Error toggling shift:", error);
     }
     setIsTogglingAvailability(false);
   };
@@ -415,12 +427,95 @@ export default function Delivery() {
     }
   };
 
+  const handleCODDelivery = (order) => {
+    setCodOrder(order);
+    setCodAmount(order.total_amount.toString());
+    setCodProofImage(null);
+    setShowCODConfirm(true);
+  };
+
+  const handleCODImageUpload = async (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    setUploadingProof(true);
+    try {
+      const { file_url } = await base44.integrations.Core.UploadFile({ file });
+      setCodProofImage(file_url);
+    } catch (error) {
+      console.error("Error uploading proof:", error);
+    }
+    setUploadingProof(false);
+  };
+
+  const confirmCODDelivery = async () => {
+    if (!codOrder || !codAmount) return;
+    
+    setUpdatingOrderId(codOrder.id);
+    setShowCODConfirm(false);
+    
+    try {
+      const order = codOrder;
+      const commission = order.total_amount * 0.10;
+      const newTotalDeliveries = (deliveryPerson.total_deliveries || 0) + 1;
+      const newTotalEarnings = (deliveryPerson.total_earnings || 0) + commission;
+      const newBalance = (deliveryPerson.account_balance || 0) + parseFloat(codAmount);
+      const newDailyCOD = (deliveryPerson.daily_cod_collected || 0) + parseFloat(codAmount);
+
+      setAssignedOrders(prev => prev.filter(o => o.id !== codOrder.id));
+      const updatedPerson = {
+        ...deliveryPerson,
+        total_deliveries: newTotalDeliveries,
+        total_earnings: newTotalEarnings,
+        account_balance: newBalance,
+        daily_cod_collected: newDailyCOD
+      };
+      setDeliveryPerson(updatedPerson);
+      localStorage.setItem('deliveryPerson', JSON.stringify(updatedPerson));
+
+      await Promise.all([
+        Order.update(codOrder.id, { 
+          status: "delivered",
+          is_paid: true
+        }),
+        DeliveryPerson.update(deliveryPerson.id, {
+          total_deliveries: newTotalDeliveries,
+          total_earnings: newTotalEarnings,
+          account_balance: newBalance,
+          daily_cod_collected: newDailyCOD,
+          current_orders: (deliveryPerson.current_orders || []).filter(id => id !== codOrder.id)
+        }),
+        Notification.create({
+          user_id: order.user_id,
+          title: "Order Delivered!",
+          message: `Your order #${order.order_number} has been delivered. Thank you for choosing CollegeCart!`,
+          type: "success"
+        })
+      ]);
+
+    } catch (error) {
+      console.error("Error confirming COD delivery:", error);
+      await loadAssignedOrders(deliveryPerson.id);
+    } finally {
+      setUpdatingOrderId(null);
+      setCodOrder(null);
+      setCodAmount("");
+      setCodProofImage(null);
+    }
+  };
+
   const markOrderDelivered = async (orderId) => {
+    const order = assignedOrders.find(o => o.id === orderId);
+    if (!order) return;
+
+    // Check if COD order
+    if (!order.is_paid && order.payment_method === "cash") {
+      handleCODDelivery(order);
+      return;
+    }
+
     setUpdatingOrderId(orderId);
     try {
-      const order = assignedOrders.find(o => o.id === orderId);
-      if (!order) return;
-
       const commission = order.total_amount * 0.10;
       const newTotalDeliveries = (deliveryPerson.total_deliveries || 0) + 1;
       const newTotalEarnings = (deliveryPerson.total_earnings || 0) + commission;
@@ -613,29 +708,58 @@ export default function Delivery() {
         <div>
           <h1 className="text-3xl font-bold text-gray-900">Delivery Dashboard</h1>
           <p className="text-gray-600">Welcome back, {deliveryPerson.name}!</p>
+          {deliveryPerson.assigned_hostel && (
+            <Badge className="mt-1 bg-blue-100 text-blue-800">📍 {deliveryPerson.assigned_hostel} Hostel</Badge>
+          )}
         </div>
         <div className="flex gap-2">
-          <Button
-            variant={deliveryPerson.is_available ? "default" : "outline"}
-            onClick={toggleAvailability}
-            disabled={isTogglingAvailability}
-            className={deliveryPerson.is_available ? "bg-green-600 hover:bg-green-700" : "border-red-500 text-red-600 hover:bg-red-50"}
-          >
-            {isTogglingAvailability ? (
-              <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-            ) : (
-              <Power className="w-4 h-4 mr-2" />
-            )}
-            {deliveryPerson.is_available ? "Available" : "Offline"}
-          </Button>
+          {(deliveryPerson.account_balance || 0) >= 0 ? (
+            <Button
+              variant={deliveryPerson.is_on_shift ? "default" : "outline"}
+              onClick={toggleShift}
+              disabled={isTogglingAvailability}
+              className={deliveryPerson.is_on_shift ? "bg-green-600 hover:bg-green-700" : "border-gray-500 text-gray-600 hover:bg-gray-50"}
+            >
+              {isTogglingAvailability ? (
+                <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+              ) : (
+                <Power className="w-4 h-4 mr-2" />
+              )}
+              {deliveryPerson.is_on_shift ? "End Shift" : "Start Shift"}
+            </Button>
+          ) : (
+            <Button variant="outline" disabled className="border-red-500 text-red-600 cursor-not-allowed">
+              <Lock className="w-4 h-4 mr-2" />
+              Account Blocked
+            </Button>
+          )}
           <Button variant="outline" onClick={handleLogout}>
             Logout
           </Button>
         </div>
       </div>
 
-      {/* Availability Status Banner */}
-      {!deliveryPerson.is_available && (
+      {/* Account Balance Warning */}
+      {(deliveryPerson.account_balance || 0) < 0 && (
+        <motion.div
+          initial={{ opacity: 0, y: -20 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="bg-red-50 border-l-4 border-red-500 p-4 rounded-lg"
+        >
+          <div className="flex items-start gap-3">
+            <Lock className="w-5 h-5 text-red-600 mt-0.5" />
+            <div>
+              <h3 className="font-semibold text-red-900">Account Blocked - Negative Balance</h3>
+              <p className="text-sm text-red-700 mt-1">
+                Your account balance is ₹{deliveryPerson.account_balance.toFixed(2)}. Please contact admin to resolve this issue.
+              </p>
+            </div>
+          </div>
+        </motion.div>
+      )}
+
+      {/* Shift Status Banner */}
+      {(deliveryPerson.account_balance || 0) >= 0 && !deliveryPerson.is_on_shift && (
         <motion.div
           initial={{ opacity: 0, y: -20 }}
           animate={{ opacity: 1, y: 0 }}
@@ -644,9 +768,9 @@ export default function Delivery() {
           <div className="flex items-start gap-3">
             <AlertTriangle className="w-5 h-5 text-orange-600 mt-0.5" />
             <div>
-              <h3 className="font-semibold text-orange-900">You are currently OFFLINE</h3>
+              <h3 className="font-semibold text-orange-900">Shift Not Active</h3>
               <p className="text-sm text-orange-700 mt-1">
-                You will not receive notifications for new orders. Toggle the availability button to go online.
+                Click "Start Shift" to begin accepting orders.
               </p>
             </div>
           </div>
@@ -656,8 +780,8 @@ export default function Delivery() {
       {/* Delivery Statistics */}
       <DeliveryStats deliveryPerson={deliveryPerson} />
 
-      {/* Available Orders to Accept - Only show if available */}
-      {deliveryPerson.is_available && availableOrders.length > 0 && (
+      {/* Available Orders to Accept - Only show if on shift */}
+      {deliveryPerson.is_on_shift && (deliveryPerson.account_balance || 0) >= 0 && availableOrders.length > 0 && (
         <div className="space-y-4">
           <div className="flex items-center gap-2">
             <h2 className="text-xl font-semibold">Available Orders</h2>
@@ -748,11 +872,41 @@ export default function Delivery() {
         </div>
       )}
 
+      {/* Daily COD Summary */}
+      {deliveryPerson.is_on_shift && (deliveryPerson.daily_cod_collected || 0) > 0 && (
+        <Card className="bg-amber-50 border-amber-200">
+          <CardContent className="p-4">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm text-amber-800 font-medium">Today's COD Collected</p>
+                <p className="text-2xl font-bold text-amber-900">₹{(deliveryPerson.daily_cod_collected || 0).toFixed(2)}</p>
+              </div>
+              <div className="text-right">
+                <p className="text-sm text-amber-800">Account Balance</p>
+                <p className={`text-xl font-bold ${(deliveryPerson.account_balance || 0) >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                  ₹{(deliveryPerson.account_balance || 0).toFixed(2)}
+                </p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
       {/* Orders to Deliver */}
       <div className="space-y-4">
         <h2 className="text-xl font-semibold">My Active Deliveries</h2>
         
-        {assignedOrders.length === 0 ? (
+        {!deliveryPerson.is_on_shift ? (
+          <Card>
+            <CardContent className="p-12 text-center">
+              <div className="w-16 h-16 mx-auto mb-4 bg-gray-100 rounded-full flex items-center justify-center">
+                <Power className="w-8 h-8 text-gray-400" />
+              </div>
+              <h3 className="text-lg font-semibold text-gray-900 mb-2">Start Your Shift</h3>
+              <p className="text-gray-600">Click "Start Shift" to begin accepting orders.</p>
+            </CardContent>
+          </Card>
+        ) : assignedOrders.length === 0 ? (
           <Card>
             <CardContent className="p-12 text-center">
               <div className="w-16 h-16 mx-auto mb-4 bg-gray-100 rounded-full flex items-center justify-center">
@@ -867,34 +1021,28 @@ export default function Delivery() {
                               Out for Delivery
                             </Button>
                           ) : (
-                            <>
-                              {!order.is_paid && order.payment_method === "cash" && (
-                                <CODPaymentCollector 
-                                  order={order} 
-                                  onPaymentSuccess={() => loadAssignedOrders(deliveryPerson.id)}
-                                />
-                              )}
-                              {/* Mobile: Swipe to Deliver */}
-                              <div className="w-full lg:hidden">
-                                <SwipeToDeliver
-                                  onDeliver={() => markOrderDelivered(order.id)}
-                                  isLoading={updatingOrderId === order.id}
-                                />
-                              </div>
-                              {/* Desktop: Button */}
-                              <Button
-                                onClick={() => markOrderDelivered(order.id)}
-                                disabled={updatingOrderId === order.id}
-                                className="hidden lg:flex bg-green-600 hover:bg-green-700 w-full lg:w-auto"
-                              >
-                                {updatingOrderId === order.id ? (
-                                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                                ) : (
-                                  <CheckCircle className="w-4 h-4 mr-2" />
-                                )}
-                                Mark as Delivered
-                              </Button>
-                            </>
+                           <>
+                             {/* Mobile: Swipe to Deliver */}
+                             <div className="w-full lg:hidden">
+                               <SwipeToDeliver
+                                 onDeliver={() => markOrderDelivered(order.id)}
+                                 isLoading={updatingOrderId === order.id}
+                               />
+                             </div>
+                             {/* Desktop: Button */}
+                             <Button
+                               onClick={() => markOrderDelivered(order.id)}
+                               disabled={updatingOrderId === order.id}
+                               className="hidden lg:flex bg-green-600 hover:bg-green-700 w-full lg:w-auto"
+                             >
+                               {updatingOrderId === order.id ? (
+                                 <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                               ) : (
+                                 <CheckCircle className="w-4 h-4 mr-2" />
+                               )}
+                               {!order.is_paid && order.payment_method === "cash" ? "Collect COD & Deliver" : "Mark as Delivered"}
+                             </Button>
+                           </>
                           )}
                           <Button
                             variant="outline"
@@ -927,6 +1075,62 @@ export default function Delivery() {
           </div>
         )}
       </div>
+
+      {/* COD Confirmation Dialog */}
+      <Dialog open={showCODConfirm} onOpenChange={setShowCODConfirm}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>COD Collection Confirmation</DialogTitle>
+            <DialogDescription>
+              Confirm the amount collected and optionally upload proof.
+            </DialogDescription>
+          </DialogHeader>
+          {codOrder && (
+            <div className="space-y-4">
+              <div className="p-3 bg-gray-50 rounded-lg">
+                <p className="font-semibold">Order #{codOrder.order_number}</p>
+                <p className="text-sm text-gray-600">{codOrder.customer_name}</p>
+              </div>
+              
+              <div>
+                <Label>Amount Collected *</Label>
+                <Input
+                  type="number"
+                  value={codAmount}
+                  onChange={(e) => setCodAmount(e.target.value)}
+                  placeholder="₹"
+                  className="mt-1"
+                />
+              </div>
+
+              <div>
+                <Label>Upload Proof (Optional)</Label>
+                <Input
+                  type="file"
+                  accept="image/*"
+                  onChange={handleCODImageUpload}
+                  disabled={uploadingProof}
+                  className="mt-1"
+                />
+                {uploadingProof && <p className="text-xs text-gray-500 mt-1">Uploading...</p>}
+                {codProofImage && <p className="text-xs text-green-600 mt-1">✓ Image uploaded</p>}
+              </div>
+            </div>
+          )}
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShowCODConfirm(false)}>
+              Cancel
+            </Button>
+            <Button 
+              onClick={confirmCODDelivery}
+              disabled={!codAmount}
+              className="bg-green-600 hover:bg-green-700"
+            >
+              Confirm & Deliver
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       {/* Cancel Order Dialog */}
       <Dialog open={showCancelDialog} onOpenChange={setShowCancelDialog}>
