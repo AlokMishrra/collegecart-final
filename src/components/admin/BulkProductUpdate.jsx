@@ -350,20 +350,22 @@ export default function BulkProductUpdate() {
 
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <Label>Available From (HH:MM)</Label>
+                <Label>Available From (12-hour format)</Label>
                 <Input
-                  type="time"
+                  placeholder="e.g., 08:00 AM"
                   value={updateData.available_from}
                   onChange={(e) => setUpdateData({...updateData, available_from: e.target.value})}
                 />
+                <p className="text-xs text-gray-500 mt-1">Format: HH:MM AM/PM</p>
               </div>
               <div>
-                <Label>Available To (HH:MM)</Label>
+                <Label>Available To (12-hour format)</Label>
                 <Input
-                  type="time"
+                  placeholder="e.g., 11:00 PM"
                   value={updateData.available_to}
                   onChange={(e) => setUpdateData({...updateData, available_to: e.target.value})}
                 />
+                <p className="text-xs text-gray-500 mt-1">Format: HH:MM AM/PM</p>
               </div>
             </div>
 
