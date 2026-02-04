@@ -80,10 +80,11 @@ export default function Delivery() {
   const [showCODConfirm, setShowCODConfirm] = useState(false);
   const [codOrder, setCodOrder] = useState(null);
   const [codAmount, setCodAmount] = useState("");
-  const [codProofImage, setCodProofImage] = useState(null);
-  const [uploadingProof, setUploadingProof] = useState(false);
   const [paymentMethod, setPaymentMethod] = useState("cod");
   const [processingOnlinePayment, setProcessingOnlinePayment] = useState(false);
+  const [showAddWalletDialog, setShowAddWalletDialog] = useState(false);
+  const [walletAmount, setWalletAmount] = useState("");
+  const [addingToWallet, setAddingToWallet] = useState(false);
 
 
   const loadAssignedOrders = useCallback(async (deliveryPersonId) => {
@@ -555,11 +556,14 @@ export default function Delivery() {
     
     try {
       const order = codOrder;
+      const collectedAmount = parseFloat(codAmount);
       const commission = order.total_amount * 0.10;
       const newTotalDeliveries = (deliveryPerson.total_deliveries || 0) + 1;
       const newTotalEarnings = (deliveryPerson.total_earnings || 0) + commission;
-      const newBalance = (deliveryPerson.account_balance || 0) + parseFloat(codAmount);
-      const newDailyCOD = (deliveryPerson.daily_cod_collected || 0) + parseFloat(codAmount);
+      
+      // DEDUCT COD amount from wallet balance
+      const newBalance = (deliveryPerson.account_balance || 0) - collectedAmount;
+      const newDailyCOD = (deliveryPerson.daily_cod_collected || 0) + collectedAmount;
 
       setAssignedOrders(prev => prev.filter(o => o.id !== codOrder.id));
       const updatedPerson = {
@@ -592,6 +596,14 @@ export default function Delivery() {
         })
       ]);
 
+      // Show warning if balance is low
+      if (newBalance < 500 && newBalance >= 0) {
+        showBrowserNotification(
+          '⚠️ Low Wallet Balance',
+          `Your balance is ₹${newBalance.toFixed(2)}. Add money to avoid account freeze.`
+        );
+      }
+
     } catch (error) {
       console.error("Error confirming COD delivery:", error);
       await loadAssignedOrders(deliveryPerson.id);
@@ -599,8 +611,38 @@ export default function Delivery() {
       setUpdatingOrderId(null);
       setCodOrder(null);
       setCodAmount("");
-      setCodProofImage(null);
     }
+  };
+
+  const addToWallet = async () => {
+    if (!walletAmount || parseFloat(walletAmount) <= 0) return;
+    
+    setAddingToWallet(true);
+    try {
+      const amount = parseFloat(walletAmount);
+      const newBalance = (deliveryPerson.account_balance || 0) + amount;
+      
+      await DeliveryPerson.update(deliveryPerson.id, {
+        account_balance: newBalance
+      });
+
+      const updatedPerson = { ...deliveryPerson, account_balance: newBalance };
+      setDeliveryPerson(updatedPerson);
+      localStorage.setItem('deliveryPerson', JSON.stringify(updatedPerson));
+
+      await Notification.create({
+        user_id: deliveryPerson.email,
+        title: "Wallet Recharged!",
+        message: `₹${amount.toFixed(2)} added to your wallet. New balance: ₹${newBalance.toFixed(2)}`,
+        type: "success"
+      });
+
+      setShowAddWalletDialog(false);
+      setWalletAmount("");
+    } catch (error) {
+      console.error("Error adding to wallet:", error);
+    }
+    setAddingToWallet(false);
   };
 
   const markOrderDelivered = async (orderId) => {
@@ -971,25 +1013,38 @@ export default function Delivery() {
         </div>
       )}
 
-      {/* Daily COD Summary */}
-      {deliveryPerson.is_on_shift && (deliveryPerson.daily_cod_collected || 0) > 0 && (
-        <Card className="bg-amber-50 border-amber-200">
-          <CardContent className="p-4">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-amber-800 font-medium">Today's COD Collected</p>
-                <p className="text-2xl font-bold text-amber-900">₹{(deliveryPerson.daily_cod_collected || 0).toFixed(2)}</p>
-              </div>
-              <div className="text-right">
-                <p className="text-sm text-amber-800">Account Balance</p>
-                <p className={`text-xl font-bold ${(deliveryPerson.account_balance || 0) >= 0 ? 'text-green-600' : 'text-red-600'}`}>
-                  ₹{(deliveryPerson.account_balance || 0).toFixed(2)}
-                </p>
-              </div>
+      {/* Wallet Balance Card */}
+      <Card className={`${(deliveryPerson.account_balance || 0) < 0 ? 'bg-red-50 border-red-200' : (deliveryPerson.account_balance || 0) < 500 ? 'bg-amber-50 border-amber-200' : 'bg-emerald-50 border-emerald-200'}`}>
+        <CardContent className="p-4">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-sm font-medium text-gray-700">💰 Wallet Balance</p>
+              <p className={`text-3xl font-bold ${(deliveryPerson.account_balance || 0) >= 0 ? 'text-emerald-600' : 'text-red-600'}`}>
+                ₹{(deliveryPerson.account_balance || 0).toFixed(2)}
+              </p>
+              {(deliveryPerson.account_balance || 0) < 0 && (
+                <p className="text-xs text-red-600 mt-1">⚠️ Negative balance - Account frozen</p>
+              )}
+              {(deliveryPerson.account_balance || 0) >= 0 && (deliveryPerson.account_balance || 0) < 500 && (
+                <p className="text-xs text-amber-600 mt-1">⚠️ Low balance - Add money soon</p>
+              )}
             </div>
-          </CardContent>
-        </Card>
-      )}
+            <div className="text-right space-y-2">
+              <div>
+                <p className="text-xs text-gray-600">Today's COD</p>
+                <p className="text-lg font-bold text-amber-600">₹{(deliveryPerson.daily_cod_collected || 0).toFixed(2)}</p>
+              </div>
+              <Button
+                onClick={() => setShowAddWalletDialog(true)}
+                size="sm"
+                className="bg-emerald-600 hover:bg-emerald-700"
+              >
+                + Add Money
+              </Button>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
 
       {/* Orders to Deliver */}
       <div className="space-y-4">
@@ -1205,9 +1260,9 @@ export default function Delivery() {
       <Dialog open={showCODConfirm} onOpenChange={setShowCODConfirm}>
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
-            <DialogTitle>💵 COD Collection Confirmation</DialogTitle>
+            <DialogTitle>💵 Collect COD Payment</DialogTitle>
             <DialogDescription>
-              Confirm the cash amount collected and optionally upload proof.
+              This amount will be deducted from your wallet balance.
             </DialogDescription>
           </DialogHeader>
           {codOrder && (
@@ -1215,11 +1270,28 @@ export default function Delivery() {
               <div className="p-3 bg-gray-50 rounded-lg">
                 <p className="font-semibold">Order #{codOrder.order_number}</p>
                 <p className="text-sm text-gray-600">{codOrder.customer_name}</p>
-                <p className="text-sm font-medium text-emerald-600">Amount: ₹{codOrder.total_amount.toFixed(2)}</p>
+                <p className="text-sm font-medium text-emerald-600">COD Amount: ₹{codOrder.total_amount.toFixed(2)}</p>
+              </div>
+              
+              <div className="p-3 bg-blue-50 border border-blue-200 rounded-lg">
+                <div className="flex justify-between text-sm mb-1">
+                  <span>Current Wallet Balance:</span>
+                  <span className="font-semibold">₹{(deliveryPerson.account_balance || 0).toFixed(2)}</span>
+                </div>
+                <div className="flex justify-between text-sm mb-1">
+                  <span>COD to Deduct:</span>
+                  <span className="font-semibold text-red-600">- ₹{parseFloat(codAmount || 0).toFixed(2)}</span>
+                </div>
+                <div className="flex justify-between text-sm font-bold pt-2 border-t border-blue-300">
+                  <span>Balance After:</span>
+                  <span className={((deliveryPerson.account_balance || 0) - parseFloat(codAmount || 0)) >= 0 ? 'text-green-600' : 'text-red-600'}>
+                    ₹{((deliveryPerson.account_balance || 0) - parseFloat(codAmount || 0)).toFixed(2)}
+                  </span>
+                </div>
               </div>
               
               <div>
-                <Label>Cash Amount Collected *</Label>
+                <Label>Cash Collected from Customer *</Label>
                 <Input
                   type="number"
                   value={codAmount}
@@ -1227,19 +1299,6 @@ export default function Delivery() {
                   placeholder="₹"
                   className="mt-1"
                 />
-              </div>
-
-              <div>
-                <Label>Upload Proof (Optional)</Label>
-                <Input
-                  type="file"
-                  accept="image/*"
-                  onChange={handleCODImageUpload}
-                  disabled={uploadingProof}
-                  className="mt-1"
-                />
-                {uploadingProof && <p className="text-xs text-gray-500 mt-1">Uploading...</p>}
-                {codProofImage && <p className="text-xs text-green-600 mt-1">✓ Image uploaded</p>}
               </div>
             </div>
           )}
@@ -1252,7 +1311,74 @@ export default function Delivery() {
               disabled={!codAmount}
               className="bg-green-600 hover:bg-green-700"
             >
-              Confirm & Deliver
+              Confirm Collection
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Add to Wallet Dialog */}
+      <Dialog open={showAddWalletDialog} onOpenChange={setShowAddWalletDialog}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>💰 Add Money to Wallet</DialogTitle>
+            <DialogDescription>
+              Add funds to your wallet to collect COD payments.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div className="p-3 bg-gray-50 rounded-lg">
+              <p className="text-sm text-gray-600">Current Balance</p>
+              <p className={`text-2xl font-bold ${(deliveryPerson.account_balance || 0) >= 0 ? 'text-emerald-600' : 'text-red-600'}`}>
+                ₹{(deliveryPerson.account_balance || 0).toFixed(2)}
+              </p>
+            </div>
+            
+            <div>
+              <Label>Amount to Add *</Label>
+              <Input
+                type="number"
+                placeholder="Enter amount"
+                value={walletAmount}
+                onChange={(e) => setWalletAmount(e.target.value)}
+                className="mt-1"
+              />
+            </div>
+
+            {walletAmount && parseFloat(walletAmount) > 0 && (
+              <div className="p-3 bg-emerald-50 border border-emerald-200 rounded-lg">
+                <div className="flex justify-between text-sm">
+                  <span>New Balance:</span>
+                  <span className="font-bold text-emerald-600">
+                    ₹{((deliveryPerson.account_balance || 0) + parseFloat(walletAmount)).toFixed(2)}
+                  </span>
+                </div>
+              </div>
+            )}
+
+            <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
+              <p className="text-xs text-blue-800">
+                💡 <strong>Note:</strong> Deposit this amount to admin before adding to wallet. COD collections will be deducted from this balance.
+              </p>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShowAddWalletDialog(false)}>
+              Cancel
+            </Button>
+            <Button 
+              onClick={addToWallet}
+              disabled={!walletAmount || parseFloat(walletAmount) <= 0 || addingToWallet}
+              className="bg-emerald-600 hover:bg-emerald-700"
+            >
+              {addingToWallet ? (
+                <>
+                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                  Adding...
+                </>
+              ) : (
+                "Add to Wallet"
+              )}
             </Button>
           </DialogFooter>
         </DialogContent>
