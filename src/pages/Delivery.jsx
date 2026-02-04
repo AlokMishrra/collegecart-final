@@ -431,9 +431,15 @@ export default function Delivery() {
   };
 
   const handleCODDelivery = (order) => {
+    // Check if delivery person has sufficient balance
+    const currentBalance = deliveryPerson.account_balance || 0;
+    if (currentBalance < order.total_amount) {
+      alert(`Insufficient wallet balance! You need ₹${order.total_amount.toFixed(2)} but have ₹${currentBalance.toFixed(2)}. Please add money to your wallet.`);
+      return;
+    }
+    
     setCodOrder(order);
     setCodAmount(order.total_amount.toString());
-    setCodProofImage(null);
     setPaymentMethod("cod");
     setShowCODConfirm(true);
   };
