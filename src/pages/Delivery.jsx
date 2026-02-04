@@ -82,6 +82,8 @@ export default function Delivery() {
   const [codAmount, setCodAmount] = useState("");
   const [codProofImage, setCodProofImage] = useState(null);
   const [uploadingProof, setUploadingProof] = useState(false);
+  const [paymentMethod, setPaymentMethod] = useState("cod");
+  const [processingOnlinePayment, setProcessingOnlinePayment] = useState(false);
 
 
   const loadAssignedOrders = useCallback(async (deliveryPersonId) => {
@@ -431,7 +433,104 @@ export default function Delivery() {
     setCodOrder(order);
     setCodAmount(order.total_amount.toString());
     setCodProofImage(null);
+    setPaymentMethod("cod");
     setShowCODConfirm(true);
+  };
+
+  const handleOnlinePayment = async (order) => {
+    setProcessingOnlinePayment(true);
+    try {
+      const { createCashfreeOrder } = await import("@/functions/createCashfreeOrder");
+      
+      const response = await createCashfreeOrder({
+        orderId: order.id,
+        amount: order.total_amount,
+        customerName: order.customer_name,
+        customerPhone: order.phone_number,
+        customerEmail: order.user_id
+      });
+
+      if (response.data.success && response.data.payment_link) {
+        // Open payment link
+        window.open(response.data.payment_link, '_blank');
+        
+        // Set up listener for payment completion
+        const checkPayment = setInterval(async () => {
+          try {
+            const { verifyCashfreePayment } = await import("@/functions/verifyCashfreePayment");
+            const verifyResponse = await verifyCashfreePayment({
+              orderId: response.data.order_id
+            });
+
+            if (verifyResponse.data.verified) {
+              clearInterval(checkPayment);
+              await completeOnlineDelivery(order);
+            }
+          } catch (error) {
+            console.error("Error checking payment:", error);
+          }
+        }, 3000);
+
+        // Stop checking after 10 minutes
+        setTimeout(() => clearInterval(checkPayment), 600000);
+      }
+    } catch (error) {
+      console.error("Error creating online payment:", error);
+      await Notification.create({
+        user_id: deliveryPerson.email,
+        title: "Payment Error",
+        message: "Failed to create online payment link",
+        type: "error"
+      });
+    }
+    setProcessingOnlinePayment(false);
+  };
+
+  const completeOnlineDelivery = async (order) => {
+    setUpdatingOrderId(order.id);
+    try {
+      const commission = order.total_amount * 0.10;
+      const newTotalDeliveries = (deliveryPerson.total_deliveries || 0) + 1;
+      const newTotalEarnings = (deliveryPerson.total_earnings || 0) + commission;
+
+      setAssignedOrders(prev => prev.filter(o => o.id !== order.id));
+      const updatedPerson = {
+        ...deliveryPerson,
+        total_deliveries: newTotalDeliveries,
+        total_earnings: newTotalEarnings
+      };
+      setDeliveryPerson(updatedPerson);
+      localStorage.setItem('deliveryPerson', JSON.stringify(updatedPerson));
+
+      await Promise.all([
+        Order.update(order.id, { 
+          status: "delivered",
+          is_paid: true
+        }),
+        DeliveryPerson.update(deliveryPerson.id, {
+          total_deliveries: newTotalDeliveries,
+          total_earnings: newTotalEarnings,
+          current_orders: (deliveryPerson.current_orders || []).filter(id => id !== order.id)
+        }),
+        Notification.create({
+          user_id: order.user_id,
+          title: "Order Delivered!",
+          message: `Your order #${order.order_number} has been delivered. Thank you for choosing CollegeCart!`,
+          type: "success"
+        }),
+        Notification.create({
+          user_id: deliveryPerson.email,
+          title: "Payment Received!",
+          message: `Online payment of ₹${order.total_amount.toFixed(2)} received for order #${order.order_number}`,
+          type: "success"
+        })
+      ]);
+
+    } catch (error) {
+      console.error("Error completing online delivery:", error);
+    } finally {
+      setUpdatingOrderId(null);
+    }
   };
 
   const handleCODImageUpload = async (e) => {
@@ -1022,26 +1121,52 @@ export default function Delivery() {
                             </Button>
                           ) : (
                            <>
-                             {/* Mobile: Swipe to Deliver */}
-                             <div className="w-full lg:hidden">
-                               <SwipeToDeliver
-                                 onDeliver={() => markOrderDelivered(order.id)}
-                                 isLoading={updatingOrderId === order.id}
-                               />
-                             </div>
-                             {/* Desktop: Button */}
-                             <Button
-                               onClick={() => markOrderDelivered(order.id)}
-                               disabled={updatingOrderId === order.id}
-                               className="hidden lg:flex bg-green-600 hover:bg-green-700 w-full lg:w-auto"
-                             >
-                               {updatingOrderId === order.id ? (
-                                 <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                               ) : (
-                                 <CheckCircle className="w-4 h-4 mr-2" />
-                               )}
-                               {!order.is_paid && order.payment_method === "cash" ? "Collect COD & Deliver" : "Mark as Delivered"}
-                             </Button>
+                             {!order.is_paid && order.payment_method === "cash" ? (
+                               <>
+                                 <Button
+                                   onClick={() => handleCODDelivery(order)}
+                                   disabled={updatingOrderId === order.id}
+                                   className="bg-amber-600 hover:bg-amber-700 w-full lg:w-auto"
+                                 >
+                                   💵 Collect COD
+                                 </Button>
+                                 <Button
+                                   onClick={() => handleOnlinePayment(order)}
+                                   disabled={updatingOrderId === order.id || processingOnlinePayment}
+                                   className="bg-blue-600 hover:bg-blue-700 w-full lg:w-auto"
+                                 >
+                                   {processingOnlinePayment ? (
+                                     <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                                   ) : (
+                                     "💳"
+                                   )}
+                                   Collect Online
+                                 </Button>
+                               </>
+                             ) : (
+                               <>
+                                 {/* Mobile: Swipe to Deliver */}
+                                 <div className="w-full lg:hidden">
+                                   <SwipeToDeliver
+                                     onDeliver={() => markOrderDelivered(order.id)}
+                                     isLoading={updatingOrderId === order.id}
+                                   />
+                                 </div>
+                                 {/* Desktop: Button */}
+                                 <Button
+                                   onClick={() => markOrderDelivered(order.id)}
+                                   disabled={updatingOrderId === order.id}
+                                   className="hidden lg:flex bg-green-600 hover:bg-green-700 w-full lg:w-auto"
+                                 >
+                                   {updatingOrderId === order.id ? (
+                                     <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                                   ) : (
+                                     <CheckCircle className="w-4 h-4 mr-2" />
+                                   )}
+                                   Mark as Delivered
+                                 </Button>
+                               </>
+                             )}
                            </>
                           )}
                           <Button
@@ -1080,9 +1205,9 @@ export default function Delivery() {
       <Dialog open={showCODConfirm} onOpenChange={setShowCODConfirm}>
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
-            <DialogTitle>COD Collection Confirmation</DialogTitle>
+            <DialogTitle>💵 COD Collection Confirmation</DialogTitle>
             <DialogDescription>
-              Confirm the amount collected and optionally upload proof.
+              Confirm the cash amount collected and optionally upload proof.
             </DialogDescription>
           </DialogHeader>
           {codOrder && (
@@ -1090,10 +1215,11 @@ export default function Delivery() {
               <div className="p-3 bg-gray-50 rounded-lg">
                 <p className="font-semibold">Order #{codOrder.order_number}</p>
                 <p className="text-sm text-gray-600">{codOrder.customer_name}</p>
+                <p className="text-sm font-medium text-emerald-600">Amount: ₹{codOrder.total_amount.toFixed(2)}</p>
               </div>
               
               <div>
-                <Label>Amount Collected *</Label>
+                <Label>Cash Amount Collected *</Label>
                 <Input
                   type="number"
                   value={codAmount}
