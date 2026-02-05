@@ -38,7 +38,17 @@ export default function RazorpayPayment({ amount, onSuccess, onError, orderNumbe
         receipt: orderNumber
       });
 
-      const orderData = orderResponse.data || orderResponse;
+      console.log('Order Response:', orderResponse);
+
+      // Handle both response formats
+      let orderData;
+      if (orderResponse.data) {
+        orderData = typeof orderResponse.data === 'string' ? JSON.parse(orderResponse.data) : orderResponse.data;
+      } else {
+        orderData = orderResponse;
+      }
+
+      console.log('Parsed Order Data:', orderData);
 
       if (!orderData || !orderData.orderId) {
         throw new Error('Failed to create payment order');
@@ -55,6 +65,8 @@ export default function RazorpayPayment({ amount, onSuccess, onError, orderNumbe
         order_id: orderData.orderId,
         handler: async function (response) {
           try {
+            console.log('Payment Response:', response);
+            
             // Verify payment on backend
             const verifyResponse = await base44.functions.invoke('verifyRazorpayPayment', {
               razorpay_order_id: response.razorpay_order_id,
@@ -62,7 +74,17 @@ export default function RazorpayPayment({ amount, onSuccess, onError, orderNumbe
               razorpay_signature: response.razorpay_signature
             });
 
-            const verificationData = verifyResponse.data || verifyResponse;
+            console.log('Verification Response:', verifyResponse);
+
+            // Handle both response formats
+            let verificationData;
+            if (verifyResponse.data) {
+              verificationData = typeof verifyResponse.data === 'string' ? JSON.parse(verifyResponse.data) : verifyResponse.data;
+            } else {
+              verificationData = verifyResponse;
+            }
+
+            console.log('Parsed Verification Data:', verificationData);
 
             if (verificationData && verificationData.success) {
               onSuccess(response.razorpay_payment_id);

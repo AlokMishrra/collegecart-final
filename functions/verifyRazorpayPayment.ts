@@ -41,20 +41,26 @@ Deno.serve(async (req) => {
       .join('');
 
     if (expectedSignature !== razorpay_signature) {
+      console.error('Signature mismatch - Expected:', expectedSignature, 'Got:', razorpay_signature);
       return Response.json({ 
         success: false, 
         error: 'Payment verification failed' 
       }, { status: 400 });
     }
 
+    console.log('Payment verified successfully:', razorpay_payment_id);
+
     return Response.json({
       success: true,
       message: 'Payment verified successfully',
       payment_id: razorpay_payment_id
-    });
+    }, { status: 200 });
 
   } catch (error) {
-    console.error('Error:', error);
-    return Response.json({ error: error.message }, { status: 500 });
+    console.error('Error verifying payment:', error);
+    return Response.json({ 
+      error: error.message || 'Internal server error',
+      stack: error.stack 
+    }, { status: 500 });
   }
 });

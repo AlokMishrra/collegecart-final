@@ -47,20 +47,28 @@ Deno.serve(async (req) => {
     if (!response.ok) {
       const error = await response.text();
       console.error('Razorpay API Error:', error);
-      return Response.json({ error: 'Failed to create Razorpay order' }, { status: 500 });
+      return Response.json({ 
+        error: 'Failed to create Razorpay order',
+        details: error 
+      }, { status: 500 });
     }
 
     const order = await response.json();
+
+    console.log('Razorpay order created:', order.id);
 
     return Response.json({
       orderId: order.id,
       amount: order.amount,
       currency: order.currency,
       keyId: razorpayKeyId
-    });
+    }, { status: 200 });
 
   } catch (error) {
-    console.error('Error:', error);
-    return Response.json({ error: error.message }, { status: 500 });
+    console.error('Error creating Razorpay order:', error);
+    return Response.json({ 
+      error: error.message || 'Internal server error',
+      stack: error.stack 
+    }, { status: 500 });
   }
 });
