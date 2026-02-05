@@ -2,7 +2,6 @@ import React, { useState, useEffect } from "react";
 import { base44 } from "@/api/base44Client";
 import { Button } from "@/components/ui/button";
 import { Loader2, CreditCard, Shield } from "lucide-react";
-import { load } from "npm:@cashfreepayments/cashfree-js@3.6.2";
 
 export default function CashfreePayment({ 
   amount, 
@@ -17,17 +16,33 @@ export default function CashfreePayment({
   const [cashfree, setCashfree] = useState(null);
 
   useEffect(() => {
-    // Initialize Cashfree SDK
-    const initializeCashfree = async () => {
-      try {
-        const cf = await load({ mode: "production" });
-        setCashfree(cf);
-      } catch (error) {
-        console.error("Failed to load Cashfree SDK:", error);
-        onError('Payment system initialization failed');
+    // Load Cashfree SDK from CDN
+    const loadCashfreeScript = () => {
+      if (document.querySelector('script[src*="cashfree"]')) {
+        if (window.Cashfree) {
+          setCashfree(window.Cashfree);
+        }
+        return;
       }
+
+      const script = document.createElement('script');
+      script.src = 'https://sdk.cashfree.com/js/v3/cashfree.js';
+      script.onload = () => {
+        if (window.Cashfree) {
+          setCashfree(window.Cashfree);
+        } else {
+          console.error('Cashfree SDK not available');
+          onError('Payment system initialization failed');
+        }
+      };
+      script.onerror = () => {
+        console.error('Failed to load Cashfree SDK');
+        onError('Payment system initialization failed');
+      };
+      document.body.appendChild(script);
     };
-    initializeCashfree();
+
+    loadCashfreeScript();
   }, []);
 
   const handlePayment = async () => {
@@ -69,12 +84,14 @@ export default function CashfreePayment({
       const checkoutOptions = {
         paymentSessionId: orderData.paymentSessionId,
         returnUrl: `https://collegecart.base44.app/Orders?order_id=${orderNumber}`,
+        redirectTarget: "_modal"
       };
 
       console.log('Opening Cashfree checkout...');
 
       // Open Cashfree payment modal
-      cashfree.checkout(checkoutOptions).then(async (result) => {
+      const cashfreeInstance = cashfree({ mode: "production" });
+      cashfreeInstance.checkout(checkoutOptions).then(async (result) => {
         if (result.error) {
           console.error('Payment error:', result.error);
           setIsLoading(false);
