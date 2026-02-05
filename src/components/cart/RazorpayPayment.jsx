@@ -53,6 +53,8 @@ export default function RazorpayPayment({ amount, onSuccess, onError, orderNumbe
         order_id: orderData.orderId,
         handler: async function (response) {
           try {
+            console.log('Payment successful, verifying...', response);
+            
             // Verify payment on backend
             const { data: verificationData } = await base44.functions.invoke('verifyRazorpayPayment', {
               razorpay_order_id: response.razorpay_order_id,
@@ -60,14 +62,19 @@ export default function RazorpayPayment({ amount, onSuccess, onError, orderNumbe
               razorpay_signature: response.razorpay_signature
             });
 
+            console.log('Verification response:', verificationData);
+
             if (verificationData.success) {
+              // Keep loading state active while order is being created
               onSuccess(response.razorpay_payment_id);
             } else {
-              throw new Error('Payment verification failed');
+              setIsLoading(false);
+              onError('Payment verification failed');
             }
           } catch (error) {
+            console.error('Payment verification error:', error);
             setIsLoading(false);
-            onError(error.message);
+            onError(error.message || 'Payment verification failed');
           }
         },
         prefill: {
@@ -87,11 +94,18 @@ export default function RazorpayPayment({ amount, onSuccess, onError, orderNumbe
       };
 
       const razorpay = new window.Razorpay(options);
+      
+      razorpay.on('payment.failed', function (response) {
+        console.error('Payment failed:', response.error);
+        setIsLoading(false);
+        onError(response.error.description || 'Payment failed');
+      });
+
       razorpay.open();
 
     } catch (error) {
-      console.error('Payment error:', error);
-      onError(error.message || 'Payment failed');
+      console.error('Payment initialization error:', error);
+      onError(error.message || 'Failed to initialize payment');
       setIsLoading(false);
     }
   };

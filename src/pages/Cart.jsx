@@ -397,16 +397,18 @@ export default function Cart() {
     // Set loading state immediately
     setIsPlacingOrder(true);
 
-    // Show processing notification immediately for online payments
-    if (paymentMethod === "online" && paymentId) {
-      await Notification.create({
-        user_id: user.id,
-        title: "Processing Your Order...",
-        message: "Payment successful! Creating your order now...",
-        type: "info"
-      });
-    }
     try {
+      console.log('Starting order creation, payment method:', paymentMethod, 'payment ID:', paymentId);
+
+      // Show processing notification immediately for online payments
+      if (paymentMethod === "online" && paymentId) {
+        await Notification.create({
+          user_id: user.id,
+          title: "Processing Your Order...",
+          message: "Payment successful! Creating your order now...",
+          type: "info"
+        });
+      }
       const orderNumber = `CC${Date.now()}`;
       const orderItems = cartItems.map(item => {
         const product = products[item.product_id];
@@ -653,17 +655,23 @@ export default function Cart() {
         console.log("Could not play notification sound");
       }
 
-      navigate(createPageUrl('Orders'));
+      console.log('Order created successfully, navigating to orders page');
+      
+      // Small delay to ensure all notifications are sent
+      setTimeout(() => {
+        navigate(createPageUrl('Orders'));
+      }, 500);
     } catch (error) {
       console.error("Error placing order:", error);
+      setIsPlacingOrder(false);
+      
       await Notification.create({
         user_id: user.id,
         title: "Order Failed",
-        message: "There was an error placing your order. Please try again.",
+        message: error.message || "There was an error placing your order. Please contact support.",
         type: "error"
       });
     }
-    setIsPlacingOrder(false);
   };
 
   if (isLoading) {
@@ -1025,10 +1033,13 @@ export default function Cart() {
                     amount={calculateTotal()}
                     orderNumber={`CC${Date.now()}`}
                     onSuccess={(paymentId) => {
+                      console.log('Payment successful, creating order with payment ID:', paymentId);
                       setRazorpayPaymentId(paymentId);
                       placeOrder(paymentId);
                     }}
                     onError={async (error) => {
+                      console.error('Payment error in Cart:', error);
+                      setIsPlacingOrder(false);
                       await Notification.create({
                         user_id: user.id,
                         title: "Payment Failed",
@@ -1171,10 +1182,15 @@ export default function Cart() {
               
               <Button
                 onClick={() => placeOrder()}
-                disabled={isPlacingOrder || cartItems.length === 0 || calculateSubtotal() === 0}
+                disabled={isPlacingOrder || cartItems.length === 0 || calculateSubtotal() === 0 || (paymentMethod === "online")}
                 className="w-full h-9 sm:h-10 bg-emerald-600 hover:bg-emerald-700 disabled:opacity-50 disabled:cursor-not-allowed text-xs sm:text-sm font-semibold"
               >
-                {isPlacingOrder ? "Processing..." : paymentMethod === "online" ? "Continue to Pay" : "Place Order"}
+                {isPlacingOrder ? (
+                  <div className="flex items-center gap-2">
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                    <span>Creating Order...</span>
+                  </div>
+                ) : paymentMethod === "online" ? "Pay Below ⬇" : "Place Order"}
               </Button>
             </CardContent>
           </Card>
