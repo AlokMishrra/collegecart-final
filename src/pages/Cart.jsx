@@ -38,13 +38,14 @@ export default function Cart() {
         const [phoneNumber, setPhoneNumber] = useState("");
         const [deliveryNotes, setDeliveryNotes] = useState("");
         const [customAddress, setCustomAddress] = useState("");
-        const [paymentMethod] = useState("cash");
+        const [paymentMethod, setPaymentMethod] = useState("cash");
         const [loyaltyPoints, setLoyaltyPoints] = useState(0);
         const [pointsToRedeem, setPointsToRedeem] = useState(0);
         const [discountCode, setDiscountCode] = useState("");
         const [appliedCampaign, setAppliedCampaign] = useState(null);
         const [codeError, setCodeError] = useState("");
         const [selectedDhaba, setSelectedDhaba] = useState({});
+        const [razorpayPaymentId, setRazorpayPaymentId] = useState(null);
 
   const loadCart = useCallback(async (userId) => {
     setIsLoading(true);
@@ -364,8 +365,29 @@ export default function Cart() {
         }
       }
 
+      // For online payment, wait for Razorpay payment completion
+      if (paymentMethod === "online" && !paymentId) {
+        await Notification.create({
+          user_id: user.id,
+          title: "Complete Payment",
+          message: "Please complete the payment using the Razorpay button below.",
+          type: "info"
+        });
+        return;
+      }
+
     // Set loading state immediately
     setIsPlacingOrder(true);
+
+    // Show processing notification immediately for online payments
+    if (paymentMethod === "online" && paymentId) {
+      await Notification.create({
+        user_id: user.id,
+        title: "Processing Your Order...",
+        message: "Payment successful! Creating your order now...",
+        type: "info"
+      });
+    }
     try {
       const orderNumber = `CC${Date.now()}`;
       const orderItems = cartItems.map(item => {
@@ -430,8 +452,8 @@ export default function Cart() {
         phone_number: phoneNumber,
         delivery_notes: deliveryNotes,
         status: "confirmed",
-        payment_method: "cash",
-        is_paid: false
+        payment_method: paymentMethod,
+        is_paid: paymentMethod === "online" ? true : false
       });
 
       // Reduce stock for each item (parallel operations for speed)
@@ -871,17 +893,37 @@ export default function Cart() {
                   </div>
                 )}
 
-                <div className="bg-emerald-50 border border-emerald-200 rounded p-2">
-                  <div className="flex items-center gap-2">
-                    <div className="w-6 h-6 bg-emerald-600 rounded-full flex items-center justify-center flex-shrink-0">
-                      <span className="text-white text-xs">💵</span>
-                    </div>
-                    <div>
-                      <Label className="text-xs sm:text-sm font-semibold text-emerald-900 block">Payment Method</Label>
-                      <p className="text-[10px] sm:text-xs text-emerald-700">Cash on Delivery</p>
-                    </div>
-                  </div>
+                <div>
+                  <Label htmlFor="payment" className="text-xs sm:text-sm">Payment <span className="text-red-500">*</span></Label>
+                  <Select onValueChange={setPaymentMethod} value={paymentMethod} required>
+                    <SelectTrigger id="payment" className="h-8 sm:h-10 text-xs sm:text-sm">
+                      <SelectValue placeholder="Payment method" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="cash">Cash on Delivery</SelectItem>
+                      <SelectItem value="online">Online (Razorpay)</SelectItem>
+                    </SelectContent>
+                  </Select>
                 </div>
+
+                {paymentMethod === "online" && (
+                  <RazorpayPayment
+                    amount={calculateTotal()}
+                    orderNumber={`CC${Date.now()}`}
+                    onSuccess={(paymentId) => {
+                      setRazorpayPaymentId(paymentId);
+                      placeOrder(paymentId);
+                    }}
+                    onError={async (error) => {
+                      await Notification.create({
+                        user_id: user.id,
+                        title: "Payment Failed",
+                        message: error || "Payment was unsuccessful. Please try again.",
+                        type: "error"
+                      });
+                    }}
+                  />
+                )}
 
                 {/* Discount Code */}
                 <div className="bg-blue-50 border border-blue-200 rounded p-2">
@@ -1018,7 +1060,7 @@ export default function Cart() {
                 disabled={isPlacingOrder || cartItems.length === 0 || calculateSubtotal() === 0}
                 className="w-full h-9 sm:h-10 bg-emerald-600 hover:bg-emerald-700 disabled:opacity-50 disabled:cursor-not-allowed text-xs sm:text-sm font-semibold"
               >
-                {isPlacingOrder ? "Processing..." : "Place Order"}
+                {isPlacingOrder ? "Processing..." : paymentMethod === "online" ? "Continue to Pay" : "Place Order"}
               </Button>
             </CardContent>
           </Card>
