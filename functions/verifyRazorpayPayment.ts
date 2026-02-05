@@ -1,4 +1,4 @@
-import { createClientFromRequest } from 'npm:@base44/sdk@0.8.4';
+import { createClientFromRequest } from 'npm:@base44/sdk@0.8.6';
 
 Deno.serve(async (req) => {
   try {
@@ -15,7 +15,7 @@ Deno.serve(async (req) => {
       return Response.json({ error: 'Missing payment details' }, { status: 400 });
     }
 
-    const razorpayKeySecret = Deno.env.get('RAZORPAY_KEY_SECRET') || 'S0vJKS1VHwIpuxJhl8eh1hrR';
+    const razorpayKeySecret = Deno.env.get('RAZORPAY_KEY_SECRET');
 
     if (!razorpayKeySecret) {
       return Response.json({ error: 'Razorpay credentials not configured' }, { status: 500 });
