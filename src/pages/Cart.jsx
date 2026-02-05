@@ -794,15 +794,7 @@ export default function Cart() {
             }
           />
 
-          {/* Personalized Recommendations at Checkout */}
-          {user && (
-            <RecommendationEngine
-              user={user}
-              onAddToCart={addToCart}
-              getCartQuantity={getCartQuantity}
-              context="checkout"
-            />
-          )}
+
         </div>
 
         {/* Order Summary */}
