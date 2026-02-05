@@ -183,36 +183,36 @@ Return ONLY a JSON array of product names: ["Product Name 1", "Product Name 2", 
 
   if (isLoading) {
     return (
-      <div className="flex items-center justify-center py-4">
-        <Loader2 className="w-4 h-4 sm:w-5 sm:h-5 animate-spin text-emerald-600" />
-        <span className="ml-2 text-gray-600 text-xs sm:text-sm">Loading...</span>
+      <div className="flex items-center justify-center py-8">
+        <Loader2 className="w-6 h-6 animate-spin text-emerald-600" />
+        <span className="ml-2 text-gray-600">Loading personalized recommendations...</span>
       </div>
     );
   }
 
   return (
-    <div className="space-y-2 sm:space-y-3">
-      <div className="flex items-center gap-1.5 sm:gap-2">
-        <Sparkles className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-emerald-600 flex-shrink-0" />
-        <h2 className="text-sm sm:text-base font-bold text-gray-900">
-          {context === "checkout" ? "You May Also Like" : "For You"}
+    <div className="space-y-4">
+      <div className="flex items-center gap-2">
+        <Sparkles className="w-5 h-5 text-emerald-600" />
+        <h2 className="text-xl font-bold text-gray-900">
+          {context === "checkout" ? "You May Also Like" : "Recommended For You"}
         </h2>
         {settings?.strategy === "ai_powered" && (
-          <span className="text-[9px] sm:text-xs bg-purple-100 text-purple-700 px-1.5 py-0.5 rounded-full">AI</span>
+          <span className="text-xs bg-purple-100 text-purple-700 px-2 py-1 rounded-full">AI Powered</span>
         )}
       </div>
       
-      <Card className="bg-gradient-to-r from-emerald-50 to-blue-50 border-emerald-200 shadow-sm">
-        <CardContent className="p-2 sm:p-3">
-          <p className="text-[10px] sm:text-xs text-gray-600 mb-2">
+      <Card className="bg-gradient-to-r from-emerald-50 to-blue-50 border-emerald-200">
+        <CardContent className="p-4">
+          <p className="text-sm text-gray-600 mb-4">
             {settings?.strategy === "ai_powered" 
-              ? "Personalized by AI"
-              : "Based on your preferences"}
+              ? "Personalized by AI based on your preferences and shopping patterns"
+              : "Based on your preferences and purchase history"}
           </p>
           <div className="relative">
-            <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-hide snap-x snap-mandatory">
+            <div className="flex gap-4 overflow-x-auto pb-4 scrollbar-hide snap-x snap-mandatory">
               {recommendations.map((product, index) => (
-                <div key={product.id} className="flex-shrink-0 w-28 sm:w-32 snap-start">
+                <div key={product.id} className="flex-shrink-0 w-40 snap-start">
                   <ProductCard
                     product={product}
                     cartQuantity={getCartQuantity(product.id)}
