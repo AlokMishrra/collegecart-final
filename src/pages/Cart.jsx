@@ -6,7 +6,7 @@ import { base44 } from "@/api/base44Client";
   import { Order } from "@/entities/Order";
   import { Notification } from "@/entities/Notification";
   import { DeliveryPerson } from "@/entities/DeliveryPerson";
-import { Trash2, Plus, Minus, ShoppingBag, Wallet, CreditCard, DollarSign, AlertTriangle, Gift } from "lucide-react";
+import { Trash2, Plus, Minus, ShoppingBag, Wallet, CreditCard, DollarSign, AlertTriangle, Gift, Loader2 } from "lucide-react";
 import DeliveryProgressBar from "../components/cart/DeliveryProgressBar";
 import RecommendedProducts from "../components/cart/RecommendedProducts";
 import UserWalletRecharge from "../components/shop/UserWalletRecharge";
