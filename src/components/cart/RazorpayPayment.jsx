@@ -33,12 +33,14 @@ export default function RazorpayPayment({ amount, onSuccess, onError, orderNumbe
 
     try {
       // Create order on backend
-      const { data: orderData } = await base44.functions.invoke('createRazorpayOrder', {
+      const orderResponse = await base44.functions.invoke('createRazorpayOrder', {
         amount: amount,
         receipt: orderNumber
       });
 
-      if (!orderData.orderId) {
+      const orderData = orderResponse.data || orderResponse;
+
+      if (!orderData || !orderData.orderId) {
         throw new Error('Failed to create payment order');
       }
 
@@ -54,20 +56,23 @@ export default function RazorpayPayment({ amount, onSuccess, onError, orderNumbe
         handler: async function (response) {
           try {
             // Verify payment on backend
-            const { data: verificationData } = await base44.functions.invoke('verifyRazorpayPayment', {
+            const verifyResponse = await base44.functions.invoke('verifyRazorpayPayment', {
               razorpay_order_id: response.razorpay_order_id,
               razorpay_payment_id: response.razorpay_payment_id,
               razorpay_signature: response.razorpay_signature
             });
 
-            if (verificationData.success) {
+            const verificationData = verifyResponse.data || verifyResponse;
+
+            if (verificationData && verificationData.success) {
               onSuccess(response.razorpay_payment_id);
             } else {
               throw new Error('Payment verification failed');
             }
           } catch (error) {
+            console.error('Payment verification error:', error);
             setIsLoading(false);
-            onError(error.message);
+            onError(error.message || 'Payment verification failed');
           }
         },
         prefill: {
