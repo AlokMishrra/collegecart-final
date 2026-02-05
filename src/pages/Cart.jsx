@@ -1029,25 +1029,27 @@ export default function Cart() {
                 </div>
 
                 {paymentMethod === "online" && (
-                  <RazorpayPayment
-                    amount={calculateTotal()}
-                    orderNumber={`CC${Date.now()}`}
-                    onSuccess={(paymentId) => {
-                      console.log('Payment successful, creating order with payment ID:', paymentId);
-                      setRazorpayPaymentId(paymentId);
-                      placeOrder(paymentId);
-                    }}
-                    onError={async (error) => {
-                      console.error('Payment error in Cart:', error);
-                      setIsPlacingOrder(false);
-                      await Notification.create({
-                        user_id: user.id,
-                        title: "Payment Failed",
-                        message: error || "Payment was unsuccessful. Please try again.",
-                        type: "error"
-                      });
-                    }}
-                  />
+                  <div className="mt-4">
+                    <RazorpayPayment
+                      amount={calculateTotal()}
+                      orderNumber={`CC${Date.now()}`}
+                      onSuccess={(paymentId) => {
+                        console.log('✓ Payment successful! Payment ID:', paymentId);
+                        setRazorpayPaymentId(paymentId);
+                        placeOrder(paymentId);
+                      }}
+                      onError={async (error) => {
+                        console.error('✗ Payment error:', error);
+                        setIsPlacingOrder(false);
+                        await Notification.create({
+                          user_id: user.id,
+                          title: "Payment Failed",
+                          message: error || "Payment was unsuccessful. Please try again.",
+                          type: "error"
+                        });
+                      }}
+                    />
+                  </div>
                 )}
 
                 {/* Discount Code */}
