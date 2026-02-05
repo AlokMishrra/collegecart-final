@@ -33,25 +33,31 @@ export default function RazorpayPayment({ amount, onSuccess, onError, orderNumbe
 
     try {
       // Create order on backend
+      console.log('Creating Razorpay order with amount:', amount, 'receipt:', orderNumber);
+      
       const orderResponse = await base44.functions.invoke('createRazorpayOrder', {
         amount: amount,
         receipt: orderNumber
       });
 
-      console.log('Order Response:', orderResponse);
+      console.log('Full Order Response:', orderResponse);
 
-      // Handle both response formats
-      let orderData;
+      // Parse response data
+      let orderData = orderResponse;
       if (orderResponse.data) {
-        orderData = typeof orderResponse.data === 'string' ? JSON.parse(orderResponse.data) : orderResponse.data;
-      } else {
-        orderData = orderResponse;
+        orderData = orderResponse.data;
       }
 
       console.log('Parsed Order Data:', orderData);
 
-      if (!orderData || !orderData.orderId) {
-        throw new Error('Failed to create payment order');
+      // Check for errors
+      if (!orderData || orderData.error) {
+        throw new Error(orderData?.error || 'Failed to create payment order');
+      }
+
+      if (!orderData.orderId) {
+        console.error('Missing orderId in response:', orderData);
+        throw new Error('Invalid payment order response - missing order ID');
       }
 
       // Razorpay options with CollegeCart branding
@@ -65,7 +71,7 @@ export default function RazorpayPayment({ amount, onSuccess, onError, orderNumbe
         order_id: orderData.orderId,
         handler: async function (response) {
           try {
-            console.log('Payment Response:', response);
+            console.log('Payment Success Response:', response);
             
             // Verify payment on backend
             const verifyResponse = await base44.functions.invoke('verifyRazorpayPayment', {
@@ -76,21 +82,23 @@ export default function RazorpayPayment({ amount, onSuccess, onError, orderNumbe
 
             console.log('Verification Response:', verifyResponse);
 
-            // Handle both response formats
-            let verificationData;
+            // Parse response
+            let verificationData = verifyResponse;
             if (verifyResponse.data) {
-              verificationData = typeof verifyResponse.data === 'string' ? JSON.parse(verifyResponse.data) : verifyResponse.data;
-            } else {
-              verificationData = verifyResponse;
+              verificationData = verifyResponse.data;
             }
 
             console.log('Parsed Verification Data:', verificationData);
 
-            if (verificationData && verificationData.success) {
-              onSuccess(response.razorpay_payment_id);
-            } else {
-              throw new Error('Payment verification failed');
+            // Check for errors in verification
+            if (verificationData?.error || !verificationData?.success) {
+              throw new Error(verificationData?.error || 'Payment verification failed');
             }
+
+            // Payment verified successfully
+            console.log('Payment verified successfully:', response.razorpay_payment_id);
+            onSuccess(response.razorpay_payment_id);
+            
           } catch (error) {
             console.error('Payment verification error:', error);
             setIsLoading(false);
@@ -117,8 +125,22 @@ export default function RazorpayPayment({ amount, onSuccess, onError, orderNumbe
       razorpay.open();
 
     } catch (error) {
-      console.error('Payment error:', error);
-      onError(error.message || 'Payment failed');
+      console.error('Payment initialization error:', error);
+      console.error('Error details:', {
+        message: error.message,
+        response: error.response,
+        stack: error.stack
+      });
+      
+      // Extract meaningful error message
+      let errorMessage = 'Payment failed';
+      if (error.response?.data?.error) {
+        errorMessage = error.response.data.error;
+      } else if (error.message) {
+        errorMessage = error.message;
+      }
+      
+      onError(errorMessage);
       setIsLoading(false);
     }
   };
