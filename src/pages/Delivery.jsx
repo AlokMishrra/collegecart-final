@@ -18,6 +18,7 @@ import { motion, AnimatePresence } from "framer-motion";
   import CODQRGenerator from "../components/delivery/CODQRGenerator";
   import SwipeToDeliver from "../components/delivery/SwipeToDeliver";
   import CODPaymentCollector from "../components/delivery/CODPaymentCollector";
+  import WalletRecharge from "../components/delivery/WalletRecharge";
 
 function DeliveryOrderItem({ item }) {
   const [product, setProduct] = useState(null);
@@ -447,46 +448,60 @@ export default function Delivery() {
   const handleOnlinePayment = async (order) => {
     setProcessingOnlinePayment(true);
     try {
-      const { createCashfreeOrder } = await import("@/functions/createCashfreeOrder");
+      const { createRazorpayOrder } = await import("@/functions/createRazorpayOrder");
       
-      const response = await createCashfreeOrder({
+      const response = await createRazorpayOrder({
         orderId: order.id,
         amount: order.total_amount,
         customerName: order.customer_name,
-        customerPhone: order.phone_number,
-        customerEmail: order.user_id
+        customerPhone: order.phone_number
       });
 
-      if (response.data.success && response.data.payment_link) {
-        // Open payment link
-        window.open(response.data.payment_link, '_blank');
-        
-        // Set up listener for payment completion
-        const checkPayment = setInterval(async () => {
+      if (!response.data.success) {
+        throw new Error("Failed to create order");
+      }
+
+      const options = {
+        key: response.data.key,
+        amount: response.data.amount,
+        currency: response.data.currency,
+        order_id: response.data.orderId,
+        name: "CollegeCart",
+        description: `Order #${order.order_number}`,
+        handler: async (razorpayResponse) => {
           try {
-            const { verifyCashfreePayment } = await import("@/functions/verifyCashfreePayment");
-            const verifyResponse = await verifyCashfreePayment({
-              orderId: response.data.order_id
+            const { verifyRazorpayPayment } = await import("@/functions/verifyRazorpayPayment");
+            const verifyResponse = await verifyRazorpayPayment({
+              razorpay_order_id: razorpayResponse.razorpay_order_id,
+              razorpay_payment_id: razorpayResponse.razorpay_payment_id,
+              razorpay_signature: razorpayResponse.razorpay_signature,
+              orderId: order.id
             });
 
             if (verifyResponse.data.verified) {
-              clearInterval(checkPayment);
               await completeOnlineDelivery(order);
             }
           } catch (error) {
-            console.error("Error checking payment:", error);
+            console.error("Verification error:", error);
           }
-        }, 3000);
+        },
+        prefill: {
+          name: order.customer_name,
+          contact: order.phone_number
+        },
+        theme: {
+          color: "#10b981"
+        }
+      };
 
-        // Stop checking after 10 minutes
-        setTimeout(() => clearInterval(checkPayment), 600000);
-      }
+      const rzp = new window.Razorpay(options);
+      rzp.open();
     } catch (error) {
       console.error("Error creating online payment:", error);
       await Notification.create({
         user_id: deliveryPerson.email,
         title: "Payment Error",
-        message: "Failed to create online payment link",
+        message: "Failed to create online payment",
         type: "error"
       });
     }
@@ -620,35 +635,17 @@ export default function Delivery() {
     }
   };
 
-  const addToWallet = async () => {
-    if (!walletAmount || parseFloat(walletAmount) <= 0) return;
-    
-    setAddingToWallet(true);
+  const handleWalletRechargeSuccess = async () => {
     try {
-      const amount = parseFloat(walletAmount);
-      const newBalance = (deliveryPerson.account_balance || 0) + amount;
-      
-      await DeliveryPerson.update(deliveryPerson.id, {
-        account_balance: newBalance
-      });
-
-      const updatedPerson = { ...deliveryPerson, account_balance: newBalance };
-      setDeliveryPerson(updatedPerson);
-      localStorage.setItem('deliveryPerson', JSON.stringify(updatedPerson));
-
-      await Notification.create({
-        user_id: deliveryPerson.email,
-        title: "Wallet Recharged!",
-        message: `₹${amount.toFixed(2)} added to your wallet. New balance: ₹${newBalance.toFixed(2)}`,
-        type: "success"
-      });
-
-      setShowAddWalletDialog(false);
-      setWalletAmount("");
+      const persons = await DeliveryPerson.filter({ id: deliveryPerson.id });
+      if (persons.length > 0) {
+        const updatedPerson = persons[0];
+        setDeliveryPerson(updatedPerson);
+        localStorage.setItem('deliveryPerson', JSON.stringify(updatedPerson));
+      }
     } catch (error) {
-      console.error("Error adding to wallet:", error);
+      console.error("Error refreshing delivery person:", error);
     }
-    setAddingToWallet(false);
   };
 
   const markOrderDelivered = async (orderId) => {
@@ -1324,71 +1321,12 @@ export default function Delivery() {
       </Dialog>
 
       {/* Add to Wallet Dialog */}
-      <Dialog open={showAddWalletDialog} onOpenChange={setShowAddWalletDialog}>
-        <DialogContent className="sm:max-w-md">
-          <DialogHeader>
-            <DialogTitle>💰 Add Money to Wallet</DialogTitle>
-            <DialogDescription>
-              Add funds to your wallet to collect COD payments.
-            </DialogDescription>
-          </DialogHeader>
-          <div className="space-y-4">
-            <div className="p-3 bg-gray-50 rounded-lg">
-              <p className="text-sm text-gray-600">Current Balance</p>
-              <p className={`text-2xl font-bold ${(deliveryPerson.account_balance || 0) >= 0 ? 'text-emerald-600' : 'text-red-600'}`}>
-                ₹{(deliveryPerson.account_balance || 0).toFixed(2)}
-              </p>
-            </div>
-            
-            <div>
-              <Label>Amount to Add *</Label>
-              <Input
-                type="number"
-                placeholder="Enter amount"
-                value={walletAmount}
-                onChange={(e) => setWalletAmount(e.target.value)}
-                className="mt-1"
-              />
-            </div>
-
-            {walletAmount && parseFloat(walletAmount) > 0 && (
-              <div className="p-3 bg-emerald-50 border border-emerald-200 rounded-lg">
-                <div className="flex justify-between text-sm">
-                  <span>New Balance:</span>
-                  <span className="font-bold text-emerald-600">
-                    ₹{((deliveryPerson.account_balance || 0) + parseFloat(walletAmount)).toFixed(2)}
-                  </span>
-                </div>
-              </div>
-            )}
-
-            <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
-              <p className="text-xs text-blue-800">
-                💡 <strong>Note:</strong> Deposit this amount to admin before adding to wallet. COD collections will be deducted from this balance.
-              </p>
-            </div>
-          </div>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setShowAddWalletDialog(false)}>
-              Cancel
-            </Button>
-            <Button 
-              onClick={addToWallet}
-              disabled={!walletAmount || parseFloat(walletAmount) <= 0 || addingToWallet}
-              className="bg-emerald-600 hover:bg-emerald-700"
-            >
-              {addingToWallet ? (
-                <>
-                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                  Adding...
-                </>
-              ) : (
-                "Add to Wallet"
-              )}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+      <WalletRecharge 
+        deliveryPerson={deliveryPerson}
+        open={showAddWalletDialog}
+        onOpenChange={setShowAddWalletDialog}
+        onSuccess={handleWalletRechargeSuccess}
+      />
 
       {/* Cancel Order Dialog */}
       <Dialog open={showCancelDialog} onOpenChange={setShowCancelDialog}>
