@@ -15,7 +15,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { motion, AnimatePresence } from "framer-motion";
   import DeliveryStats from "../components/delivery/DeliveryStats";
   import DeliveryNotifications from "../components/delivery/DeliveryNotifications";
-  import CODQRGenerator from "../components/delivery/CODQRGenerator";
+  
   import SwipeToDeliver from "../components/delivery/SwipeToDeliver";
   import CODPaymentCollector from "../components/delivery/CODPaymentCollector";
 
@@ -602,7 +602,7 @@ export default function Delivery() {
                 className="mt-2 bg-yellow-600 hover:bg-yellow-700 text-white"
               >
                 <Bell className="w-4 h-4 mr-2" />
-                {Notification.permission === 'Allow' ? 'Check Browser Settings' : 'Enable Notifications'}
+                {Notification.permission === 'denied' ? 'Check Browser Settings' : 'Enable Notifications'}
               </Button>
             </div>
           </div>

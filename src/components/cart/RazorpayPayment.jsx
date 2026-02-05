@@ -8,90 +8,66 @@ export default function RazorpayPayment({ amount, onSuccess, onError, orderNumbe
   const [scriptLoaded, setScriptLoaded] = useState(false);
 
   useEffect(() => {
+    // Pre-load Razorpay script for faster checkout
     const loadRazorpayScript = () => {
-      if (window.Razorpay) {
+      if (document.querySelector('script[src="https://checkout.razorpay.com/v1/checkout.js"]')) {
         setScriptLoaded(true);
         return;
       }
-      
-      const existingScript = document.querySelector('script[src="https://checkout.razorpay.com/v1/checkout.js"]');
-      if (existingScript) {
-        existingScript.onload = () => setScriptLoaded(true);
-        return;
-      }
-      
       const script = document.createElement('script');
       script.src = 'https://checkout.razorpay.com/v1/checkout.js';
-      script.async = true;
-      script.onload = () => {
-        setScriptLoaded(true);
-        console.log('Razorpay script loaded');
-      };
-      script.onerror = () => {
-        setScriptLoaded(false);
-        console.error('Failed to load Razorpay script');
-      };
+      script.onload = () => setScriptLoaded(true);
+      script.onerror = () => setScriptLoaded(false);
       document.body.appendChild(script);
     };
-    
     loadRazorpayScript();
   }, []);
 
   const handlePayment = async () => {
-    if (!scriptLoaded || !window.Razorpay) {
-      onError('Payment system is loading. Please wait and try again.');
+    if (!scriptLoaded) {
+      onError('Payment system is loading, please try again');
       return;
     }
 
     setIsLoading(true);
 
     try {
-      console.log('Creating Razorpay order...', { amount, orderNumber });
-      
-      const createResponse = await base44.functions.invoke('createRazorpayOrder', {
+      // Create order on backend
+      const { data: orderData } = await base44.functions.invoke('createRazorpayOrder', {
         amount: amount,
         receipt: orderNumber
       });
 
-      console.log('Order creation response:', createResponse);
-
-      if (!createResponse || createResponse.error) {
-        throw new Error(createResponse?.error || 'Failed to create payment order');
+      if (!orderData.orderId) {
+        throw new Error('Failed to create payment order');
       }
 
-      if (!createResponse.orderId || !createResponse.keyId) {
-        throw new Error('Invalid order data received from server');
-      }
-
+      // Razorpay options with CollegeCart branding
       const options = {
-        key: createResponse.keyId,
-        amount: createResponse.amount,
-        currency: createResponse.currency || 'INR',
+        key: orderData.keyId,
+        amount: orderData.amount,
+        currency: orderData.currency,
         name: 'CollegeCart',
         description: `Order ${orderNumber}`,
         image: 'https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/6885ba54fc40d82179646aca/56f3d15ef_WhatsAppImage2025-12-13at111830AM.jpeg',
-        order_id: createResponse.orderId,
+        order_id: orderData.orderId,
         handler: async function (response) {
-          console.log('Payment successful, verifying...', response);
           try {
-            const verifyResponse = await base44.functions.invoke('verifyRazorpayPayment', {
+            // Verify payment on backend
+            const { data: verificationData } = await base44.functions.invoke('verifyRazorpayPayment', {
               razorpay_order_id: response.razorpay_order_id,
               razorpay_payment_id: response.razorpay_payment_id,
               razorpay_signature: response.razorpay_signature
             });
 
-            console.log('Verification response:', verifyResponse);
-
-            if (verifyResponse && verifyResponse.success) {
-              setIsLoading(false);
+            if (verificationData.success) {
               onSuccess(response.razorpay_payment_id);
             } else {
-              throw new Error(verifyResponse?.error || 'Payment verification failed');
+              throw new Error('Payment verification failed');
             }
           } catch (error) {
-            console.error('Verification error:', error);
             setIsLoading(false);
-            onError(error.message || 'Payment verification failed');
+            onError(error.message);
           }
         },
         prefill: {
@@ -104,21 +80,19 @@ export default function RazorpayPayment({ amount, onSuccess, onError, orderNumbe
         },
         modal: {
           ondismiss: function() {
-            console.log('Payment modal dismissed');
             setIsLoading(false);
             onError('Payment cancelled');
           }
         }
       };
 
-      console.log('Opening Razorpay checkout...', options);
       const razorpay = new window.Razorpay(options);
       razorpay.open();
 
     } catch (error) {
       console.error('Payment error:', error);
+      onError(error.message || 'Payment failed');
       setIsLoading(false);
-      onError(error.message || 'Payment failed. Please try again.');
     }
   };
 

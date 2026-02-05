@@ -146,10 +146,10 @@ export default function DailyOrderSummary() {
         return orderDate >= startOfDay && orderDate <= endOfDay;
       });
 
-      // Calculate total revenue from delivered orders only
+      // Calculate total revenue from delivered orders only, minus 65 Rs
       const totalRevenue = Math.max(0, dayOrders
         .filter(order => order.status === 'delivered')
-        .reduce((sum, order) => sum + order.total_amount, 0));
+        .reduce((sum, order) => sum + order.total_amount, 0) - 65);
 
       // Group orders by status
       const ordersByStatus = dayOrders.reduce((acc, order) => {

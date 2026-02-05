@@ -1,4 +1,4 @@
-import { createClientFromRequest } from 'npm:@base44/sdk@0.8.6';
+import { createClientFromRequest } from 'npm:@base44/sdk@0.8.4';
 
 Deno.serve(async (req) => {
   try {
@@ -15,15 +15,16 @@ Deno.serve(async (req) => {
       return Response.json({ error: 'Invalid amount' }, { status: 400 });
     }
 
-    const razorpayKeyId = Deno.env.get('RAZORPAY_KEY_ID');
-    const razorpayKeySecret = Deno.env.get('RAZORPAY_KEY_SECRET');
+    const razorpayKeyId = Deno.env.get('RAZORPAY_KEY_ID') || 'rzp_live_RvsMho8KxQpWkr';
+    const razorpayKeySecret = Deno.env.get('RAZORPAY_KEY_SECRET') || 'S0vJKS1VHwIpuxJhl8eh1hrR';
 
     if (!razorpayKeyId || !razorpayKeySecret) {
       return Response.json({ error: 'Razorpay credentials not configured' }, { status: 500 });
     }
 
+    // Create Razorpay order
     const orderData = {
-      amount: Math.round(amount * 100),
+      amount: Math.round(amount * 100), // Convert to paise
       currency: currency,
       receipt: receipt || `order_${Date.now()}`,
       notes: {
@@ -46,13 +47,12 @@ Deno.serve(async (req) => {
     if (!response.ok) {
       const error = await response.text();
       console.error('Razorpay API Error:', error);
-      return Response.json({ error: 'Failed to create Razorpay order', details: error }, { status: 500 });
+      return Response.json({ error: 'Failed to create Razorpay order' }, { status: 500 });
     }
 
     const order = await response.json();
 
     return Response.json({
-      success: true,
       orderId: order.id,
       amount: order.amount,
       currency: order.currency,
