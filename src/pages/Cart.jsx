@@ -1056,6 +1056,17 @@ export default function Cart() {
           </Card>
         </div>
       </div>
+
+      {/* User Wallet Recharge Dialog */}
+      <UserWalletRecharge 
+        user={user}
+        open={showWalletRecharge}
+        onOpenChange={setShowWalletRecharge}
+        onSuccess={async () => {
+          const updatedUser = await User.me();
+          setUser(updatedUser);
+        }}
+      />
     </div>
   );
 }
