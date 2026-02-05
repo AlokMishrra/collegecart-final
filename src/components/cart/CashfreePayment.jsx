@@ -90,7 +90,7 @@ export default function CashfreePayment({
       console.log('Opening Cashfree checkout...');
 
       // Open Cashfree payment modal
-      const cashfreeInstance = cashfree({ mode: "production" });
+      const cashfreeInstance = new cashfree.Cashfree({ mode: "production" });
       cashfreeInstance.checkout(checkoutOptions).then(async (result) => {
         if (result.error) {
           console.error('Payment error:', result.error);
