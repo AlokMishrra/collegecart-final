@@ -6,9 +6,10 @@ import { base44 } from "@/api/base44Client";
   import { Order } from "@/entities/Order";
   import { Notification } from "@/entities/Notification";
   import { DeliveryPerson } from "@/entities/DeliveryPerson";
-import { Trash2, Plus, Minus, ShoppingBag } from "lucide-react";
+import { Trash2, Plus, Minus, ShoppingBag, Wallet, CreditCard, DollarSign, AlertTriangle, Gift } from "lucide-react";
 import DeliveryProgressBar from "../components/cart/DeliveryProgressBar";
 import RecommendedProducts from "../components/cart/RecommendedProducts";
+import UserWalletRecharge from "../components/shop/UserWalletRecharge";
 
 import RazorpayPayment from "../components/cart/RazorpayPayment";
 import { Button } from "@/components/ui/button";
@@ -46,6 +47,7 @@ export default function Cart() {
         const [codeError, setCodeError] = useState("");
         const [selectedDhaba, setSelectedDhaba] = useState({});
         const [razorpayPaymentId, setRazorpayPaymentId] = useState(null);
+        const [showWalletRecharge, setShowWalletRecharge] = useState(false);
 
   const loadCart = useCallback(async (userId) => {
     setIsLoading(true);
@@ -180,6 +182,11 @@ export default function Cart() {
   };
 
   const calculateShippingCharge = () => {
+    // Free delivery if paying with wallet
+    if (paymentMethod === "wallet") {
+      return 0;
+    }
+
     if (!settings) return 0;
     const subtotal = calculateSubtotal();
     const threshold = isFirstOrder ? settings.first_order_threshold : settings.free_delivery_above;
@@ -332,6 +339,17 @@ export default function Cart() {
         return;
       }
 
+      // Check wallet balance if paying with wallet
+      if (paymentMethod === "wallet") {
+        const walletBalance = user.wallet_balance || 0;
+        const totalAmount = calculateTotal();
+        if (walletBalance < totalAmount) {
+          alert(`Insufficient wallet balance! You have ₹${walletBalance.toFixed(2)} but need ₹${totalAmount.toFixed(2)}. Please add money to your wallet.`);
+          setShowWalletRecharge(true);
+          return;
+        }
+      }
+
       // Validate based on address type
       if (!customerName.trim() || !phoneNumber.trim()) {
         await Notification.create({
@@ -452,9 +470,24 @@ export default function Cart() {
         phone_number: phoneNumber,
         delivery_notes: deliveryNotes,
         status: "confirmed",
-        payment_method: paymentMethod,
-        is_paid: paymentMethod === "online" ? true : false
+        payment_method: paymentMethod === "wallet" ? "online" : paymentMethod,
+        is_paid: paymentMethod === "online" || paymentMethod === "wallet"
       });
+
+      // Deduct from wallet if paying with wallet
+      if (paymentMethod === "wallet") {
+        const newWalletBalance = (user.wallet_balance || 0) - finalAmount;
+        await User.update(user.id, {
+          wallet_balance: newWalletBalance
+        });
+
+        await Notification.create({
+          user_id: user.id,
+          title: "Payment Successful!",
+          message: `₹${finalAmount.toFixed(2)} deducted from wallet. New balance: ₹${newWalletBalance.toFixed(2)}`,
+          type: "success"
+        });
+      }
 
       // Reduce stock for each item (parallel operations for speed)
       const stockUpdatePromises = cartItems.map(async (item) => {
@@ -883,17 +916,108 @@ export default function Cart() {
                   </div>
                 )}
 
-                <div>
-                  <Label htmlFor="payment" className="text-xs sm:text-sm">Payment <span className="text-red-500">*</span></Label>
-                  <Select onValueChange={setPaymentMethod} value={paymentMethod} required>
-                    <SelectTrigger id="payment" className="h-8 sm:h-10 text-xs sm:text-sm">
-                      <SelectValue placeholder="Payment method" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="cash">Cash on Delivery</SelectItem>
-                      <SelectItem value="online">Online (UPI)</SelectItem>
-                    </SelectContent>
-                  </Select>
+                <div className="space-y-2">
+                  <Label className="text-xs sm:text-sm">Payment Method <span className="text-red-500">*</span></Label>
+                  
+                  {/* Wallet Payment Option */}
+                  <button
+                    type="button"
+                    onClick={() => setPaymentMethod("wallet")}
+                    className={`w-full flex items-center justify-between p-3 rounded-lg border-2 transition-all ${
+                      paymentMethod === "wallet"
+                        ? "border-emerald-500 bg-gradient-to-r from-emerald-50 to-green-50"
+                        : "border-gray-200 hover:border-gray-300"
+                    }`}
+                  >
+                    <div className="flex items-center gap-2">
+                      <div className={`w-4 h-4 rounded-full border-2 flex items-center justify-center ${
+                        paymentMethod === "wallet" ? "border-emerald-500" : "border-gray-300"
+                      }`}>
+                        {paymentMethod === "wallet" && (
+                          <div className="w-2 h-2 bg-emerald-500 rounded-full" />
+                        )}
+                      </div>
+                      <Wallet className="w-4 h-4 text-emerald-600" />
+                      <div className="text-left">
+                        <div className="text-xs font-medium">Pay with Wallet</div>
+                        <div className="text-[10px] text-emerald-600">Balance: ₹{(user?.wallet_balance || 0).toFixed(2)}</div>
+                      </div>
+                    </div>
+                    {paymentMethod === "wallet" && (
+                      <span className="text-[10px] bg-amber-500 text-white px-2 py-0.5 rounded font-medium">FREE Delivery!</span>
+                    )}
+                  </button>
+
+                  {(user?.wallet_balance || 0) < calculateTotal() && paymentMethod === "wallet" && (
+                    <div className="bg-amber-50 border border-amber-200 rounded p-2 flex items-start gap-1.5">
+                      <AlertTriangle className="w-3 h-3 text-amber-600 mt-0.5 flex-shrink-0" />
+                      <div className="flex-1">
+                        <p className="text-[10px] text-amber-800">
+                          Insufficient balance. Need ₹{(calculateTotal() - (user?.wallet_balance || 0)).toFixed(2)} more.
+                        </p>
+                        <Button
+                          type="button"
+                          onClick={() => setShowWalletRecharge(true)}
+                          size="sm"
+                          className="mt-1 bg-emerald-600 hover:bg-emerald-700 text-white h-6 text-[10px]"
+                        >
+                          Add Money
+                        </Button>
+                      </div>
+                    </div>
+                  )}
+                  
+                  {/* Cash Payment Option */}
+                  <button
+                    type="button"
+                    onClick={() => setPaymentMethod("cash")}
+                    className={`w-full flex items-center gap-2 p-3 rounded-lg border-2 transition-all ${
+                      paymentMethod === "cash"
+                        ? "border-emerald-500 bg-emerald-50"
+                        : "border-gray-200 hover:border-gray-300"
+                    }`}
+                  >
+                    <div className={`w-4 h-4 rounded-full border-2 flex items-center justify-center ${
+                      paymentMethod === "cash" ? "border-emerald-500" : "border-gray-300"
+                    }`}>
+                      {paymentMethod === "cash" && (
+                        <div className="w-2 h-2 bg-emerald-500 rounded-full" />
+                      )}
+                    </div>
+                    <DollarSign className="w-4 h-4 text-emerald-600" />
+                    <span className="text-xs font-medium">Cash on Delivery</span>
+                  </button>
+                  
+                  {/* Online Payment Option */}
+                  <button
+                    type="button"
+                    onClick={() => setPaymentMethod("online")}
+                    className={`w-full flex items-center gap-2 p-3 rounded-lg border-2 transition-all ${
+                      paymentMethod === "online"
+                        ? "border-emerald-500 bg-emerald-50"
+                        : "border-gray-200 hover:border-gray-300"
+                    }`}
+                  >
+                    <div className={`w-4 h-4 rounded-full border-2 flex items-center justify-center ${
+                      paymentMethod === "online" ? "border-emerald-500" : "border-gray-300"
+                    }`}>
+                      {paymentMethod === "online" && (
+                        <div className="w-2 h-2 bg-emerald-500 rounded-full" />
+                      )}
+                    </div>
+                    <CreditCard className="w-4 h-4 text-blue-600" />
+                    <span className="text-xs font-medium">Pay Online (UPI/Card)</span>
+                  </button>
+
+                  {/* Tip to use wallet */}
+                  {paymentMethod !== "wallet" && (user?.wallet_balance || 0) >= calculateTotal() && (
+                    <div className="bg-blue-50 border border-blue-200 rounded p-2 flex items-start gap-1.5">
+                      <Gift className="w-3 h-3 text-blue-600 mt-0.5 flex-shrink-0" />
+                      <p className="text-[10px] text-blue-800">
+                        <strong>Tip:</strong> Switch to Wallet payment to get FREE delivery!
+                      </p>
+                    </div>
+                  )}
                 </div>
 
                 {paymentMethod === "online" && (
