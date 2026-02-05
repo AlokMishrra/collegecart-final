@@ -33,6 +33,7 @@ export default function WalletRecharge({ deliveryPerson, onSuccess, open, onOpen
         name: "CollegeCart",
         description: "Wallet Recharge",
         handler: async (razorpayResponse) => {
+          setIsProcessing(true);
           try {
             const { verifyWalletRecharge } = await import("@/functions/verifyWalletRecharge");
             const verifyResponse = await verifyWalletRecharge({
@@ -45,13 +46,23 @@ export default function WalletRecharge({ deliveryPerson, onSuccess, open, onOpen
             });
 
             if (verifyResponse.data.verified) {
+              alert(`₹${parseFloat(amount).toFixed(2)} added successfully!`);
               setAmount("");
+              setIsProcessing(false);
               onOpenChange(false);
               onSuccess();
+            } else {
+              throw new Error("Payment verification failed");
             }
           } catch (error) {
             console.error("Verification error:", error);
-            alert("Payment verification failed");
+            alert("Payment verification failed. Please contact support.");
+            setIsProcessing(false);
+          }
+        },
+        modal: {
+          ondismiss: () => {
+            setIsProcessing(false);
           }
         },
         prefill: {
@@ -65,12 +76,18 @@ export default function WalletRecharge({ deliveryPerson, onSuccess, open, onOpen
       };
 
       const rzp = new window.Razorpay(options);
+      rzp.on('payment.failed', () => {
+        setIsProcessing(false);
+        alert('Payment failed. Please try again.');
+      });
+      
       rzp.open();
+      setIsProcessing(false);
     } catch (error) {
       console.error("Error initiating recharge:", error);
-      alert("Failed to initiate payment");
+      alert("Failed to initiate payment. Please try again.");
+      setIsProcessing(false);
     }
-    setIsProcessing(false);
   };
 
   return (
