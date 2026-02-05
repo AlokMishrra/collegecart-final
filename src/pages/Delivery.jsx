@@ -221,15 +221,19 @@ export default function Delivery() {
   const requestNotificationPermission = async () => {
     if ('Notification' in window && Notification.permission !== 'granted') {
       try {
-        const permission = await Notification.requestPermission();
-        setNotificationsEnabled(permission === 'granted');
-        
-        if (permission === 'granted') {
-          // Show a test notification
-          showBrowserNotification(
-            '🔔 Notifications Enabled!',
-            'You will now receive alerts for new orders.'
-          );
+        // Handle both promise-based and callback-based API
+        if (typeof Notification.requestPermission === 'function') {
+          const result = Notification.requestPermission();
+          if (result && typeof result.then === 'function') {
+            const permission = await result;
+            setNotificationsEnabled(permission === 'granted');
+            if (permission === 'granted') {
+              showBrowserNotification(
+                '🔔 Notifications Enabled!',
+                'You will now receive alerts for new orders.'
+              );
+            }
+          }
         }
       } catch (error) {
         console.error('Error requesting notification permission:', error);
