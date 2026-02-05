@@ -46,7 +46,6 @@ export default function Cart() {
         const [appliedCampaign, setAppliedCampaign] = useState(null);
         const [codeError, setCodeError] = useState("");
         const [selectedDhaba, setSelectedDhaba] = useState({});
-        const [razorpayPaymentId, setRazorpayPaymentId] = useState(null);
 
   const loadCart = useCallback(async (userId) => {
     setIsLoading(true);
@@ -366,12 +365,12 @@ export default function Cart() {
         }
       }
 
-      // For online payment, wait for Razorpay payment completion
+      // For online payment, wait for Cashfree payment completion
       if (paymentMethod === "online" && !paymentId) {
         await Notification.create({
           user_id: user.id,
           title: "Complete Payment",
-          message: "Please complete the payment using the Razorpay button below.",
+          message: "Please complete the payment using the Cashfree button below.",
           type: "info"
         });
         return;
@@ -894,17 +893,19 @@ export default function Cart() {
                     </SelectTrigger>
                     <SelectContent>
                       <SelectItem value="cash">Cash on Delivery</SelectItem>
-                      <SelectItem value="online">Online (Razorpay)</SelectItem>
+                      <SelectItem value="online">Online (Cashfree)</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
 
                 {paymentMethod === "online" && (
-                  <RazorpayPayment
+                  <CashfreePayment
                     amount={calculateTotal()}
                     orderNumber={`CC${Date.now()}`}
+                    customerName={customerName}
+                    customerPhone={phoneNumber}
+                    customerEmail={user?.email}
                     onSuccess={(paymentId) => {
-                      setRazorpayPaymentId(paymentId);
                       placeOrder(paymentId);
                     }}
                     onError={async (error) => {
