@@ -4,12 +4,7 @@ import crypto from 'node:crypto';
 Deno.serve(async (req) => {
   try {
     const base44 = createClientFromRequest(req);
-    const user = await base44.auth.me();
-
-    if (!user) {
-      return Response.json({ error: 'Unauthorized' }, { status: 401 });
-    }
-
+    
     const { razorpay_order_id, razorpay_payment_id, razorpay_signature, amount, type, deliveryPersonId } = await req.json();
 
     const sign = razorpay_order_id + '|' + razorpay_payment_id;
@@ -19,7 +14,7 @@ Deno.serve(async (req) => {
       .digest('hex');
 
     if (razorpay_signature !== expectedSign) {
-      return Response.json({ error: 'Invalid signature' }, { status: 400 });
+      return Response.json({ error: 'Invalid signature', verified: false }, { status: 400 });
     }
 
     if (type === 'delivery' && deliveryPersonId) {
@@ -40,6 +35,11 @@ Deno.serve(async (req) => {
         });
       }
     } else if (type === 'user') {
+      const user = await base44.auth.me();
+      if (!user) {
+        return Response.json({ error: 'Unauthorized', verified: false }, { status: 401 });
+      }
+      
       const users = await base44.asServiceRole.entities.User.filter({ id: user.id });
       if (users.length > 0) {
         const currentUser = users[0];
