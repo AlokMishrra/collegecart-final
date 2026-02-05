@@ -10,7 +10,7 @@ import { Trash2, Plus, Minus, ShoppingBag } from "lucide-react";
 import DeliveryProgressBar from "../components/cart/DeliveryProgressBar";
 import RecommendedProducts from "../components/cart/RecommendedProducts";
 import RecommendationEngine from "../components/shop/RecommendationEngine";
-import RazorpayPayment from "../components/cart/RazorpayPayment";
+import CashfreePayment from "../components/cart/CashfreePayment";
 
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
