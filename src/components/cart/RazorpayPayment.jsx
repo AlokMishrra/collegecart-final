@@ -29,16 +29,23 @@ export default function RazorpayPayment({ amount, onSuccess, onError, orderNumbe
       return;
     }
 
+    if (!window.Razorpay) {
+      onError('Payment system not loaded. Please refresh the page.');
+      return;
+    }
+
     setIsLoading(true);
 
     try {
       // Create order on backend
-      const { data: orderData } = await base44.functions.invoke('createRazorpayOrder', {
+      const response = await base44.functions.invoke('createRazorpayOrder', {
         amount: amount,
         receipt: orderNumber
       });
 
-      if (!orderData.orderId) {
+      const orderData = response.data || response;
+
+      if (!orderData || !orderData.orderId) {
         throw new Error('Failed to create payment order');
       }
 
@@ -54,20 +61,24 @@ export default function RazorpayPayment({ amount, onSuccess, onError, orderNumbe
         handler: async function (response) {
           try {
             // Verify payment on backend
-            const { data: verificationData } = await base44.functions.invoke('verifyRazorpayPayment', {
+            const verifyResponse = await base44.functions.invoke('verifyRazorpayPayment', {
               razorpay_order_id: response.razorpay_order_id,
               razorpay_payment_id: response.razorpay_payment_id,
               razorpay_signature: response.razorpay_signature
             });
 
+            const verificationData = verifyResponse.data || verifyResponse;
+
             if (verificationData.success) {
+              setIsLoading(false);
               onSuccess(response.razorpay_payment_id);
             } else {
               throw new Error('Payment verification failed');
             }
           } catch (error) {
+            console.error('Verification error:', error);
             setIsLoading(false);
-            onError(error.message);
+            onError(error.message || 'Payment verification failed');
           }
         },
         prefill: {
@@ -81,7 +92,7 @@ export default function RazorpayPayment({ amount, onSuccess, onError, orderNumbe
         modal: {
           ondismiss: function() {
             setIsLoading(false);
-            onError('Payment cancelled');
+            onError('Payment cancelled by user');
           }
         }
       };
@@ -91,8 +102,8 @@ export default function RazorpayPayment({ amount, onSuccess, onError, orderNumbe
 
     } catch (error) {
       console.error('Payment error:', error);
-      onError(error.message || 'Payment failed');
       setIsLoading(false);
+      onError(error.message || 'Payment failed. Please try again.');
     }
   };
 
