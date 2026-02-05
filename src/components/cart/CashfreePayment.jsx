@@ -18,28 +18,30 @@ export default function CashfreePayment({
   useEffect(() => {
     // Load Cashfree SDK from CDN
     const loadCashfreeScript = () => {
-      if (document.querySelector('script[src*="cashfree"]')) {
-        if (window.Cashfree) {
-          setCashfree(window.Cashfree);
-        }
+      const existingScript = document.querySelector('script[src*="cashfree"]');
+      
+      if (existingScript && window.Cashfree) {
+        setCashfree(window.Cashfree);
         return;
+      }
+
+      if (existingScript) {
+        existingScript.remove();
       }
 
       const script = document.createElement('script');
       script.src = 'https://sdk.cashfree.com/js/v3/cashfree.js';
+      script.async = true;
       script.onload = () => {
+        console.log('Cashfree SDK loaded');
         if (window.Cashfree) {
           setCashfree(window.Cashfree);
-        } else {
-          console.error('Cashfree SDK not available');
-          onError('Payment system initialization failed');
         }
       };
       script.onerror = () => {
         console.error('Failed to load Cashfree SDK');
-        onError('Payment system initialization failed');
       };
-      document.body.appendChild(script);
+      document.head.appendChild(script);
     };
 
     loadCashfreeScript();
@@ -83,14 +85,14 @@ export default function CashfreePayment({
       // Initialize Cashfree checkout
       const checkoutOptions = {
         paymentSessionId: orderData.paymentSessionId,
-        returnUrl: `https://collegecart.base44.app/Orders?order_id=${orderNumber}`,
-        redirectTarget: "_modal"
+        returnUrl: `https://collegecart.base44.app/Orders?order_id=${orderNumber}`
       };
 
       console.log('Opening Cashfree checkout...');
 
-      // Open Cashfree payment modal
-      const cashfreeInstance = new cashfree.Cashfree({ mode: "production" });
+      // Initialize and open Cashfree payment
+      const cashfreeInstance = cashfree({ mode: "production" });
+      
       cashfreeInstance.checkout(checkoutOptions).then(async (result) => {
         if (result.error) {
           console.error('Payment error:', result.error);
