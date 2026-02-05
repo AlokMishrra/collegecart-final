@@ -13,43 +13,38 @@ export default function CashfreePayment({
   customerEmail 
 }) {
   const [isLoading, setIsLoading] = useState(false);
-  const [cashfree, setCashfree] = useState(null);
+  const [sdkReady, setSdkReady] = useState(false);
 
   useEffect(() => {
-    // Load Cashfree SDK from CDN
-    const loadCashfreeScript = () => {
-      const existingScript = document.querySelector('script[src*="cashfree"]');
-      
-      if (existingScript && window.Cashfree) {
-        setCashfree(window.Cashfree);
-        return;
-      }
+    // Load Cashfree SDK
+    if (window.Cashfree) {
+      setSdkReady(true);
+      return;
+    }
 
+    const script = document.createElement('script');
+    script.src = 'https://sdk.cashfree.com/js/v3/cashfree.js';
+    script.async = true;
+    script.onload = () => {
+      setSdkReady(true);
+    };
+    script.onerror = () => {
+      console.error('Failed to load Cashfree SDK');
+      onError('Payment system failed to load');
+    };
+    document.head.appendChild(script);
+
+    return () => {
+      const existingScript = document.querySelector('script[src="https://sdk.cashfree.com/js/v3/cashfree.js"]');
       if (existingScript) {
         existingScript.remove();
       }
-
-      const script = document.createElement('script');
-      script.src = 'https://sdk.cashfree.com/js/v3/cashfree.js';
-      script.async = true;
-      script.onload = () => {
-        console.log('Cashfree SDK loaded');
-        if (window.Cashfree) {
-          setCashfree(window.Cashfree);
-        }
-      };
-      script.onerror = () => {
-        console.error('Failed to load Cashfree SDK');
-      };
-      document.head.appendChild(script);
     };
-
-    loadCashfreeScript();
   }, []);
 
   const handlePayment = async () => {
-    if (!cashfree) {
-      onError('Payment system is still loading, please wait');
+    if (!sdkReady || !window.Cashfree) {
+      onError('Payment system not ready');
       return;
     }
 
@@ -58,7 +53,6 @@ export default function CashfreePayment({
     try {
       console.log('Creating Cashfree order...');
       
-      // Create order on backend
       const orderResponse = await base44.functions.invoke('createCashfreeOrder', {
         amount: amount,
         orderNumber: orderNumber,
@@ -67,12 +61,9 @@ export default function CashfreePayment({
         customerEmail: customerEmail
       });
 
-      console.log('Order created:', orderResponse);
+      console.log('Order Response:', orderResponse);
 
-      let orderData = orderResponse;
-      if (orderResponse.data) {
-        orderData = orderResponse.data;
-      }
+      let orderData = orderResponse?.data || orderResponse;
 
       if (!orderData || orderData.error) {
         throw new Error(orderData?.error || 'Failed to create payment order');
@@ -82,18 +73,22 @@ export default function CashfreePayment({
         throw new Error('Invalid payment session');
       }
 
-      // Initialize Cashfree checkout
+      console.log('Opening Cashfree checkout with session:', orderData.paymentSessionId);
+
+      // Initialize Cashfree
+      const cashfree = window.Cashfree({
+        mode: "production"
+      });
+
       const checkoutOptions = {
         paymentSessionId: orderData.paymentSessionId,
-        returnUrl: `https://collegecart.base44.app/Orders?order_id=${orderNumber}`
+        redirectTarget: "_modal"
       };
 
-      console.log('Opening Cashfree checkout...');
+      // Open checkout
+      cashfree.checkout(checkoutOptions).then(async (result) => {
+        console.log('Checkout result:', result);
 
-      // Initialize and open Cashfree payment
-      const cashfreeInstance = cashfree({ mode: "production" });
-      
-      cashfreeInstance.checkout(checkoutOptions).then(async (result) => {
         if (result.error) {
           console.error('Payment error:', result.error);
           setIsLoading(false);
@@ -101,22 +96,24 @@ export default function CashfreePayment({
           return;
         }
 
+        if (result.redirect) {
+          console.log('Payment redirect detected');
+          return;
+        }
+
         if (result.paymentDetails) {
           console.log('Payment completed, verifying...');
           
-          // Verify payment
           try {
             const verifyResponse = await base44.functions.invoke('verifyCashfreePayment', {
               orderId: orderData.orderId
             });
 
-            let verificationData = verifyResponse;
-            if (verifyResponse.data) {
-              verificationData = verifyResponse.data;
-            }
+            let verificationData = verifyResponse?.data || verifyResponse;
 
             if (verificationData?.success) {
               console.log('Payment verified successfully');
+              setIsLoading(false);
               onSuccess(orderData.orderId);
             } else {
               throw new Error(verificationData?.error || 'Payment verification failed');
@@ -134,12 +131,10 @@ export default function CashfreePayment({
       });
 
     } catch (error) {
-      console.error('Payment initialization error:', error);
+      console.error('Payment error:', error);
       
       let errorMessage = 'Payment failed';
-      if (error.response?.data?.error) {
-        errorMessage = error.response.data.error;
-      } else if (error.message) {
+      if (error.message) {
         errorMessage = error.message;
       }
       
@@ -177,7 +172,7 @@ export default function CashfreePayment({
 
       <Button
         onClick={handlePayment}
-        disabled={isLoading || !cashfree}
+        disabled={isLoading || !sdkReady}
         className="w-full h-11 sm:h-12 bg-emerald-600 hover:bg-emerald-700 text-white font-semibold text-sm sm:text-base shadow-md disabled:opacity-50"
       >
         {isLoading ? (
@@ -185,7 +180,7 @@ export default function CashfreePayment({
             <Loader2 className="w-4 h-4 sm:w-5 sm:h-5 mr-2 animate-spin" />
             Processing...
           </>
-        ) : !cashfree ? (
+        ) : !sdkReady ? (
           <>
             <Loader2 className="w-4 h-4 sm:w-5 sm:h-5 mr-2 animate-spin" />
             Loading...
