@@ -77,6 +77,7 @@ export default function Delivery() {
   const [orderToCancel, setOrderToCancel] = useState(null);
   const [cancellationReason, setCancellationReason] = useState("");
   const [isTogglingAvailability, setIsTogglingAvailability] = useState(false);
+  const [isTogglingShift, setIsTogglingShift] = useState(false);
 
 
   const loadAssignedOrders = useCallback(async (deliveryPersonId) => {
@@ -330,6 +331,32 @@ export default function Delivery() {
     setAvailableOrders([]);
   };
 
+  const toggleShift = async () => {
+    setIsTogglingShift(true);
+    try {
+      const isStartingShift = !deliveryPerson.is_shift_active;
+      const updateData = {
+        is_shift_active: isStartingShift,
+        shift_start_time: isStartingShift ? new Date().toISOString() : deliveryPerson.shift_start_time,
+        shift_end_time: isStartingShift ? null : new Date().toISOString()
+      };
+      
+      await DeliveryPerson.update(deliveryPerson.id, updateData);
+
+      const updatedPerson = { ...deliveryPerson, ...updateData };
+      setDeliveryPerson(updatedPerson);
+      localStorage.setItem('deliveryPerson', JSON.stringify(updatedPerson));
+
+      showBrowserNotification(
+        isStartingShift ? '✅ Shift Started' : '⏸️ Shift Ended',
+        isStartingShift ? 'You can now accept orders' : 'Shift completed successfully'
+      );
+    } catch (error) {
+      console.error("Error toggling shift:", error);
+    }
+    setIsTogglingShift(false);
+  };
+
   const toggleAvailability = async () => {
     setIsTogglingAvailability(true);
     try {
@@ -338,12 +365,10 @@ export default function Delivery() {
         is_available: newAvailability
       });
 
-      // Update local state
       const updatedPerson = { ...deliveryPerson, is_available: newAvailability };
       setDeliveryPerson(updatedPerson);
       localStorage.setItem('deliveryPerson', JSON.stringify(updatedPerson));
 
-      // Show notification about status change
       if (newAvailability) {
         showBrowserNotification(
           '✅ You are now ONLINE',
@@ -609,33 +634,54 @@ export default function Delivery() {
         </motion.div>
       )}
 
+      {/* Account Balance Warning */}
+      {deliveryPerson.account_balance < 0 && (
+        <Alert variant="destructive" className="border-2 border-red-500">
+          <AlertTriangle className="h-5 w-5" />
+          <AlertDescription className="text-base">
+            <strong>Account blocked due to negative balance!</strong>
+            <br />
+            Your account balance is <strong>₹{deliveryPerson.account_balance.toFixed(2)}</strong>.
+            <br />
+            Please contact admin to settle your dues and resume deliveries.
+          </AlertDescription>
+        </Alert>
+      )}
+
       <div className="flex justify-between items-center">
         <div>
           <h1 className="text-3xl font-bold text-gray-900">Delivery Dashboard</h1>
           <p className="text-gray-600">Welcome back, {deliveryPerson.name}!</p>
+          {deliveryPerson.account_balance >= 0 && (
+            <p className="text-sm text-emerald-600 font-medium mt-1">
+              Wallet Balance: ₹{deliveryPerson.account_balance.toFixed(2)}
+            </p>
+          )}
         </div>
         <div className="flex gap-2">
-          <Button
-            variant={deliveryPerson.is_available ? "default" : "outline"}
-            onClick={toggleAvailability}
-            disabled={isTogglingAvailability}
-            className={deliveryPerson.is_available ? "bg-green-600 hover:bg-green-700" : "border-red-500 text-red-600 hover:bg-red-50"}
-          >
-            {isTogglingAvailability ? (
-              <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-            ) : (
-              <Power className="w-4 h-4 mr-2" />
-            )}
-            {deliveryPerson.is_available ? "Available" : "Offline"}
-          </Button>
+          {deliveryPerson.account_balance >= 0 && (
+            <Button
+              variant={deliveryPerson.is_shift_active ? "default" : "outline"}
+              onClick={toggleShift}
+              disabled={isTogglingShift}
+              className={deliveryPerson.is_shift_active ? "bg-emerald-600 hover:bg-emerald-700" : ""}
+            >
+              {isTogglingShift ? (
+                <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+              ) : (
+                <Power className="w-4 h-4 mr-2" />
+              )}
+              {deliveryPerson.is_shift_active ? "End Shift" : "Start Shift"}
+            </Button>
+          )}
           <Button variant="outline" onClick={handleLogout}>
             Logout
           </Button>
         </div>
       </div>
 
-      {/* Availability Status Banner */}
-      {!deliveryPerson.is_available && (
+      {/* Shift Status Banner */}
+      {!deliveryPerson.is_shift_active && deliveryPerson.account_balance >= 0 && (
         <motion.div
           initial={{ opacity: 0, y: -20 }}
           animate={{ opacity: 1, y: 0 }}
@@ -644,9 +690,9 @@ export default function Delivery() {
           <div className="flex items-start gap-3">
             <AlertTriangle className="w-5 h-5 text-orange-600 mt-0.5" />
             <div>
-              <h3 className="font-semibold text-orange-900">You are currently OFFLINE</h3>
+              <h3 className="font-semibold text-orange-900">Shift Not Active</h3>
               <p className="text-sm text-orange-700 mt-1">
-                You will not receive notifications for new orders. Toggle the availability button to go online.
+                Start your shift to view and accept orders.
               </p>
             </div>
           </div>
@@ -656,8 +702,8 @@ export default function Delivery() {
       {/* Delivery Statistics */}
       <DeliveryStats deliveryPerson={deliveryPerson} />
 
-      {/* Available Orders to Accept - Only show if available */}
-      {deliveryPerson.is_available && availableOrders.length > 0 && (
+      {/* Available Orders - Only show if shift active and balance >= 0 */}
+      {deliveryPerson.is_shift_active && deliveryPerson.account_balance >= 0 && availableOrders.length > 0 && (
         <div className="space-y-4">
           <div className="flex items-center gap-2">
             <h2 className="text-xl font-semibold">Available Orders</h2>
@@ -748,11 +794,12 @@ export default function Delivery() {
         </div>
       )}
 
-      {/* Orders to Deliver */}
-      <div className="space-y-4">
-        <h2 className="text-xl font-semibold">My Active Deliveries</h2>
-        
-        {assignedOrders.length === 0 ? (
+      {/* Orders to Deliver - Only visible during active shift */}
+      {deliveryPerson.is_shift_active && deliveryPerson.account_balance >= 0 && (
+        <div className="space-y-4">
+          <h2 className="text-xl font-semibold">My Active Deliveries</h2>
+          
+          {assignedOrders.length === 0 ? (
           <Card>
             <CardContent className="p-12 text-center">
               <div className="w-16 h-16 mx-auto mb-4 bg-gray-100 rounded-full flex items-center justify-center">
@@ -926,7 +973,8 @@ export default function Delivery() {
             </AnimatePresence>
           </div>
         )}
-      </div>
+        </div>
+      )}
 
       {/* Cancel Order Dialog */}
       <Dialog open={showCancelDialog} onOpenChange={setShowCancelDialog}>
