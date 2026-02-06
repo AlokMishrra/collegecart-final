@@ -182,9 +182,25 @@ export default function Cart() {
   const calculateShippingCharge = () => {
     if (!settings) return 0;
     const subtotal = calculateSubtotal();
+    
+    // Check if user has subscription
+    const hasActiveSubscription = user?.has_subscription && user?.subscription_expiry && new Date(user.subscription_expiry) > new Date();
+    
+    // Get current hour
+    const currentHour = new Date().getHours();
+    const isMidnight = currentHour >= 22 || currentHour < 3; // 10 PM to 3 AM
+    
+    // Subscription users get free delivery in normal hours, ₹20 in midnight
+    if (hasActiveSubscription) {
+      return isMidnight ? 20 : 0;
+    }
+    
+    // Check threshold for free delivery
     const threshold = isFirstOrder ? settings.first_order_threshold : settings.free_delivery_above;
-
     if (subtotal >= threshold) return 0;
+
+    // Dynamic delivery charges based on time
+    let baseDeliveryCharge = isMidnight ? 45 : 35;
 
     // Calculate product-specific delivery charges (sum of all products' charges)
     let totalDeliveryCharge = 0;
@@ -195,8 +211,8 @@ export default function Cart() {
       }
     });
 
-    // If no product-specific charges, use default shipping charge
-    return totalDeliveryCharge > 0 ? totalDeliveryCharge : (settings.shipping_charge || 0);
+    // Use product-specific charges or base dynamic charge
+    return totalDeliveryCharge > 0 ? totalDeliveryCharge : baseDeliveryCharge;
   };
 
   const calculatePointsDiscount = () => {
@@ -320,6 +336,10 @@ export default function Cart() {
     }
   };
 
+  const generateOTP = () => {
+    return Math.floor(1000 + Math.random() * 9000).toString();
+  };
+
   const placeOrder = async (paymentId = null) => {
       // Check if cart is empty
       if (cartItems.length === 0) {
@@ -407,6 +427,10 @@ export default function Cart() {
         : `${selectedHostel} Hostel, Room No: ${roomNumber}`;
 
       const finalAmount = calculateTotal();
+      const deliveryCharge = calculateShippingCharge();
+      
+      // Generate OTP for delivery verification
+      const deliveryOTP = generateOTP();
       
       // Validate stock before creating order (async operations)
       const stockPromises = cartItems.map(async (item) => {
@@ -453,7 +477,10 @@ export default function Cart() {
         delivery_notes: deliveryNotes,
         status: "confirmed",
         payment_method: paymentMethod,
-        is_paid: paymentMethod === "online" ? true : false
+        is_paid: paymentMethod === "online" ? true : false,
+        delivery_otp: deliveryOTP,
+        otp_generated_time: new Date().toISOString(),
+        delivery_charge: deliveryCharge
       });
 
       // Reduce stock for each item (parallel operations for speed)

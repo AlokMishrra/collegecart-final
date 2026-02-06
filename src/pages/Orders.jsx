@@ -453,6 +453,27 @@ export default function Orders() {
                   </div>
                   
                   <div className="border-t pt-4">
+                    {/* Show OTP when order is out for delivery */}
+                    {order.status === "out_for_delivery" && order.delivery_otp && (
+                      <div className="mb-4 p-4 bg-emerald-50 border-2 border-emerald-300 rounded-lg">
+                        <div className="flex items-center gap-2 mb-2">
+                          <div className="w-8 h-8 bg-emerald-600 rounded-full flex items-center justify-center">
+                            <span className="text-white font-bold text-sm">🔒</span>
+                          </div>
+                          <h4 className="font-bold text-emerald-900 text-lg">Delivery OTP</h4>
+                        </div>
+                        <p className="text-sm text-emerald-700 mb-3">Share this OTP with delivery partner to confirm delivery</p>
+                        <div className="flex items-center gap-4">
+                          <div className="bg-white border-2 border-emerald-600 rounded-lg px-6 py-3">
+                            <p className="text-3xl font-bold text-emerald-600 tracking-widest">{order.delivery_otp}</p>
+                          </div>
+                          <div className="flex-1 text-xs text-emerald-600">
+                            <p>✓ One-time use</p>
+                            <p>✓ Valid for 30 minutes</p>
+                          </div>
+                        </div>
+                      </div>
+                    )}
                     <div className="flex items-start justify-between">
                       <div className="flex-1 grid md:grid-cols-2 gap-4 text-sm">
                         <div>

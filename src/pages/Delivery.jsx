@@ -78,6 +78,9 @@ export default function Delivery() {
   const [cancellationReason, setCancellationReason] = useState("");
   const [isTogglingAvailability, setIsTogglingAvailability] = useState(false);
   const [isTogglingShift, setIsTogglingShift] = useState(false);
+  const [showOTPDialog, setShowOTPDialog] = useState(false);
+  const [orderToDeliver, setOrderToDeliver] = useState(null);
+  const [enteredOTP, setEnteredOTP] = useState("");
 
 
   const loadAssignedOrders = useCallback(async (deliveryPersonId) => {
@@ -387,17 +390,33 @@ export default function Delivery() {
   };
 
   const acceptOrder = async (orderId) => {
+    // Check if account balance is negative
+    if (deliveryPerson.account_balance < 0) {
+      await Notification.create({
+        user_id: deliveryPerson.email,
+        title: "Cannot Accept Order",
+        message: "Please settle your previous COD balance to accept new orders.",
+        type: "error"
+      });
+      return;
+    }
+
     setAcceptingOrderId(orderId);
     try {
       const order = availableOrders.find(o => o.id === orderId);
       
+      // Generate OTP for this order
+      const deliveryOTP = Math.floor(1000 + Math.random() * 9000).toString();
+      
       setAvailableOrders(prev => prev.filter(o => o.id !== orderId));
-      setAssignedOrders(prev => [...prev, { ...order, status: "preparing", delivery_person_id: deliveryPerson.id }]);
+      setAssignedOrders(prev => [...prev, { ...order, status: "preparing", delivery_person_id: deliveryPerson.id, delivery_otp: deliveryOTP }]);
       
       await Promise.all([
         Order.update(orderId, {
           delivery_person_id: deliveryPerson.id,
-          status: "preparing"
+          status: "preparing",
+          delivery_otp: deliveryOTP,
+          otp_generated_time: new Date().toISOString()
         }),
         DeliveryPerson.update(deliveryPerson.id, {
           current_orders: [...(deliveryPerson.current_orders || []), orderId]
@@ -440,6 +459,53 @@ export default function Delivery() {
     }
   };
 
+  const handleDeliverClick = (order) => {
+    setOrderToDeliver(order);
+    setEnteredOTP("");
+    setShowOTPDialog(true);
+  };
+
+  const verifyOTPAndDeliver = async () => {
+    if (!orderToDeliver || !enteredOTP.trim()) {
+      await Notification.create({
+        user_id: deliveryPerson.email,
+        title: "OTP Required",
+        message: "Please enter the 4-digit OTP from customer",
+        type: "error"
+      });
+      return;
+    }
+
+    // Verify OTP
+    if (enteredOTP !== orderToDeliver.delivery_otp) {
+      await Notification.create({
+        user_id: deliveryPerson.email,
+        title: "Invalid OTP",
+        message: "The OTP entered does not match. Please check with customer.",
+        type: "error"
+      });
+      return;
+    }
+
+    // Check OTP expiry (30 minutes)
+    const otpGeneratedTime = new Date(orderToDeliver.otp_generated_time);
+    const now = new Date();
+    const diffMinutes = (now - otpGeneratedTime) / (1000 * 60);
+    
+    if (diffMinutes > 30) {
+      await Notification.create({
+        user_id: deliveryPerson.email,
+        title: "OTP Expired",
+        message: "This OTP has expired. Please contact admin.",
+        type: "error"
+      });
+      return;
+    }
+
+    setShowOTPDialog(false);
+    await markOrderDelivered(orderToDeliver.id);
+  };
+
   const markOrderDelivered = async (orderId) => {
     setUpdatingOrderId(orderId);
     try {
@@ -450,11 +516,19 @@ export default function Delivery() {
       const newTotalDeliveries = (deliveryPerson.total_deliveries || 0) + 1;
       const newTotalEarnings = (deliveryPerson.total_earnings || 0) + commission;
 
+      // Update wallet balance for COD
+      let newAccountBalance = deliveryPerson.account_balance || 0;
+      if (!order.is_paid && order.payment_method === "cash") {
+        // COD collected - add to wallet
+        newAccountBalance += order.total_amount;
+      }
+
       setAssignedOrders(prev => prev.filter(o => o.id !== orderId));
       const updatedPerson = {
         ...deliveryPerson,
         total_deliveries: newTotalDeliveries,
-        total_earnings: newTotalEarnings
+        total_earnings: newTotalEarnings,
+        account_balance: newAccountBalance
       };
       setDeliveryPerson(updatedPerson);
       localStorage.setItem('deliveryPerson', JSON.stringify(updatedPerson));
@@ -464,6 +538,7 @@ export default function Delivery() {
         DeliveryPerson.update(deliveryPerson.id, {
           total_deliveries: newTotalDeliveries,
           total_earnings: newTotalEarnings,
+          account_balance: newAccountBalance,
           current_orders: (deliveryPerson.current_orders || []).filter(id => id !== orderId)
         }),
         Notification.create({
@@ -473,6 +548,19 @@ export default function Delivery() {
           type: "success"
         })
       ]);
+
+      // Create settlement log if COD
+      if (!order.is_paid && order.payment_method === "cash") {
+        await base44.entities.DeliverySettlement.create({
+          delivery_person_id: deliveryPerson.id,
+          delivery_person_name: deliveryPerson.name,
+          settlement_amount: order.total_amount,
+          previous_balance: deliveryPerson.account_balance || 0,
+          new_balance: newAccountBalance,
+          settlement_type: "cod_collection",
+          notes: `COD collected for order ${order.order_number}`
+        });
+      }
 
     } catch (error) {
       console.error("Error marking order as delivered:", error);
@@ -914,34 +1002,21 @@ export default function Delivery() {
                               Out for Delivery
                             </Button>
                           ) : (
-                            <>
-                              {!order.is_paid && order.payment_method === "cash" && (
-                                <CODPaymentCollector 
-                                  order={order} 
-                                  onPaymentSuccess={() => loadAssignedOrders(deliveryPerson.id)}
-                                />
-                              )}
-                              {/* Mobile: Swipe to Deliver */}
-                              <div className="w-full lg:hidden">
-                                <SwipeToDeliver
-                                  onDeliver={() => markOrderDelivered(order.id)}
-                                  isLoading={updatingOrderId === order.id}
-                                />
-                              </div>
-                              {/* Desktop: Button */}
-                              <Button
-                                onClick={() => markOrderDelivered(order.id)}
-                                disabled={updatingOrderId === order.id}
-                                className="hidden lg:flex bg-green-600 hover:bg-green-700 w-full lg:w-auto"
-                              >
-                                {updatingOrderId === order.id ? (
-                                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                                ) : (
-                                  <CheckCircle className="w-4 h-4 mr-2" />
-                                )}
-                                Mark as Delivered
-                              </Button>
-                            </>
+                           <>
+                             {/* OTP Entry Button */}
+                             <Button
+                               onClick={() => handleDeliverClick(order)}
+                               disabled={updatingOrderId === order.id}
+                               className="bg-green-600 hover:bg-green-700 w-full lg:w-auto"
+                             >
+                               {updatingOrderId === order.id ? (
+                                 <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                               ) : (
+                                 <CheckCircle className="w-4 h-4 mr-2" />
+                               )}
+                               Enter OTP & Deliver
+                             </Button>
+                           </>
                           )}
                           <Button
                             variant="outline"
@@ -975,6 +1050,65 @@ export default function Delivery() {
         )}
         </div>
       )}
+
+      {/* OTP Verification Dialog */}
+      <Dialog open={showOTPDialog} onOpenChange={setShowOTPDialog}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <div className="flex items-center gap-3 mb-2">
+              <div className="w-12 h-12 bg-green-100 rounded-full flex items-center justify-center">
+                <CheckCircle className="w-6 h-6 text-green-600" />
+              </div>
+              <DialogTitle className="text-xl">Verify Delivery OTP</DialogTitle>
+            </div>
+            <DialogDescription className="text-base pt-2">
+              Ask the customer for their 4-digit delivery OTP to confirm delivery.
+              {orderToDeliver && (
+                <div className="mt-3 p-3 bg-gray-50 rounded-lg">
+                  <p className="font-semibold text-gray-900">Order #{orderToDeliver.order_number}</p>
+                  <p className="text-sm text-gray-600 mt-1">{orderToDeliver.customer_name}</p>
+                  <p className="text-lg font-bold text-emerald-600 mt-1">₹{orderToDeliver.total_amount.toFixed(2)}</p>
+                </div>
+              )}
+              <div className="mt-4">
+                <Label htmlFor="otp-input" className="text-sm font-medium text-gray-900">
+                  Enter 4-Digit OTP <span className="text-red-500">*</span>
+                </Label>
+                <Input
+                  id="otp-input"
+                  type="text"
+                  maxLength="4"
+                  placeholder="0000"
+                  value={enteredOTP}
+                  onChange={(e) => setEnteredOTP(e.target.value.replace(/\D/g, ''))}
+                  className="mt-2 text-2xl text-center tracking-widest font-bold"
+                />
+                <p className="text-xs text-gray-500 mt-2">OTP is valid for 30 minutes from order placement</p>
+              </div>
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter className="gap-2 sm:gap-0">
+            <Button
+              variant="outline"
+              onClick={() => {
+                setShowOTPDialog(false);
+                setOrderToDeliver(null);
+                setEnteredOTP("");
+              }}
+              className="w-full sm:w-auto"
+            >
+              Cancel
+            </Button>
+            <Button
+              onClick={verifyOTPAndDeliver}
+              disabled={enteredOTP.length !== 4}
+              className="w-full sm:w-auto bg-green-600 hover:bg-green-700 disabled:opacity-50"
+            >
+              Verify & Deliver
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       {/* Cancel Order Dialog */}
       <Dialog open={showCancelDialog} onOpenChange={setShowCancelDialog}>
