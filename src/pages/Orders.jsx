@@ -504,6 +504,18 @@ export default function Orders() {
                         )}
                       </div>
                     </div>
+                    {order.delivery_otp && ['confirmed', 'preparing', 'out_for_delivery'].includes(order.status) && (
+                      <div className="mt-4 bg-emerald-50 border-2 border-emerald-300 rounded-xl p-4">
+                        <div className="flex items-center gap-2 mb-1">
+                          <div className="w-6 h-6 bg-emerald-500 rounded-full flex items-center justify-center flex-shrink-0">
+                            <span className="text-white text-xs font-bold">🔐</span>
+                          </div>
+                          <h4 className="font-semibold text-emerald-900">Your Delivery OTP</h4>
+                        </div>
+                        <p className="text-3xl font-bold tracking-widest text-emerald-700 mt-1">{order.delivery_otp}</p>
+                        <p className="text-xs text-emerald-600 mt-1">Share this OTP with the delivery partner when they arrive</p>
+                      </div>
+                    )}
                     {order.delivery_notes && (
                       <div className="mt-4">
                         <h4 className="font-medium text-gray-900">Delivery Notes</h4>
