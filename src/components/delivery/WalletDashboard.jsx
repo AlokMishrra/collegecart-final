@@ -51,28 +51,7 @@ export default function WalletDashboard({ deliveryPerson, onUpdate }) {
     setIsLoading(false);
   };
 
-  const handleCashSubmit = async () => {
-    const amount = parseFloat(cashAmount);
-    if (!amount || amount <= 0) return;
-    setIsLoading(true);
-    const newBalance = (deliveryPerson.wallet_balance || 0) + amount;
-    await Promise.all([
-      base44.entities.DeliveryPerson.update(deliveryPerson.id, { wallet_balance: newBalance }),
-      base44.entities.WalletTransaction.create({
-        delivery_person_id: deliveryPerson.id,
-        amount,
-        type: "cash_submitted",
-        description: `COD cash submitted to admin: ₹${amount.toFixed(2)}`,
-        balance_after: newBalance
-      })
-    ]);
-    const updated = { ...deliveryPerson, wallet_balance: newBalance };
-    setShowCashSubmitDialog(false);
-    setCashAmount("");
-    onUpdate(updated);
-    loadData();
-    setIsLoading(false);
-  };
+
 
   const walletBalance = deliveryPerson.wallet_balance || 0;
   const isNegative = walletBalance < 0;

@@ -3,7 +3,7 @@ import { base44 } from "@/api/base44Client";
 import { DeliveryPerson } from "@/entities/DeliveryPerson";
 import { Notification } from "@/entities/Notification";
 import { User } from "@/entities/User";
-import { Plus, Edit, Trash2, User as UserIcon, Ban, CheckCircle, Wallet, RefreshCw, Clock, ArrowUpCircle, XCircle } from "lucide-react";
+import { Plus, Edit, Trash2, User as UserIcon, Ban, CheckCircle, Wallet, RefreshCw, Clock, ArrowUpCircle, XCircle, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
