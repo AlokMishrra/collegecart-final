@@ -191,33 +191,7 @@ export default function WalletDashboard({ deliveryPerson, onUpdate }) {
         </DialogContent>
       </Dialog>
 
-      {/* Cash Submit Dialog */}
-      <Dialog open={showCashSubmitDialog} onOpenChange={setShowCashSubmitDialog}>
-        <DialogContent className="sm:max-w-sm">
-          <DialogHeader><DialogTitle>Submit / Add Money to Wallet</DialogTitle></DialogHeader>
-          <div className="space-y-4">
-            <div className="bg-orange-50 border border-orange-200 rounded-lg p-3">
-              <p className="text-sm text-orange-800">
-                Enter the cash amount you are submitting/adding to your wallet. This will update your balance immediately.
-              </p>
-            </div>
-            <div>
-              <Label>Amount (₹)</Label>
-              <Input type="number" placeholder="Enter amount" value={cashAmount} onChange={(e) => setCashAmount(e.target.value)} />
-            </div>
-            <div className="flex gap-3">
-              <Button variant="outline" onClick={() => setShowCashSubmitDialog(false)} className="flex-1">Cancel</Button>
-              <Button
-                onClick={handleCashSubmit}
-                disabled={isLoading || !cashAmount || parseFloat(cashAmount) <= 0}
-                className="flex-1 bg-orange-600 hover:bg-orange-700"
-              >
-                {isLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : "Confirm"}
-              </Button>
-            </div>
-          </div>
-        </DialogContent>
-      </Dialog>
+
     </div>
   );
 }
