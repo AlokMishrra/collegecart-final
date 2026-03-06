@@ -442,6 +442,9 @@ export default function Cart() {
         return;
       }
 
+      // Generate 4-digit delivery OTP
+      const deliveryOtp = String(Math.floor(1000 + Math.random() * 9000));
+
       const newOrder = await Order.create({
         user_id: user.id,
         order_number: orderNumber,
@@ -453,7 +456,8 @@ export default function Cart() {
         delivery_notes: deliveryNotes,
         status: "confirmed",
         payment_method: paymentMethod,
-        is_paid: paymentMethod === "online" ? true : false
+        is_paid: paymentMethod === "online" ? true : false,
+        delivery_otp: deliveryOtp
       });
 
       // Reduce stock for each item (parallel operations for speed)
