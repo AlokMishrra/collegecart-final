@@ -50,7 +50,6 @@
 import Admin from './pages/Admin';
 import Cart from './pages/Cart';
 import CategoryProducts from './pages/CategoryProducts';
-import Delivery from './pages/Delivery';
 import Home from './pages/Home';
 import LoyaltyRewards from './pages/LoyaltyRewards';
 import Orders from './pages/Orders';
@@ -66,7 +65,6 @@ export const PAGES = {
     "Admin": Admin,
     "Cart": Cart,
     "CategoryProducts": CategoryProducts,
-    "Delivery": Delivery,
     "Home": Home,
     "LoyaltyRewards": LoyaltyRewards,
     "Orders": Orders,
