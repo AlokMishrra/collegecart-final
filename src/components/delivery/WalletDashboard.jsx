@@ -132,14 +132,7 @@ export default function WalletDashboard({ deliveryPerson, onUpdate }) {
                 Withdraw
               </Button>
             )}
-            <Button
-              size="sm"
-              variant="outline"
-              onClick={() => { setCashAmount(""); setShowCashSubmitDialog(true); }}
-              className="border-blue-400 text-blue-600 hover:bg-blue-50"
-            >
-              Add Money
-            </Button>
+
           </div>
         </CardContent>
       </Card>
