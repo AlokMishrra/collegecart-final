@@ -12,10 +12,8 @@ export default function WalletDashboard({ deliveryPerson, onUpdate }) {
   const [transactions, setTransactions] = useState([]);
   const [pendingWithdrawals, setPendingWithdrawals] = useState([]);
   const [showWithdrawDialog, setShowWithdrawDialog] = useState(false);
-  const [showCashSubmitDialog, setShowCashSubmitDialog] = useState(false);
   const [withdrawAmount, setWithdrawAmount] = useState("");
   const [upiId, setUpiId] = useState("");
-  const [cashAmount, setCashAmount] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [todayEarnings, setTodayEarnings] = useState(0);
 
