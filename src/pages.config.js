@@ -58,6 +58,7 @@ import Profile from './pages/Profile';
 import Shop from './pages/Shop';
 import UserManagement from './pages/UserManagement';
 import Wishlist from './pages/Wishlist';
+import Delivery from './pages/Delivery';
 import __Layout from './Layout.jsx';
 
 
@@ -73,6 +74,7 @@ export const PAGES = {
     "Shop": Shop,
     "UserManagement": UserManagement,
     "Wishlist": Wishlist,
+    "Delivery": Delivery,
 }
 
 export const pagesConfig = {
