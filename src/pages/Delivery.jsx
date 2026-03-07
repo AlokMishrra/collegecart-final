@@ -296,12 +296,19 @@ export default function Delivery() {
       </div>
 
       {/* Status Banner */}
-      {deliveryPerson.is_available && shift ? (
+      {deliveryPerson.is_available ? (
         <div className="bg-green-50 border border-green-200 rounded-xl p-3 flex items-center gap-3">
           <Clock className="w-5 h-5 text-green-600" />
           <div className="flex-1">
-            <p className="text-sm font-semibold text-green-800">{shift.label} — {shift.time}</p>
-            <p className="text-xs text-green-600">You're online and receiving orders</p>
+            <p className="text-sm font-semibold text-green-800">
+              {deliveryPerson.current_shift ? `Shift Active` : "Online"}
+            </p>
+            <p className="text-xs text-green-600">
+              You're online and receiving orders
+              {deliveryPerson.assigned_hostel && deliveryPerson.assigned_hostel !== "All"
+                ? ` · ${deliveryPerson.assigned_hostel} hostel only`
+                : ""}
+            </p>
           </div>
           <Badge className="bg-green-500 text-white">ACTIVE</Badge>
         </div>
