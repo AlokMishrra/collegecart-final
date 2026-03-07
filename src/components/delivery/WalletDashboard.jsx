@@ -91,6 +91,10 @@ export default function WalletDashboard({ deliveryPerson, onUpdate }) {
               <p className="text-2xl font-bold text-blue-600">₹{todayEarnings.toFixed(2)}</p>
             </div>
             <div className="bg-white rounded-xl p-3">
+              <p className="text-xs text-gray-500 mb-1">Total Earnings</p>
+              <p className="text-xl font-bold text-purple-600">₹{(deliveryPerson.total_earnings || 0).toFixed(2)}</p>
+            </div>
+            <div className="bg-white rounded-xl p-3">
               <p className="text-xs text-gray-500 mb-1">Total Deliveries</p>
               <div className="flex items-center gap-1">
                 <Package className="w-4 h-4 text-gray-400" />
