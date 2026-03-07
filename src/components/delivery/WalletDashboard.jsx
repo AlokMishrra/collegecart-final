@@ -34,20 +34,25 @@ export default function WalletDashboard({ deliveryPerson, onUpdate }) {
     setTodayEarnings(earn);
   };
 
+  const [withdrawSource, setWithdrawSource] = useState("wallet"); // "wallet" or "earnings"
+
   const handleRequestWithdrawal = async () => {
     const amount = parseFloat(withdrawAmount);
-    if (!amount || amount <= 0 || amount > walletBalance) return;
+    const maxAmount = withdrawSource === "earnings" ? (deliveryPerson.total_earnings || 0) : walletBalance;
+    if (!amount || amount <= 0 || amount > maxAmount) return;
     setIsLoading(true);
     await base44.entities.WithdrawalRequest.create({
       delivery_person_id: deliveryPerson.id,
       delivery_person_name: deliveryPerson.name,
       amount,
       upi_id: upiId,
-      status: "pending"
+      status: "pending",
+      notes: withdrawSource === "earnings" ? "Withdrawal from total earnings" : "Withdrawal from wallet balance"
     });
     setShowWithdrawDialog(false);
     setWithdrawAmount("");
     setUpiId("");
+    setWithdrawSource("wallet");
     loadData();
     setIsLoading(false);
   };
