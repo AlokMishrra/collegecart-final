@@ -258,7 +258,7 @@ export default function DeliveryPersonManagement() {
                     );
                   })}
                   {!isLoading && deliveryPersons.length === 0 && (
-                    <TableRow><TableCell colSpan={7} className="text-center text-gray-500 py-8">No delivery partners yet</TableCell></TableRow>
+                    <TableRow><TableCell colSpan={8} className="text-center text-gray-500 py-8">No delivery partners yet</TableCell></TableRow>
                   )}
                 </TableBody>
               </Table>
