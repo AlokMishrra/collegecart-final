@@ -192,8 +192,8 @@ export default function DeliveryPersonManagement() {
                   <TableRow>
                     <TableHead>Name</TableHead>
                     <TableHead>Phone</TableHead>
+                    <TableHead>Hostel</TableHead>
                     <TableHead>Status</TableHead>
-                    <TableHead>Shift</TableHead>
                     <TableHead>Wallet</TableHead>
                     <TableHead>Deliveries</TableHead>
                     <TableHead>Actions</TableHead>
