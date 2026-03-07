@@ -389,9 +389,25 @@ export default function Delivery() {
                               <p className="text-xl font-bold text-emerald-600 mt-2">₹{order.total_amount?.toFixed(2)}</p>
                               <p className="text-xs text-gray-500">+₹{(order.total_amount * 0.10).toFixed(2)} commission</p>
                             </div>
-                            <Button onClick={() => acceptOrder(order.id)} disabled={acceptingOrderId === order.id} className="bg-blue-600 hover:bg-blue-700 self-start sm:self-auto">
-                              {acceptingOrderId === order.id ? <Loader2 className="w-4 h-4 animate-spin" /> : <><CheckCircle className="w-4 h-4 mr-1" />Accept</>}
-                            </Button>
+                            {(() => {
+                              const hostel = deliveryPerson.assigned_hostel;
+                              const canAccept = !hostel || hostel === "All" ||
+                                (order.delivery_address && order.delivery_address.toLowerCase().includes(hostel.toLowerCase()));
+                              return (
+                                <div className="flex flex-col items-end gap-1 self-start sm:self-auto">
+                                  <Button
+                                    onClick={() => acceptOrder(order.id)}
+                                    disabled={acceptingOrderId === order.id || !canAccept}
+                                    className={canAccept ? "bg-blue-600 hover:bg-blue-700" : "bg-gray-300 text-gray-500 cursor-not-allowed"}
+                                  >
+                                    {acceptingOrderId === order.id ? <Loader2 className="w-4 h-4 animate-spin" /> : <><CheckCircle className="w-4 h-4 mr-1" />Accept</>}
+                                  </Button>
+                                  {!canAccept && (
+                                    <span className="text-[10px] text-red-500 font-medium">{hostel} only</span>
+                                  )}
+                                </div>
+                              );
+                            })()}
                           </div>
                         </CardContent>
                       </Card>
