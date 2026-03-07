@@ -14,7 +14,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, Di
 import { Textarea } from "@/components/ui/textarea";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { motion, AnimatePresence } from "framer-motion";
-import ShiftSelector, { SHIFT_CONFIG } from "../components/delivery/ShiftSelector";
+import ShiftSelector from "../components/delivery/ShiftSelector";
 import OTPVerificationDialog from "../components/delivery/OTPVerificationDialog";
 import WalletDashboard from "../components/delivery/WalletDashboard";
 import CODPaymentCollector from "../components/delivery/CODPaymentCollector";
