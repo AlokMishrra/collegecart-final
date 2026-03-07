@@ -89,8 +89,7 @@ export default function Delivery() {
   useEffect(() => {
     if (!deliveryPerson) return;
     const interval = setInterval(() => {
-      loadOrders(deliveryPerson.id).catch(() => {});
-      checkShiftExpiry(deliveryPerson);
+      loadOrders(deliveryPerson.id, deliveryPerson).catch(() => {});
     }, 15000);
     return () => clearInterval(interval);
   }, [deliveryPerson, loadOrders, checkShiftExpiry]);
