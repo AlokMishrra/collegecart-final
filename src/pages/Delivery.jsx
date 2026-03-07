@@ -37,14 +37,24 @@ export default function Delivery() {
   const [otpDialog, setOtpDialog] = useState({ open: false, order: null });
   const [activeTab, setActiveTab] = useState("orders");
 
-  const loadOrders = useCallback(async (personId) => {
+  const loadOrders = useCallback(async (personId, person) => {
     const [preparing, outForDelivery, available] = await Promise.all([
       base44.entities.Order.filter({ delivery_person_id: personId, status: "preparing" }, '-created_date', 20).catch(() => []),
       base44.entities.Order.filter({ delivery_person_id: personId, status: "out_for_delivery" }, '-created_date', 20).catch(() => []),
       base44.entities.Order.filter({ status: "confirmed" }, '-created_date', 50).catch(() => []),
     ]);
     setAssignedOrders([...preparing, ...outForDelivery]);
-    setAvailableOrders(available.filter(o => !o.delivery_person_id));
+    // Filter available orders by assigned hostel
+    const hostel = person?.assigned_hostel;
+    const unassigned = available.filter(o => !o.delivery_person_id);
+    if (!hostel || hostel === "All") {
+      setAvailableOrders(unassigned);
+    } else {
+      // Orders whose delivery_address starts with or contains the hostel name
+      setAvailableOrders(unassigned.filter(o =>
+        o.delivery_address && o.delivery_address.toLowerCase().includes(hostel.toLowerCase())
+      ));
+    }
   }, []);
 
   const checkShiftExpiry = useCallback((person) => {
