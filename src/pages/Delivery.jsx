@@ -75,8 +75,7 @@ export default function Delivery() {
           } else {
             setDeliveryPerson(freshPerson);
             localStorage.setItem('deliveryPerson', JSON.stringify(freshPerson));
-            checkShiftExpiry(freshPerson);
-            await loadOrders(freshPerson.id);
+            await loadOrders(freshPerson.id, freshPerson);
           }
         } catch (e) {
           localStorage.removeItem('deliveryPerson');
