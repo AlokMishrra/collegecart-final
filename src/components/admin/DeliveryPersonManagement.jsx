@@ -13,6 +13,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import DeliveryPersonForm from "./DeliveryPersonForm";
+import ShiftManagement from "./ShiftManagement";
 import ConfirmDialog from "../shared/ConfirmDialog";
 
 export default function DeliveryPersonManagement() {
@@ -175,8 +176,9 @@ export default function DeliveryPersonManagement() {
       <Tabs defaultValue="partners">
         <TabsList>
           <TabsTrigger value="partners">Partners</TabsTrigger>
+          <TabsTrigger value="shifts"><Clock className="w-3.5 h-3.5 mr-1" />Shifts</TabsTrigger>
           <TabsTrigger value="withdrawals">
-            Withdrawal Requests
+            Withdrawals
             {withdrawalRequests.length > 0 && <Badge className="ml-1.5 bg-orange-500 text-white text-xs">{withdrawalRequests.length}</Badge>}
           </TabsTrigger>
         </TabsList>
