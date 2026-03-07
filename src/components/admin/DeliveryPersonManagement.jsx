@@ -266,6 +266,11 @@ export default function DeliveryPersonManagement() {
           </Card>
         </TabsContent>
 
+        {/* Shifts Tab */}
+        <TabsContent value="shifts">
+          <ShiftManagement />
+        </TabsContent>
+
         {/* Withdrawal Requests Tab */}
         <TabsContent value="withdrawals">
           <Card>
