@@ -268,7 +268,6 @@ export default function Delivery() {
     );
   }
 
-  const shift = deliveryPerson.current_shift ? SHIFT_CONFIG[deliveryPerson.current_shift] : null;
   const walletBalance = deliveryPerson.wallet_balance || 0;
   const isNegativeBalance = walletBalance < 0;
 
