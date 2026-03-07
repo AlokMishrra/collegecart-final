@@ -178,11 +178,27 @@ export default function WalletDashboard({ deliveryPerson, onUpdate }) {
       {/* Withdraw Dialog */}
       <Dialog open={showWithdrawDialog} onOpenChange={setShowWithdrawDialog}>
         <DialogContent className="sm:max-w-sm">
-          <DialogHeader><DialogTitle>Request Withdrawal</DialogTitle></DialogHeader>
+          <DialogHeader>
+            <DialogTitle>
+              {withdrawSource === "earnings" ? "Withdraw from Total Earnings" : "Withdraw from Wallet"}
+            </DialogTitle>
+          </DialogHeader>
           <div className="space-y-4">
+            <div className="bg-gray-50 rounded-lg p-3 text-sm">
+              <p className="text-gray-500 text-xs">Available</p>
+              <p className={`text-xl font-bold ${withdrawSource === "earnings" ? "text-purple-600" : "text-emerald-600"}`}>
+                ₹{withdrawSource === "earnings" ? (deliveryPerson.total_earnings || 0).toFixed(2) : walletBalance.toFixed(2)}
+              </p>
+            </div>
             <div>
-              <Label>Amount (Available: ₹{walletBalance.toFixed(2)})</Label>
-              <Input type="number" placeholder="Enter amount" value={withdrawAmount} onChange={(e) => setWithdrawAmount(e.target.value)} max={walletBalance} />
+              <Label>Amount to Withdraw</Label>
+              <Input
+                type="number"
+                placeholder="Enter amount"
+                value={withdrawAmount}
+                onChange={(e) => setWithdrawAmount(e.target.value)}
+                max={withdrawSource === "earnings" ? (deliveryPerson.total_earnings || 0) : walletBalance}
+              />
             </div>
             <div>
               <Label>UPI ID</Label>
@@ -192,8 +208,11 @@ export default function WalletDashboard({ deliveryPerson, onUpdate }) {
               <Button variant="outline" onClick={() => setShowWithdrawDialog(false)} className="flex-1">Cancel</Button>
               <Button
                 onClick={handleRequestWithdrawal}
-                disabled={isLoading || !withdrawAmount || parseFloat(withdrawAmount) > walletBalance || !upiId}
-                className="flex-1 bg-emerald-600 hover:bg-emerald-700"
+                disabled={
+                  isLoading || !withdrawAmount || !upiId ||
+                  parseFloat(withdrawAmount) > (withdrawSource === "earnings" ? (deliveryPerson.total_earnings || 0) : walletBalance)
+                }
+                className={`flex-1 ${withdrawSource === "earnings" ? "bg-purple-600 hover:bg-purple-700" : "bg-emerald-600 hover:bg-emerald-700"}`}
               >
                 {isLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : "Submit Request"}
               </Button>
