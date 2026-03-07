@@ -45,16 +45,8 @@ export default function Delivery() {
     ]);
     setAssignedOrders([...preparing, ...outForDelivery]);
     // Filter available orders by assigned hostel
-    const hostel = person?.assigned_hostel;
     const unassigned = available.filter(o => !o.delivery_person_id);
-    if (!hostel || hostel === "All") {
-      setAvailableOrders(unassigned);
-    } else {
-      // Orders whose delivery_address starts with or contains the hostel name
-      setAvailableOrders(unassigned.filter(o =>
-        o.delivery_address && o.delivery_address.toLowerCase().includes(hostel.toLowerCase())
-      ));
-    }
+    setAvailableOrders(unassigned);
   }, []);
 
   const checkShiftExpiry = useCallback(() => {
