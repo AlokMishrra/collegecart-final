@@ -218,17 +218,17 @@ export default function DeliveryPersonManagement() {
                         </TableCell>
                         <TableCell>{person.phone_number}</TableCell>
                         <TableCell>
+                          <Badge className={person.assigned_hostel && person.assigned_hostel !== "All" ? "bg-purple-100 text-purple-700" : "bg-gray-100 text-gray-500"}>
+                            {person.assigned_hostel || "All"}
+                          </Badge>
+                        </TableCell>
+                        <TableCell>
                           <div className="flex flex-col gap-1">
                             <Badge className={person.is_available ? "bg-green-100 text-green-800" : "bg-gray-100 text-gray-600"}>
                               {person.is_available ? "Online" : "Offline"}
                             </Badge>
                             {person.is_blocked && <Badge className="bg-red-100 text-red-700">Blocked</Badge>}
                           </div>
-                        </TableCell>
-                        <TableCell>
-                          {person.current_shift
-                            ? <Badge className="bg-blue-100 text-blue-700 capitalize">{person.current_shift}</Badge>
-                            : <span className="text-gray-400 text-xs">—</span>}
                         </TableCell>
                         <TableCell>
                           <span className={`font-semibold text-sm ${isNeg ? "text-red-600" : "text-emerald-600"}`}>
