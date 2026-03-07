@@ -106,21 +106,12 @@ export default function WalletDashboard({ deliveryPerson, onUpdate }) {
             <div className="bg-red-100 rounded-lg p-3 flex items-start gap-2 mb-3">
               <AlertTriangle className="w-4 h-4 text-red-600 mt-0.5 flex-shrink-0" />
               <p className="text-xs text-red-700">
-                You collected ₹{cashOwed.toFixed(2)} COD cash. Submit it to admin to go online and receive new orders.
+                You collected ₹{cashOwed.toFixed(2)} COD cash. Submit it physically to admin — they will reset your wallet.
               </p>
             </div>
           )}
 
           <div className="flex flex-wrap gap-2">
-            {isNegative && (
-              <Button
-                size="sm"
-                onClick={() => { setCashAmount(cashOwed.toFixed(2)); setShowCashSubmitDialog(true); }}
-                className="bg-red-600 hover:bg-red-700 text-white flex-1"
-              >
-                Submit Cash (₹{cashOwed.toFixed(2)})
-              </Button>
-            )}
             {walletBalance > 0 && (
               <Button
                 size="sm"
