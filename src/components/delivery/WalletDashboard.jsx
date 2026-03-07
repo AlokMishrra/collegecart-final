@@ -126,14 +126,24 @@ export default function WalletDashboard({ deliveryPerson, onUpdate }) {
               <Button
                 size="sm"
                 variant="outline"
-                onClick={() => setShowWithdrawDialog(true)}
+                onClick={() => { setWithdrawSource("wallet"); setShowWithdrawDialog(true); }}
                 className="border-emerald-500 text-emerald-600 hover:bg-emerald-50"
               >
                 <ArrowUpCircle className="w-4 h-4 mr-1" />
-                Withdraw
+                Withdraw Wallet
               </Button>
             )}
-
+            {(deliveryPerson.total_earnings || 0) > 0 && (
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={() => { setWithdrawSource("earnings"); setWithdrawAmount(""); setShowWithdrawDialog(true); }}
+                className="border-purple-500 text-purple-600 hover:bg-purple-50"
+              >
+                <ArrowUpCircle className="w-4 h-4 mr-1" />
+                Withdraw Earnings
+              </Button>
+            )}
           </div>
         </CardContent>
       </Card>
