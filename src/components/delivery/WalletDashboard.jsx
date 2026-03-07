@@ -7,6 +7,7 @@ import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 
 import { Wallet, Package, ArrowUpCircle, AlertTriangle, Loader2 } from "lucide-react";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 
 export default function WalletDashboard({ deliveryPerson, onUpdate }) {
   const [transactions, setTransactions] = useState([]);
