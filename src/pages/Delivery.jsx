@@ -57,18 +57,8 @@ export default function Delivery() {
     }
   }, []);
 
-  const checkShiftExpiry = useCallback((person) => {
-    if (!person?.current_shift || !person?.is_available) return;
-    const shift = SHIFT_CONFIG[person.current_shift];
-    if (!shift) return;
-    const currentHour = new Date().getHours();
-    const expired = shift.endHour === 24 ? currentHour === 0 : currentHour >= shift.endHour;
-    if (expired) {
-      base44.entities.DeliveryPerson.update(person.id, { is_available: false, current_shift: null }).catch(() => {});
-      const updated = { ...person, is_available: false, current_shift: null };
-      setDeliveryPerson(updated);
-      localStorage.setItem('deliveryPerson', JSON.stringify(updated));
-    }
+  const checkShiftExpiry = useCallback(() => {
+    // Shift expiry is now managed by admin-defined shifts; no-op here
   }, []);
 
   useEffect(() => {
