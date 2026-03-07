@@ -105,7 +105,7 @@ export default function Delivery() {
     if (found.is_blocked) { setLoginError("Account blocked. Contact admin."); setIsLoggingIn(false); return; }
     localStorage.setItem('deliveryPerson', JSON.stringify(found));
     setDeliveryPerson(found);
-    await loadOrders(found.id);
+    await loadOrders(found.id, found);
     setLoginForm({ email: "", password: "" });
     setIsLoggingIn(false);
   };
