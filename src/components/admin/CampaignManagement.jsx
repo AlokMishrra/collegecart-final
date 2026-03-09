@@ -293,7 +293,27 @@ export default function CampaignManagement() {
             </div>
             <div>
               <Label>Discount Code</Label>
-              <Input value={formData.code} onChange={(e) => setFormData({...formData, code: e.target.value.toUpperCase()})} placeholder="SUMMER25" />
+              <div className="flex gap-2 mt-1">
+                <Input
+                  value={formData.code}
+                  onChange={(e) => setFormData({...formData, code: e.target.value.toUpperCase()})}
+                  placeholder="SUMMER25"
+                  className="flex-1"
+                />
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={() => {
+                    const chars = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
+                    const code = Array.from({length: 8}, () => chars[Math.floor(Math.random() * chars.length)]).join('');
+                    setFormData(f => ({...f, code}));
+                  }}
+                  className="flex-shrink-0 text-xs px-3"
+                >
+                  Generate
+                </Button>
+              </div>
             </div>
             <div className="grid grid-cols-2 gap-4">
               <div>

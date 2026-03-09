@@ -15,6 +15,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import DeliveryPersonForm from "./DeliveryPersonForm";
 import ShiftManagement from "./ShiftManagement";
 import HostelDailyReport from "./HostelDailyReport";
+import DeliveryQueryManagement from "./DeliveryQueryManagement";
 import ConfirmDialog from "../shared/ConfirmDialog";
 
 export default function DeliveryPersonManagement() {
@@ -189,6 +190,7 @@ export default function DeliveryPersonManagement() {
             {withdrawalRequests.length > 0 && <Badge className="ml-1.5 bg-orange-500 text-white text-xs">{withdrawalRequests.length}</Badge>}
           </TabsTrigger>
           <TabsTrigger value="report"><TrendingUp className="w-3.5 h-3.5 mr-1" />Daily Report</TabsTrigger>
+          <TabsTrigger value="queries">Support Queries</TabsTrigger>
         </TabsList>
 
         {/* Partners Tab */}
@@ -333,6 +335,11 @@ export default function DeliveryPersonManagement() {
         {/* Daily Report Tab */}
         <TabsContent value="report">
           <HostelDailyReport />
+        </TabsContent>
+
+        {/* Support Queries Tab */}
+        <TabsContent value="queries">
+          <DeliveryQueryManagement />
         </TabsContent>
       </Tabs>
 
