@@ -212,7 +212,7 @@ export default function Shop() {
       setCartItems(prev => [...prev, { product_id: product.id, user_id: user.id, quantity: 1, id: 'temp-' + Date.now() }]);
     }
 
-    // Background API call
+    // Background API call - no re-fetch needed (optimistic update handles UI)
     try {
       if (existingItem) {
         if (newQuantity <= 0) {
@@ -221,18 +221,21 @@ export default function Shop() {
           await CartItem.update(existingItem.id, { quantity: newQuantity });
         }
       } else if (quantityChange > 0) {
-        await CartItem.create({
+        const created = await CartItem.create({
           product_id: product.id,
           user_id: user.id,
           quantity: 1
         });
+        // Replace temp id with real id
+        setCartItems(prev => prev.map(item =>
+          item.product_id === product.id && item.id?.startsWith('temp-')
+            ? { ...item, id: created.id }
+            : item
+        ));
       }
-      
-      // Refresh cart in background
-      loadCartItems(user.id);
     } catch (error) {
       console.error("Error updating cart:", error);
-      loadCartItems(user.id); // Revert on error
+      loadCartItems(user.id); // Revert on error only
     }
   };
 
