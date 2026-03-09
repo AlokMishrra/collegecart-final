@@ -224,6 +224,7 @@ export default function Delivery() {
       base44.entities.DeliveryPerson.update(deliveryPerson.id, {
         total_deliveries: newTotalDeliveries,
         total_earnings: newTotalEarnings,
+        today_earnings: newTodayEarnings,
         wallet_balance: newWalletBalance,
         current_orders: (freshPerson.current_orders || []).filter(id => id !== order.id)
       }),
@@ -392,8 +393,8 @@ export default function Delivery() {
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
         {[
           { label: "Total Deliveries", value: deliveryPerson.total_deliveries || 0 },
-          { label: "Total Earnings", value: `₹${(deliveryPerson.total_earnings || 0).toFixed(0)}` },
-          { label: "Wallet Balance", value: `${isNegativeBalance ? "-" : ""}₹${Math.abs(walletBalance).toFixed(0)}`, color: isNegativeBalance ? "text-red-600" : "text-emerald-600" },
+          { label: "Today's Earnings", value: `₹${(deliveryPerson.today_earnings || 0).toFixed(0)}`, color: "text-emerald-600" },
+          { label: "COD to Submit", value: `${isNegativeBalance ? "-" : ""}₹${Math.abs(walletBalance).toFixed(0)}`, color: isNegativeBalance ? "text-red-600" : "text-emerald-600" },
           { label: "Active Orders", value: assignedOrders.length },
         ].map(stat => (
           <Card key={stat.label}>
