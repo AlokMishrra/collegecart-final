@@ -61,18 +61,14 @@ export default function Layout({ children, currentPageName }) {
     try {
       const currentUser = await User.me();
       setUser(currentUser);
-      
-      // Check if user has any assigned roles
+
       if (currentUser.assigned_role_ids && currentUser.assigned_role_ids.length > 0) {
         setUserHasRole(true);
-        // Load all assigned roles to check permissions
-        const rolePromises = currentUser.assigned_role_ids.map(roleId => 
-          base44.entities.Role.filter({ id: roleId })
-        );
-        const roleResults = await Promise.all(rolePromises);
-        const allRoles = roleResults.flat();
-        if (allRoles.length > 0) {
-          setUserRole(allRoles[0]); // Set first role as primary
+        // Load all roles and match client-side
+        const allRoles = await base44.entities.Role.list();
+        const assignedRoles = allRoles.filter(r => currentUser.assigned_role_ids.includes(r.id));
+        if (assignedRoles.length > 0) {
+          setUserRole(assignedRoles[0]);
         }
       }
     } catch (error) {
