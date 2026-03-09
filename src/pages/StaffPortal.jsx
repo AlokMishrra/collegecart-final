@@ -123,27 +123,15 @@ export default function StaffPortal() {
         return;
       }
 
-      // Must have assigned roles
-      if (!currentUser.assigned_role_ids || currentUser.assigned_role_ids.length === 0) {
-        navigate(createPageUrl('Shop'));
+      // Users with assigned roles are treated as staff/admin → redirect to CCA
+      if (currentUser.assigned_role_ids && currentUser.assigned_role_ids.length > 0) {
+        navigate(createPageUrl('CCA'));
         return;
       }
 
-      // Load all roles and filter by assigned IDs client-side
-      const allRoles = await base44.entities.Role.list();
-      const roles = allRoles.filter(r => currentUser.assigned_role_ids.includes(r.id));
-      const allPerms = roles.flatMap(r => r.permissions || []);
-
-      // Delivery-only users go to Delivery portal
-      const isDeliveryOnly = allPerms.length > 0 && allPerms.every(p => p.includes('delivery') || p === 'view_delivery_portal');
-      if (isDeliveryOnly) {
-        navigate(createPageUrl('Delivery'));
-        return;
-      }
-
-      setUser(currentUser);
-      setUserRoles(roles);
-      setPermissions(allPerms);
+      // No roles assigned → send to Shop
+      navigate(createPageUrl('Shop'));
+      return;
     } catch {
       navigate(createPageUrl('Shop'));
     }
