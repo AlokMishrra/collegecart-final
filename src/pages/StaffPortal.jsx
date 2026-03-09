@@ -134,9 +134,9 @@ export default function StaffPortal() {
       const roles = allRoles.filter(r => currentUser.assigned_role_ids.includes(r.id));
       const allPerms = roles.flatMap(r => r.permissions || []);
 
-      // Delivery-only users go to Delivery portal
-      const isDeliveryOnly = allPerms.length > 0 && allPerms.every(p => p.includes('delivery') || p === 'view_delivery_portal');
-      if (isDeliveryOnly) {
+      // Delivery-only users (no other permissions) go to Delivery portal
+      const nonDeliveryPerms = allPerms.filter(p => !p.includes('delivery') && p !== 'view_delivery_portal' && p !== 'view_orders' && p !== 'update_order_status');
+      if (allPerms.length > 0 && nonDeliveryPerms.length === 0) {
         navigate(createPageUrl('Delivery'));
         return;
       }
