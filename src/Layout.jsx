@@ -104,11 +104,12 @@ export default function Layout({ children, currentPageName }) {
   // Check if user has multiple roles
   const hasMultipleRoles = user?.assigned_role_ids && user.assigned_role_ids.length > 1;
 
-  // Check if user is a delivery person (single role only)
-  const isDeliveryOnlyRole = !hasMultipleRoles && userRole && (
-    userRole.name.toLowerCase().includes("delivery") ||
-    userRole.permissions?.includes("view_delivery_portal")
-  );
+  // Check if all permissions across all roles are delivery-related
+  const allUserPermissions = userRole?.permissions || [];
+  const isDeliveryOnlyRole = userHasRole && allUserPermissions.length > 0 &&
+    allUserPermissions.every(p =>
+      p.includes('delivery') || p === 'view_delivery_portal' || p === 'view_orders' || p === 'update_order_status'
+    );
 
   const navigationItems = [
     {
