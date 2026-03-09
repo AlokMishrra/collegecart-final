@@ -108,17 +108,20 @@ export default function DeliveryPersonManagement() {
   };
 
   const handleApproveWithdrawal = async (req) => {
+    const isDeposit = req.type === "deposit";
+    const partnerBalance = (deliveryPersons.find(p => p.id === req.delivery_person_id)?.wallet_balance) || 0;
+    const newBalance = isDeposit ? partnerBalance + req.amount : partnerBalance - req.amount;
     await Promise.all([
       base44.entities.WithdrawalRequest.update(req.id, { status: "approved", admin_notes: "Approved by admin" }),
-      base44.entities.DeliveryPerson.update(req.delivery_person_id, {
-        wallet_balance: ((deliveryPersons.find(p => p.id === req.delivery_person_id)?.wallet_balance) || 0) - req.amount
-      }),
+      base44.entities.DeliveryPerson.update(req.delivery_person_id, { wallet_balance: newBalance }),
       base44.entities.WalletTransaction.create({
         delivery_person_id: req.delivery_person_id,
-        amount: -req.amount,
-        type: "withdrawal",
-        description: `Withdrawal approved: ₹${req.amount} to ${req.upi_id}`,
-        balance_after: ((deliveryPersons.find(p => p.id === req.delivery_person_id)?.wallet_balance) || 0) - req.amount
+        amount: isDeposit ? req.amount : -req.amount,
+        type: isDeposit ? "deposit" : "withdrawal",
+        description: isDeposit
+          ? `Wallet top-up approved: ₹${req.amount} (Txn: ${req.transaction_id || "—"})`
+          : `Withdrawal approved: ₹${req.amount} to ${req.upi_id}`,
+        balance_after: newBalance
       })
     ]);
     loadWithdrawalRequests();
