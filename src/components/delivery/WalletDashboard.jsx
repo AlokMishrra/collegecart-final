@@ -313,7 +313,7 @@ export default function WalletDashboard({ deliveryPerson, onUpdate }) {
               </div>
             </div>
           ) : (
-            <div className="space-y-4">
+            <div className="space-y-4 max-h-[70vh] overflow-y-auto pr-1">
               <div className="text-center bg-blue-50 rounded-xl p-4">
                 <p className="text-sm text-gray-600 mb-1">Pay to CollegeCart</p>
                 <p className="text-2xl font-bold text-blue-600 mb-3">₹{addMoneyAmount}</p>
@@ -345,7 +345,21 @@ export default function WalletDashboard({ deliveryPerson, onUpdate }) {
                   <Input placeholder="yourname@upi" value={addMoneyUpiId} onChange={(e) => setAddMoneyUpiId(e.target.value)} />
                 </div>
                 <div>
-                  <Label className="text-xs">UPI Transaction ID</Label>
+                  <div className="flex items-center justify-between mb-1">
+                    <Label className="text-xs">UPI Transaction ID</Label>
+                    <button
+                      type="button"
+                      className="text-[10px] text-blue-600 underline"
+                      onClick={async () => {
+                        try {
+                          const text = await navigator.clipboard.readText();
+                          if (text && text.trim()) setTransactionId(text.trim());
+                        } catch {}
+                      }}
+                    >
+                      Paste from clipboard
+                    </button>
+                  </div>
                   <Input placeholder="e.g. T2506121234567" value={transactionId} onChange={(e) => setTransactionId(e.target.value)} />
                 </div>
               </div>

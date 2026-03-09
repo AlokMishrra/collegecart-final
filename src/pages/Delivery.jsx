@@ -18,6 +18,7 @@ import ShiftSelector from "../components/delivery/ShiftSelector";
 import OTPVerificationDialog from "../components/delivery/OTPVerificationDialog";
 import WalletDashboard from "../components/delivery/WalletDashboard";
 import CODPaymentCollector from "../components/delivery/CODPaymentCollector";
+import RaiseQuery from "../components/delivery/RaiseQuery";
 
 export default function Delivery() {
   const [deliveryPerson, setDeliveryPerson] = useState(null);
