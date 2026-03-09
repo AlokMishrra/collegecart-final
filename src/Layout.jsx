@@ -86,11 +86,9 @@ export default function Layout({ children, currentPageName }) {
     setUser(null);
   };
 
-  // Is this user a delivery-role staff member?
-  const isDeliveryRole = userHasRole && userRole && (
-    userRole.name.toLowerCase().includes("delivery") ||
-    (userRole.permissions || []).includes("view_delivery_portal")
-  );
+  // Is this user a delivery boy role specifically?
+  const isDeliveryRole = userHasRole && userRole &&
+    userRole.name.toLowerCase().includes("delivery boy");
 
   const navigationItems = [
     {
