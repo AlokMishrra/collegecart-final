@@ -129,11 +129,9 @@ export default function StaffPortal() {
         return;
       }
 
-      // Load roles
-      const roleResults = await Promise.all(
-        currentUser.assigned_role_ids.map(id => base44.entities.Role.filter({ id }).catch(() => []))
-      );
-      const roles = roleResults.flat();
+      // Load all roles and filter by assigned IDs client-side
+      const allRoles = await base44.entities.Role.list();
+      const roles = allRoles.filter(r => currentUser.assigned_role_ids.includes(r.id));
       const allPerms = roles.flatMap(r => r.permissions || []);
 
       // Delivery-only users go to Delivery portal
