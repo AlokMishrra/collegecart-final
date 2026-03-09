@@ -133,6 +133,27 @@ export default function SettingsManagement() {
         </CardContent>
       </Card>
 
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Wallet className="w-5 h-5" />
+            Delivery Partner Wallet Settings
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div>
+            <Label htmlFor="store_upi_id">Store UPI ID (for delivery partner wallet top-ups)</Label>
+            <Input
+              id="store_upi_id"
+              placeholder="e.g. collegecart@upi"
+              value={formData.store_upi_id || ""}
+              onChange={(e) => setFormData({ ...formData, store_upi_id: e.target.value })}
+            />
+            <p className="text-xs text-gray-500 mt-1">Delivery partners will pay to this UPI ID when adding money to their wallet. A QR code will be auto-generated.</p>
+          </div>
+        </CardContent>
+      </Card>
+
       <div className="flex justify-end">
         <Button
           onClick={handleSave}
