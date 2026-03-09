@@ -45,7 +45,7 @@ import ProductManagement from "../components/admin/ProductManagement";
   import HostelManagement from "../components/admin/HostelManagement";
   import HostelPerformanceMetrics from "../components/admin/HostelPerformanceMetrics";
 
-export default function Admin() {
+export default function CCA() {
   const navigate = useNavigate();
   const [user, setUser] = useState(null);
   const [isLoading, setIsLoading] = useState(true);

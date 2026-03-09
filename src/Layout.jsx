@@ -121,7 +121,7 @@ export default function Layout({ children, currentPageName }) {
     },
     {
       title: "Admin Panel",
-      url: createPageUrl("Admin"),
+      url: createPageUrl("CCA"),
       icon: Settings,
       showCondition: () => {
         // Hide for delivery-only users
