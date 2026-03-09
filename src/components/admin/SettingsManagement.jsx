@@ -5,7 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
-import { DollarSign, Truck, Save } from "lucide-react";
+import { DollarSign, Truck, Save, Wallet } from "lucide-react";
 
 export default function SettingsManagement() {
   const [settings, setSettings] = useState(null);
