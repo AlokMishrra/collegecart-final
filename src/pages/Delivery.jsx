@@ -220,7 +220,8 @@ export default function Delivery() {
     const newWalletBalance = (freshPerson.wallet_balance || 0) - codDeduction;
 
     setAssignedOrders(prev => prev.filter(o => o.id !== order.id));
-    const updatedPerson = { ...freshPerson, total_deliveries: newTotalDeliveries, total_earnings: newTotalEarnings, today_earnings: newTodayEarnings, wallet_balance: newWalletBalance };
+    setTodayEarnings(prev => prev + commission);
+    const updatedPerson = { ...freshPerson, total_deliveries: newTotalDeliveries, total_earnings: newTotalEarnings, wallet_balance: newWalletBalance };
     setDeliveryPerson(updatedPerson);
     localStorage.setItem('deliveryPerson', JSON.stringify(updatedPerson));
 
