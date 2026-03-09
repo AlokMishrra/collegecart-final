@@ -84,6 +84,11 @@ export default function Delivery() {
             setDeliveryPerson(freshPerson);
             localStorage.setItem('deliveryPerson', JSON.stringify(freshPerson));
             await loadOrders(freshPerson.id, freshPerson);
+            // Load today's commission earnings from transactions
+            const todayStr = new Date().toDateString();
+            const txns = await base44.entities.WalletTransaction.filter({ delivery_person_id: freshPerson.id }, '-created_date', 100).catch(() => []);
+            const earn = txns.filter(t => new Date(t.created_date).toDateString() === todayStr && t.type === "delivery_earning").reduce((s, t) => s + (t.amount || 0), 0);
+            setTodayEarnings(earn);
           }
         } catch (e) {
           localStorage.removeItem('deliveryPerson');
