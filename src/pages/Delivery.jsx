@@ -216,7 +216,6 @@ export default function Delivery() {
     const codDeduction = isCODPending ? order.total_amount : 0;
     const newTotalDeliveries = (freshPerson.total_deliveries || 0) + 1;
     const newTotalEarnings = (freshPerson.total_earnings || 0) + commission;
-    const newTodayEarnings = (freshPerson.today_earnings || 0) + commission;
     // Wallet only tracks COD cash owed to store — commission is separate earnings
     const newWalletBalance = (freshPerson.wallet_balance || 0) - codDeduction;
 
