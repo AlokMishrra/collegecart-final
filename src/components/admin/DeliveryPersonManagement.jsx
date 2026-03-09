@@ -45,8 +45,11 @@ export default function DeliveryPersonManagement() {
   };
 
   const loadWithdrawalRequests = async () => {
-    const data = await base44.entities.WithdrawalRequest.filter({ status: "pending" }, '-created_date').catch(() => []);
-    setWithdrawalRequests(data);
+    const [withdrawals, deposits] = await Promise.all([
+      base44.entities.WithdrawalRequest.filter({ status: "pending", type: "withdrawal" }, '-created_date').catch(() => []),
+      base44.entities.WithdrawalRequest.filter({ status: "pending", type: "deposit" }, '-created_date').catch(() => [])
+    ]);
+    setWithdrawalRequests([...deposits, ...withdrawals]);
   };
 
   const openWalletDialog = async (person) => {
