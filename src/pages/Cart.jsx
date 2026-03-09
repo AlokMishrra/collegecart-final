@@ -485,16 +485,15 @@ export default function Cart() {
 
       await Promise.all(stockUpdatePromises);
 
-      // Redeem loyalty points if used
+      // Redeem loyalty points — zeros out ALL points after redemption
       if (pointsToRedeem > 0) {
-        const currentBalance = loyaltyPoints;
         await base44.entities.LoyaltyTransaction.create({
           user_id: user.id,
-          points: -pointsToRedeem,
+          points: -loyaltyPoints,
           transaction_type: "redeemed",
           order_id: newOrder.id,
-          description: `Redeemed ${pointsToRedeem} points for ₹${calculatePointsDiscount().toFixed(2)} discount on order ${orderNumber}`,
-          balance_after: currentBalance - pointsToRedeem
+          description: `Redeemed all ${loyaltyPoints} points for ₹${(loyaltyPoints / 10).toFixed(2)} discount on order ${orderNumber}`,
+          balance_after: 0
         });
       }
 
@@ -955,61 +954,36 @@ export default function Cart() {
                   )}
                 </div>
 
-                {/* Loyalty Points Redemption */}
-                {loyaltyPoints >= 100 && (
+                {/* Loyalty Points Redemption — Weekend Only (Sat & Sun) */}
+                {(() => { const d = new Date().getDay(); return (d === 0 || d === 6) && loyaltyPoints >= 100; })() && (
                   <div className="bg-emerald-50 border border-emerald-200 rounded p-2">
                     <div className="flex items-center gap-1.5 mb-2">
                       <div className="w-6 h-6 bg-emerald-100 rounded-full flex items-center justify-center flex-shrink-0">
                         <span className="text-emerald-600 font-bold text-xs">★</span>
                       </div>
                       <div className="flex-1 min-w-0">
-                        <Label className="text-[10px] sm:text-xs font-semibold text-emerald-900 block">Loyalty Points</Label>
-                        <p className="text-[9px] sm:text-[10px] text-emerald-700">{loyaltyPoints} pts (₹{(loyaltyPoints / 10).toFixed(2)})</p>
+                        <Label className="text-[10px] sm:text-xs font-semibold text-emerald-900 block">🎉 Weekend Reward!</Label>
+                        <p className="text-[9px] sm:text-[10px] text-emerald-700">{loyaltyPoints} pts = ₹{(loyaltyPoints / 10).toFixed(2)} off</p>
                       </div>
                     </div>
-                    <div className="space-y-1.5">
-                      <Input
-                        type="number"
-                        min="0"
-                        max={Math.min(loyaltyPoints, calculateSubtotal() * 10)}
-                        value={pointsToRedeem}
-                        onChange={(e) => {
-                          const value = parseInt(e.target.value) || 0;
-                          const maxPoints = Math.min(loyaltyPoints, Math.floor((calculateSubtotal() + calculateShippingCharge()) * 10));
-                          setPointsToRedeem(Math.min(value, maxPoints));
-                        }}
-                        placeholder="Points"
-                        className="border-emerald-300 h-7 text-xs"
-                      />
-                      <div className="flex gap-1.5">
-                        <Button
-                          type="button"
-                          variant="outline"
-                          size="sm"
-                          onClick={() => setPointsToRedeem(Math.min(100, loyaltyPoints))}
-                          className="flex-1 text-[10px] h-6"
-                        >
-                          Use 100
-                        </Button>
-                        <Button
-                          type="button"
-                          variant="outline"
-                          size="sm"
-                          onClick={() => {
-                            const maxPoints = Math.min(loyaltyPoints, Math.floor((calculateSubtotal() + calculateShippingCharge()) * 10));
-                            setPointsToRedeem(maxPoints);
-                          }}
-                          className="flex-1 text-[10px] h-6"
-                        >
-                          Max
+                    {pointsToRedeem > 0 ? (
+                      <div className="flex items-center justify-between bg-emerald-100 rounded p-2">
+                        <p className="text-xs font-medium text-emerald-800">✓ Saving ₹{(loyaltyPoints / 10).toFixed(2)}</p>
+                        <Button type="button" variant="ghost" size="sm" className="h-6 text-[10px] text-red-600 px-2" onClick={() => setPointsToRedeem(0)}>
+                          Remove
                         </Button>
                       </div>
-                      {pointsToRedeem > 0 && (
-                        <p className="text-[9px] sm:text-xs text-emerald-700 font-medium">
-                          Save ₹{calculatePointsDiscount().toFixed(2)}
-                        </p>
-                      )}
-                    </div>
+                    ) : (
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        onClick={() => setPointsToRedeem(loyaltyPoints)}
+                        className="w-full h-7 text-[10px] bg-white text-emerald-700 border-emerald-300"
+                      >
+                        Redeem All {loyaltyPoints} pts → save ₹{(loyaltyPoints / 10).toFixed(2)}
+                      </Button>
+                    )}
                   </div>
                 )}
                 </div>

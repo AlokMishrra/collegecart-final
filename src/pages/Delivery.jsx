@@ -61,10 +61,24 @@ export default function Delivery() {
         try {
           const person = JSON.parse(saved);
           const fresh = await base44.entities.DeliveryPerson.filter({ id: person.id }).catch(() => []);
-          const freshPerson = fresh[0] || person;
+          let freshPerson = fresh[0] || person;
           if (freshPerson.is_blocked) {
             localStorage.removeItem('deliveryPerson');
           } else {
+            // Auto-offline: if COD cash has not been submitted for >24hr, force offline
+            if (freshPerson.wallet_balance < 0 && freshPerson.is_available) {
+              const codTxns = await base44.entities.WalletTransaction.filter(
+                { delivery_person_id: freshPerson.id, type: "cod_collection" },
+                '-created_date', 1
+              ).catch(() => []);
+              if (codTxns.length > 0) {
+                const hoursSince = (Date.now() - new Date(codTxns[0].created_date).getTime()) / (1000 * 60 * 60);
+                if (hoursSince >= 24) {
+                  await base44.entities.DeliveryPerson.update(freshPerson.id, { is_available: false, current_shift: null });
+                  freshPerson = { ...freshPerson, is_available: false, current_shift: null };
+                }
+              }
+            }
             setDeliveryPerson(freshPerson);
             localStorage.setItem('deliveryPerson', JSON.stringify(freshPerson));
             await loadOrders(freshPerson.id, freshPerson);
@@ -168,17 +182,21 @@ export default function Delivery() {
     const freshList = await base44.entities.DeliveryPerson.filter({ id: deliveryPerson.id }).catch(() => []);
     const freshPerson = freshList[0] || deliveryPerson;
 
+    // If COD cash not yet collected via CODPaymentCollector, deduct from wallet
+    // (partner is now holding this cash and owes it to the store)
+    const isCODPending = !order.is_paid && order.payment_method === "cash";
     const commission = order.total_amount * 0.10;
+    const codDeduction = isCODPending ? order.total_amount : 0;
     const newTotalDeliveries = (freshPerson.total_deliveries || 0) + 1;
     const newTotalEarnings = (freshPerson.total_earnings || 0) + commission;
-    const newWalletBalance = (freshPerson.wallet_balance || 0) + commission;
+    const newWalletBalance = (freshPerson.wallet_balance || 0) + commission - codDeduction;
 
     setAssignedOrders(prev => prev.filter(o => o.id !== order.id));
     const updatedPerson = { ...freshPerson, total_deliveries: newTotalDeliveries, total_earnings: newTotalEarnings, wallet_balance: newWalletBalance };
     setDeliveryPerson(updatedPerson);
     localStorage.setItem('deliveryPerson', JSON.stringify(updatedPerson));
 
-    await Promise.all([
+    const ops = [
       base44.entities.Order.update(order.id, { status: "delivered" }),
       base44.entities.DeliveryPerson.update(deliveryPerson.id, {
         total_deliveries: newTotalDeliveries,
@@ -194,7 +212,21 @@ export default function Delivery() {
         balance_after: newWalletBalance
       }),
       base44.entities.Notification.create({ user_id: order.user_id, title: "Order Delivered!", message: `Your order #${order.order_number} has been delivered!`, type: "success" })
-    ]).catch(() => {});
+    ];
+
+    if (isCODPending) {
+      ops.push(
+        base44.entities.WalletTransaction.create({
+          delivery_person_id: deliveryPerson.id,
+          amount: -codDeduction,
+          type: "cod_collection",
+          description: `COD cash collected for order #${order.order_number} — submit ₹${codDeduction.toFixed(2)} to admin`,
+          balance_after: newWalletBalance
+        })
+      );
+    }
+
+    await Promise.all(ops).catch(() => {});
     setUpdatingOrderId(null);
   };
 

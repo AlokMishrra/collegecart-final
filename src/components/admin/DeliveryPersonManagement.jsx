@@ -3,7 +3,7 @@ import { base44 } from "@/api/base44Client";
 import { DeliveryPerson } from "@/entities/DeliveryPerson";
 import { Notification } from "@/entities/Notification";
 import { User } from "@/entities/User";
-import { Plus, Edit, Trash2, User as UserIcon, Ban, CheckCircle, Wallet, RefreshCw, Clock, ArrowUpCircle, XCircle, Loader2 } from "lucide-react";
+import { Plus, Edit, Trash2, User as UserIcon, Ban, CheckCircle, Wallet, RefreshCw, Clock, ArrowUpCircle, XCircle, Loader2, TrendingUp } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -14,6 +14,7 @@ import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import DeliveryPersonForm from "./DeliveryPersonForm";
 import ShiftManagement from "./ShiftManagement";
+import HostelDailyReport from "./HostelDailyReport";
 import ConfirmDialog from "../shared/ConfirmDialog";
 
 export default function DeliveryPersonManagement() {
@@ -187,6 +188,7 @@ export default function DeliveryPersonManagement() {
             Withdrawals
             {withdrawalRequests.length > 0 && <Badge className="ml-1.5 bg-orange-500 text-white text-xs">{withdrawalRequests.length}</Badge>}
           </TabsTrigger>
+          <TabsTrigger value="report"><TrendingUp className="w-3.5 h-3.5 mr-1" />Daily Report</TabsTrigger>
         </TabsList>
 
         {/* Partners Tab */}
@@ -326,6 +328,17 @@ export default function DeliveryPersonManagement() {
               )}
             </CardContent>
           </Card>
+        </TabsContent>
+      </Tabs>
+
+        {/* Daily Report Tab */}
+        <TabsContent value="report">
+          <HostelDailyReport />
+        </TabsContent>
+
+        {/* Daily Report Tab */}
+        <TabsContent value="report">
+          <HostelDailyReport />
         </TabsContent>
       </Tabs>
 
