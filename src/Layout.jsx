@@ -38,6 +38,17 @@ export default function Layout({ children, currentPageName }) {
   const [userHasRole, setUserHasRole] = useState(false);
   const [userRole, setUserRole] = useState(null);
   const [cartItemCount, setCartItemCount] = useState(0);
+  const [darkMode, setDarkMode] = useState(() => localStorage.getItem('theme') === 'dark');
+
+  useEffect(() => {
+    if (darkMode) {
+      document.documentElement.classList.add('dark');
+      localStorage.setItem('theme', 'dark');
+    } else {
+      document.documentElement.classList.remove('dark');
+      localStorage.setItem('theme', 'light');
+    }
+  }, [darkMode]);
 
   useEffect(() => {
     checkUser();
