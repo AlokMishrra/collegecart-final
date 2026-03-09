@@ -159,9 +159,9 @@ export default function StaffPortal() {
   }
   if (!user) return null;
 
-  const has = (perm) => permissions.includes(perm) || permissions.includes('all');
+  const has = (perms) => permissions.includes('all') || perms.some(p => permissions.includes(p));
 
-  const visibleTabs = ROLE_TABS.filter(tab => has(tab.permission));
+  const visibleTabs = ROLE_TABS.filter(tab => has(tab.permissions));
 
   if (visibleTabs.length === 0) {
     return (
