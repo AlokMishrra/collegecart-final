@@ -65,7 +65,7 @@ export default function CCA() {
       
       // Only allow admin users or users with specific admin role assignments
       if (currentUser.role !== 'admin' && (!currentUser.assigned_role_ids || currentUser.assigned_role_ids.length === 0)) {
-        navigate(createPageUrl('Shop'));
+        navigate(createPageUrl('Shop')); // Silently redirect — don't reveal admin page name
         return;
       }
       
