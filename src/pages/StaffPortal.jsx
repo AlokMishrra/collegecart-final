@@ -28,70 +28,70 @@ const ROLE_TABS = [
     value: "dashboard",
     label: "Dashboard",
     icon: BarChart2,
-    permissions: ["view_summary"],
+    permission: "view_summary",
     component: () => <><AdminStats /><div className="mt-4"><DailyOrderSummary /></div></>,
   },
   {
     value: "orders",
     label: "Orders",
     icon: ShoppingCart,
-    permissions: ["manage_orders", "orders_manage", "view_orders", "orders_view"],
+    permission: "manage_orders",
     component: () => <OrderManagement />,
   },
   {
     value: "profit",
     label: "Profit",
     icon: BarChart2,
-    permissions: ["manage_orders", "orders_manage", "view_orders"],
+    permission: "manage_orders",
     component: () => <DailyProfitCalculator />,
   },
   {
     value: "products",
     label: "Products",
     icon: Package,
-    permissions: ["manage_products", "products_manage", "products_view"],
+    permission: "manage_products",
     component: () => <ProductManagement />,
   },
   {
     value: "categories",
     label: "Categories",
     icon: Tag,
-    permissions: ["manage_categories", "categories_manage", "categories_view"],
+    permission: "manage_categories",
     component: () => <CategoryManagement />,
   },
   {
     value: "banners",
     label: "Banners",
     icon: Megaphone,
-    permissions: ["manage_settings"],
+    permission: "manage_settings",
     component: () => <BannerManagement />,
   },
   {
     value: "delivery",
     label: "Delivery",
     icon: Truck,
-    permissions: ["manage_delivery", "delivery_view", "view_delivery_portal"],
+    permission: "manage_delivery",
     component: () => <DeliveryPersonManagement />,
   },
   {
     value: "campaigns",
     label: "Campaigns",
     icon: Megaphone,
-    permissions: ["manage_campaigns"],
+    permission: "manage_campaigns",
     component: () => <CampaignManagement />,
   },
   {
     value: "reviews",
     label: "Reviews",
     icon: Star,
-    permissions: ["manage_reviews"],
+    permission: "manage_reviews",
     component: () => <ReviewModeration />,
   },
   {
     value: "crm",
     label: "CRM",
     icon: Users2,
-    permissions: ["manage_crm"],
+    permission: "manage_crm",
     component: () => <CRMModule />,
   },
 ];
@@ -134,9 +134,9 @@ export default function StaffPortal() {
       const roles = allRoles.filter(r => currentUser.assigned_role_ids.includes(r.id));
       const allPerms = roles.flatMap(r => r.permissions || []);
 
-      // Delivery-only users (no other permissions) go to Delivery portal
-      const nonDeliveryPerms = allPerms.filter(p => !p.includes('delivery') && p !== 'view_delivery_portal' && p !== 'view_orders' && p !== 'update_order_status');
-      if (allPerms.length > 0 && nonDeliveryPerms.length === 0) {
+      // Delivery-only users go to Delivery portal
+      const isDeliveryOnly = allPerms.length > 0 && allPerms.every(p => p.includes('delivery') || p === 'view_delivery_portal');
+      if (isDeliveryOnly) {
         navigate(createPageUrl('Delivery'));
         return;
       }
@@ -159,9 +159,9 @@ export default function StaffPortal() {
   }
   if (!user) return null;
 
-  const has = (perms) => permissions.includes('all') || perms.some(p => permissions.includes(p));
+  const has = (perm) => permissions.includes(perm) || permissions.includes('all');
 
-  const visibleTabs = ROLE_TABS.filter(tab => has(tab.permissions));
+  const visibleTabs = ROLE_TABS.filter(tab => has(tab.permission));
 
   if (visibleTabs.length === 0) {
     return (

@@ -17,10 +17,7 @@ import {
   Building2,
   Award,
   Heart,
-  User as UserIcon,
-  Sun,
-  Moon,
-  Download
+  User as UserIcon
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -38,17 +35,6 @@ export default function Layout({ children, currentPageName }) {
   const [userHasRole, setUserHasRole] = useState(false);
   const [userRole, setUserRole] = useState(null);
   const [cartItemCount, setCartItemCount] = useState(0);
-  const [darkMode, setDarkMode] = useState(() => localStorage.getItem('theme') === 'dark');
-
-  useEffect(() => {
-    if (darkMode) {
-      document.documentElement.classList.add('dark');
-      localStorage.setItem('theme', 'dark');
-    } else {
-      document.documentElement.classList.remove('dark');
-      localStorage.setItem('theme', 'light');
-    }
-  }, [darkMode]);
 
   useEffect(() => {
     checkUser();
@@ -79,11 +65,14 @@ export default function Layout({ children, currentPageName }) {
       // Check if user has any assigned roles
       if (currentUser.assigned_role_ids && currentUser.assigned_role_ids.length > 0) {
         setUserHasRole(true);
-        // List all roles and filter client-side (filter by id doesn't work on built-in fields)
-        const allRoles = await base44.entities.Role.list();
-        const matchedRoles = allRoles.filter(r => currentUser.assigned_role_ids.includes(r.id));
-        if (matchedRoles.length > 0) {
-          setUserRole(matchedRoles[0]); // Set first role as primary
+        // Load all assigned roles to check permissions
+        const rolePromises = currentUser.assigned_role_ids.map(roleId => 
+          base44.entities.Role.filter({ id: roleId })
+        );
+        const roleResults = await Promise.all(rolePromises);
+        const allRoles = roleResults.flat();
+        if (allRoles.length > 0) {
+          setUserRole(allRoles[0]); // Set first role as primary
         }
       }
     } catch (error) {
@@ -104,13 +93,10 @@ export default function Layout({ children, currentPageName }) {
   // Check if user has multiple roles
   const hasMultipleRoles = user?.assigned_role_ids && user.assigned_role_ids.length > 1;
 
-  // Check if user has a delivery-only role (by name or permissions)
-  const allUserPermissions = userRole?.permissions || [];
-  const isDeliveryOnlyRole = userHasRole && userRole && (
-    userRole.name?.toLowerCase().includes('delivery') ||
-    (allUserPermissions.length > 0 && allUserPermissions.every(p =>
-      p.includes('delivery') || p === 'view_delivery_portal' || p === 'view_orders' || p === 'update_order_status'
-    ))
+  // Check if user is a delivery person (single role only)
+  const isDeliveryOnlyRole = !hasMultipleRoles && userRole && (
+    userRole.name.toLowerCase().includes("delivery") ||
+    userRole.permissions?.includes("view_delivery_portal")
   );
 
   const navigationItems = [
@@ -155,7 +141,10 @@ export default function Layout({ children, currentPageName }) {
       title: "Delivery Portal",
       url: createPageUrl("Delivery"),
       icon: Truck,
-      showCondition: () => isDeliveryOnlyRole
+      showCondition: () => {
+        // Show for delivery persons or users with multiple roles
+        return isDeliveryOnlyRole || (hasMultipleRoles && userRole?.permissions?.includes("view_delivery_portal"));
+      }
     }
   ];
 
@@ -267,26 +256,6 @@ export default function Layout({ children, currentPageName }) {
                 );
               })}
             </nav>
-
-            {/* Dark Mode + Download App */}
-            <div className="px-4 pb-2 space-y-2">
-              <button
-                onClick={() => setDarkMode(d => !d)}
-                className="w-full flex items-center gap-3 px-4 py-2.5 rounded-xl text-gray-600 hover:bg-gray-50 hover:text-gray-900 transition-all duration-200"
-              >
-                {darkMode ? <Sun className="w-5 h-5" /> : <Moon className="w-5 h-5" />}
-                <span className="font-medium text-sm">{darkMode ? "Light Mode" : "Dark Mode"}</span>
-              </button>
-              <a
-                href="https://collegecart.base44.app"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="w-full flex items-center gap-3 px-4 py-2.5 rounded-xl text-emerald-700 bg-emerald-50 hover:bg-emerald-100 transition-all duration-200"
-              >
-                <Download className="w-5 h-5" />
-                <span className="font-medium text-sm">Download App</span>
-              </a>
-            </div>
 
             {/* User Profile */}
             {user && (

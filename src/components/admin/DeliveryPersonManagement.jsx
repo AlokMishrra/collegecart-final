@@ -355,7 +355,7 @@ export default function DeliveryPersonManagement() {
 
       {/* Wallet Management Dialog */}
       <Dialog open={walletDialog.open} onOpenChange={(o) => setWalletDialog(p => ({ ...p, open: o }))}>
-        <DialogContent className="sm:max-w-md max-h-[90vh] overflow-y-auto">
+        <DialogContent className="sm:max-w-md">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2"><Wallet className="w-5 h-5 text-emerald-600" />Wallet — {walletDialog.person?.name}</DialogTitle>
           </DialogHeader>

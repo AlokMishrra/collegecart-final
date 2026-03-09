@@ -47,7 +47,6 @@
  *
  * The mainPage value must match a key in the PAGES object exactly.
  */
-import CCA from './pages/CCA';
 import Cart from './pages/Cart';
 import CategoryProducts from './pages/CategoryProducts';
 import Delivery from './pages/Delivery';
@@ -57,14 +56,14 @@ import Orders from './pages/Orders';
 import ProductDetails from './pages/ProductDetails';
 import Profile from './pages/Profile';
 import Shop from './pages/Shop';
-import StaffPortal from './pages/StaffPortal';
 import UserManagement from './pages/UserManagement';
 import Wishlist from './pages/Wishlist';
+import CCA from './pages/CCA';
+import StaffPortal from './pages/StaffPortal';
 import __Layout from './Layout.jsx';
 
 
 export const PAGES = {
-    "CCA": CCA,
     "Cart": Cart,
     "CategoryProducts": CategoryProducts,
     "Delivery": Delivery,
@@ -74,9 +73,10 @@ export const PAGES = {
     "ProductDetails": ProductDetails,
     "Profile": Profile,
     "Shop": Shop,
-    "StaffPortal": StaffPortal,
     "UserManagement": UserManagement,
     "Wishlist": Wishlist,
+    "CCA": CCA,
+    "StaffPortal": StaffPortal,
 }
 
 export const pagesConfig = {
