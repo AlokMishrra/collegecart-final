@@ -114,7 +114,7 @@ export default function Layout({ children, currentPageName }) {
       title: "CCA Panel",
       url: createPageUrl("CCA"),
       icon: Settings,
-      showCondition: () => !isDeliveryRole && (user?.role === "admin" || userHasRole)
+      showCondition: () => user?.role === "admin" || (userHasRole && !isDeliveryRole)
     },
     {
       title: "User Management",
