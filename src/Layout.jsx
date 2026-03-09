@@ -271,6 +271,26 @@ export default function Layout({ children, currentPageName }) {
               })}
             </nav>
 
+            {/* Dark Mode + Download App */}
+            <div className="px-4 pb-2 space-y-2">
+              <button
+                onClick={() => setDarkMode(d => !d)}
+                className="w-full flex items-center gap-3 px-4 py-2.5 rounded-xl text-gray-600 hover:bg-gray-50 hover:text-gray-900 transition-all duration-200"
+              >
+                {darkMode ? <Sun className="w-5 h-5" /> : <Moon className="w-5 h-5" />}
+                <span className="font-medium text-sm">{darkMode ? "Light Mode" : "Dark Mode"}</span>
+              </button>
+              <a
+                href="https://collegecart.base44.app"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="w-full flex items-center gap-3 px-4 py-2.5 rounded-xl text-emerald-700 bg-emerald-50 hover:bg-emerald-100 transition-all duration-200"
+              >
+                <Download className="w-5 h-5" />
+                <span className="font-medium text-sm">Download App</span>
+              </a>
+            </div>
+
             {/* User Profile */}
             {user && (
               <div className="p-4 border-t border-gray-200">
