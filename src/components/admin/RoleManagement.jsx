@@ -32,6 +32,7 @@ const AVAILABLE_PERMISSIONS = [
 export default function RoleManagement() {
   const [roles, setRoles] = useState([]);
   const [users, setUsers] = useState([]);
+  const [searchQuery, setSearchQuery] = useState("");
   const [selectedRole, setSelectedRole] = useState(null);
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [deleteDialog, setDeleteDialog] = useState({ open: false, role: null });
