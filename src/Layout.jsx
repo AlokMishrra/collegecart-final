@@ -153,10 +153,7 @@ export default function Layout({ children, currentPageName }) {
       title: "Delivery Portal",
       url: createPageUrl("Delivery"),
       icon: Truck,
-      showCondition: () => {
-        // Show for delivery persons or users with multiple roles
-        return isDeliveryOnlyRole || (hasMultipleRoles && userRole?.permissions?.includes("view_delivery_portal"));
-      }
+      showCondition: () => isDeliveryOnlyRole
     }
   ];
 
