@@ -158,7 +158,7 @@ export default function Layout({ children, currentPageName }) {
           </div>
           <div className="flex items-center gap-2">
             <NotificationCenter />
-            {user && !isDeliveryOnlyRole && (
+            {user && !isDeliveryRole && (
               <Link to={createPageUrl("Cart")}>
                 <Button variant="ghost" size="icon" className="relative">
                   <ShoppingCart className="w-5 h-5" />
