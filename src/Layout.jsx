@@ -104,13 +104,13 @@ export default function Layout({ children, currentPageName }) {
       url: createPageUrl("Cart"),
       icon: ShoppingCart,
       badge: cartCount > 0 ? cartCount : null,
-      showCondition: () => !isDeliveryRole
+      showCondition: () => true
     },
     {
       title: "My Profile",
       url: createPageUrl("Profile"),
       icon: UserIcon,
-      showCondition: () => !isDeliveryRole
+      showCondition: () => true
     },
     {
       title: "CCA Panel",
