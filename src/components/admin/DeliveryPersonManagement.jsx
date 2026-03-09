@@ -329,12 +329,6 @@ export default function DeliveryPersonManagement() {
             </CardContent>
           </Card>
         </TabsContent>
-      </Tabs>
-
-        {/* Daily Report Tab */}
-        <TabsContent value="report">
-          <HostelDailyReport />
-        </TabsContent>
 
         {/* Daily Report Tab */}
         <TabsContent value="report">
