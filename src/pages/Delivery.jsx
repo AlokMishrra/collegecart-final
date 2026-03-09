@@ -92,13 +92,32 @@ export default function Delivery() {
     init();
   }, [loadOrders, checkShiftExpiry]);
 
+  // Check 24hr COD auto-offline rule
+  const checkCODAutoOffline = useCallback(async (person) => {
+    if (!person || !person.is_available || (person.wallet_balance || 0) >= 0) return;
+    const codTxns = await base44.entities.WalletTransaction.filter(
+      { delivery_person_id: person.id, type: "cod_collection" },
+      '-created_date', 1
+    ).catch(() => []);
+    if (codTxns.length > 0) {
+      const hoursSince = (Date.now() - new Date(codTxns[0].created_date).getTime()) / (1000 * 60 * 60);
+      if (hoursSince >= 24) {
+        await base44.entities.DeliveryPerson.update(person.id, { is_available: false, current_shift: null });
+        const updated = { ...person, is_available: false, current_shift: null };
+        setDeliveryPerson(updated);
+        localStorage.setItem('deliveryPerson', JSON.stringify(updated));
+      }
+    }
+  }, []);
+
   useEffect(() => {
     if (!deliveryPerson) return;
     const interval = setInterval(() => {
       loadOrders(deliveryPerson.id, deliveryPerson).catch(() => {});
+      checkCODAutoOffline(deliveryPerson).catch(() => {});
     }, 15000);
     return () => clearInterval(interval);
-  }, [deliveryPerson, loadOrders, checkShiftExpiry]);
+  }, [deliveryPerson, loadOrders, checkShiftExpiry, checkCODAutoOffline]);
 
   const handleLogin = async (e) => {
     e.preventDefault();
