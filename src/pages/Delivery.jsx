@@ -145,6 +145,7 @@ export default function Delivery() {
   const handleGoOnline = () => {
     const balance = deliveryPerson.wallet_balance || 0;
     if (balance < 0) {
+      alert(`⚠️ You have ₹${Math.abs(balance).toFixed(2)} in COD cash to submit. Please submit to admin first, then you can go online.`);
       setActiveTab("wallet");
       return;
     }
