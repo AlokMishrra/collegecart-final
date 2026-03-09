@@ -47,7 +47,6 @@
  *
  * The mainPage value must match a key in the PAGES object exactly.
  */
-import Admin from './pages/Admin';
 import Cart from './pages/Cart';
 import CategoryProducts from './pages/CategoryProducts';
 import Delivery from './pages/Delivery';
@@ -65,7 +64,6 @@ import __Layout from './Layout.jsx';
 
 
 export const PAGES = {
-    "Admin": Admin,
     "Cart": Cart,
     "CategoryProducts": CategoryProducts,
     "Delivery": Delivery,
