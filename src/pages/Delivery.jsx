@@ -37,6 +37,7 @@ export default function Delivery() {
   const [showShiftSelector, setShowShiftSelector] = useState(false);
   const [otpDialog, setOtpDialog] = useState({ open: false, order: null });
   const [activeTab, setActiveTab] = useState("orders");
+  const [todayEarnings, setTodayEarnings] = useState(0);
 
   const loadOrders = useCallback(async (personId, person) => {
     const [preparing, outForDelivery, available] = await Promise.all([
