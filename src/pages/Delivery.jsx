@@ -210,10 +210,12 @@ export default function Delivery() {
     const codDeduction = isCODPending ? order.total_amount : 0;
     const newTotalDeliveries = (freshPerson.total_deliveries || 0) + 1;
     const newTotalEarnings = (freshPerson.total_earnings || 0) + commission;
-    const newWalletBalance = (freshPerson.wallet_balance || 0) + commission - codDeduction;
+    const newTodayEarnings = (freshPerson.today_earnings || 0) + commission;
+    // Wallet only tracks COD cash owed to store — commission is separate earnings
+    const newWalletBalance = (freshPerson.wallet_balance || 0) - codDeduction;
 
     setAssignedOrders(prev => prev.filter(o => o.id !== order.id));
-    const updatedPerson = { ...freshPerson, total_deliveries: newTotalDeliveries, total_earnings: newTotalEarnings, wallet_balance: newWalletBalance };
+    const updatedPerson = { ...freshPerson, total_deliveries: newTotalDeliveries, total_earnings: newTotalEarnings, today_earnings: newTodayEarnings, wallet_balance: newWalletBalance };
     setDeliveryPerson(updatedPerson);
     localStorage.setItem('deliveryPerson', JSON.stringify(updatedPerson));
 
