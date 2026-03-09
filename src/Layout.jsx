@@ -323,7 +323,7 @@ export default function Layout({ children, currentPageName }) {
       </div>
 
       {/* Feedback Popup */}
-      {user && !isDeliveryOnlyRole && <FeedbackPopup user={user} />}
+      {user && !isDeliveryRole && <FeedbackPopup user={user} />}
 
       {/* AI Customer Support Chatbot */}
       <CustomerSupportChatbot user={user} />
