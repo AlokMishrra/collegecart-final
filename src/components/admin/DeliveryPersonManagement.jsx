@@ -277,19 +277,21 @@ export default function DeliveryPersonManagement() {
           <ShiftManagement />
         </TabsContent>
 
-        {/* Withdrawal Requests Tab */}
+        {/* Withdrawal / Deposit Requests Tab */}
         <TabsContent value="withdrawals">
           <Card>
             <CardContent className="p-0">
               {withdrawalRequests.length === 0 ? (
-                <div className="text-center py-10 text-gray-500">No pending withdrawal requests</div>
+                <div className="text-center py-10 text-gray-500">No pending requests</div>
               ) : (
                 <Table>
                   <TableHeader>
                     <TableRow>
+                      <TableHead>Type</TableHead>
                       <TableHead>Partner</TableHead>
                       <TableHead>Amount</TableHead>
                       <TableHead>UPI ID</TableHead>
+                      <TableHead>Txn ID</TableHead>
                       <TableHead>Date</TableHead>
                       <TableHead>Actions</TableHead>
                     </TableRow>
@@ -297,9 +299,15 @@ export default function DeliveryPersonManagement() {
                   <TableBody>
                     {withdrawalRequests.map(req => (
                       <TableRow key={req.id}>
+                        <TableCell>
+                          <Badge className={req.type === "deposit" ? "bg-blue-100 text-blue-700" : "bg-orange-100 text-orange-700"}>
+                            {req.type === "deposit" ? "💰 Deposit" : "⬆ Withdrawal"}
+                          </Badge>
+                        </TableCell>
                         <TableCell className="font-medium">{req.delivery_person_name}</TableCell>
                         <TableCell className="font-bold text-emerald-600">₹{req.amount?.toFixed(2)}</TableCell>
                         <TableCell className="text-sm text-gray-600">{req.upi_id || "—"}</TableCell>
+                        <TableCell className="text-sm text-blue-700 font-mono">{req.transaction_id || "—"}</TableCell>
                         <TableCell className="text-sm text-gray-500">{new Date(req.created_date).toLocaleDateString('en-IN')}</TableCell>
                         <TableCell>
                           <div className="flex gap-2">
