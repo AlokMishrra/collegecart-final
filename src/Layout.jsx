@@ -86,13 +86,10 @@ export default function Layout({ children, currentPageName }) {
     setUser(null);
   };
 
-  // Check if user has multiple roles
-  const hasMultipleRoles = user?.assigned_role_ids && user.assigned_role_ids.length > 1;
-
-  // Check if user is a delivery person (single role only)
-  const isDeliveryOnlyRole = !hasMultipleRoles && userRole && (
+  // Is this user a delivery-role staff member?
+  const isDeliveryRole = userHasRole && userRole && (
     userRole.name.toLowerCase().includes("delivery") ||
-    userRole.permissions?.includes("view_delivery_portal")
+    (userRole.permissions || []).includes("view_delivery_portal")
   );
 
   const navigationItems = [
@@ -107,40 +104,31 @@ export default function Layout({ children, currentPageName }) {
       url: createPageUrl("Cart"),
       icon: ShoppingCart,
       badge: cartCount > 0 ? cartCount : null,
-      showCondition: () => true
+      showCondition: () => !isDeliveryRole
     },
     {
       title: "My Profile",
       url: createPageUrl("Profile"),
       icon: UserIcon,
-      showCondition: () => true
+      showCondition: () => !isDeliveryRole
     },
     {
       title: "CCA Panel",
       url: createPageUrl("CCA"),
       icon: Settings,
-      showCondition: () => !isDeliveryOnlyRole && user?.role === "admin"
-    },
-    {
-      title: "Staff Portal",
-      url: createPageUrl("StaffPortal"),
-      icon: UserIcon,
-      showCondition: () => !isDeliveryOnlyRole && user?.role !== "admin" && userHasRole
+      showCondition: () => !isDeliveryRole && (user?.role === "admin" || userHasRole)
     },
     {
       title: "User Management",
       url: createPageUrl("UserManagement"),
       icon: UserIcon,
-      showCondition: () => !isDeliveryOnlyRole && user?.role === "admin"
+      showCondition: () => user?.role === "admin"
     },
     {
       title: "Delivery Portal",
       url: createPageUrl("Delivery"),
       icon: Truck,
-      showCondition: () => {
-        // Show for delivery persons or users with multiple roles
-        return isDeliveryOnlyRole || (hasMultipleRoles && userRole?.permissions?.includes("view_delivery_portal"));
-      }
+      showCondition: () => isDeliveryRole || isDeliveryPartner
     }
   ];
 
