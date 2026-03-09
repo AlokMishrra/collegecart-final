@@ -2,7 +2,7 @@ import React, { useState, useEffect, useCallback } from "react";
 import { base44 } from "@/api/base44Client";
 import {
   Truck, MapPin, Phone, Package, CheckCircle, Loader2, Lock, User,
-  XCircle, AlertTriangle, Power, Clock, Wallet, ChevronRight
+  XCircle, AlertTriangle, Power, Clock, Wallet, ChevronRight, MessageSquare
 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -405,7 +405,7 @@ export default function Delivery() {
 
       {/* Tabs */}
       <Tabs value={activeTab} onValueChange={setActiveTab}>
-        <TabsList className="grid w-full grid-cols-2">
+        <TabsList className="grid w-full grid-cols-3">
           <TabsTrigger value="orders">
             <Package className="w-4 h-4 mr-1.5" />Orders
             {(availableOrders.length + assignedOrders.length) > 0 && (
@@ -415,6 +415,9 @@ export default function Delivery() {
           <TabsTrigger value="wallet">
             <Wallet className="w-4 h-4 mr-1.5" />Wallet
             {isNegativeBalance && <Badge className="ml-1.5 bg-red-500 text-white text-xs px-1.5">!</Badge>}
+          </TabsTrigger>
+          <TabsTrigger value="support">
+            <MessageSquare className="w-4 h-4 mr-1.5" />Support
           </TabsTrigger>
         </TabsList>
 
@@ -553,6 +556,10 @@ export default function Delivery() {
 
         <TabsContent value="wallet" className="mt-4">
           <WalletDashboard deliveryPerson={deliveryPerson} onUpdate={handleWalletUpdate} />
+        </TabsContent>
+
+        <TabsContent value="support" className="mt-4">
+          <RaiseQuery deliveryPerson={deliveryPerson} />
         </TabsContent>
       </Tabs>
 
