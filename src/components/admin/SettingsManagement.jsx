@@ -14,7 +14,8 @@ export default function SettingsManagement() {
     free_delivery_above: 500,
     first_order_threshold: 100,
     store_name: "CollegeCart",
-    store_description: "Your one-stop shop for groceries"
+    store_description: "Your one-stop shop for groceries",
+    store_upi_id: ""
   });
   const [isSaving, setIsSaving] = useState(false);
 
