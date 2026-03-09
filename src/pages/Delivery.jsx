@@ -164,13 +164,17 @@ export default function Delivery() {
     setUpdatingOrderId(order.id);
     setOtpDialog({ open: false, order: null });
 
+    // Fetch fresh data from DB to avoid stale state earnings bug
+    const freshList = await base44.entities.DeliveryPerson.filter({ id: deliveryPerson.id }).catch(() => []);
+    const freshPerson = freshList[0] || deliveryPerson;
+
     const commission = order.total_amount * 0.10;
-    const newTotalDeliveries = (deliveryPerson.total_deliveries || 0) + 1;
-    const newTotalEarnings = (deliveryPerson.total_earnings || 0) + commission;
-    const newWalletBalance = (deliveryPerson.wallet_balance || 0) + commission;
+    const newTotalDeliveries = (freshPerson.total_deliveries || 0) + 1;
+    const newTotalEarnings = (freshPerson.total_earnings || 0) + commission;
+    const newWalletBalance = (freshPerson.wallet_balance || 0) + commission;
 
     setAssignedOrders(prev => prev.filter(o => o.id !== order.id));
-    const updatedPerson = { ...deliveryPerson, total_deliveries: newTotalDeliveries, total_earnings: newTotalEarnings, wallet_balance: newWalletBalance };
+    const updatedPerson = { ...freshPerson, total_deliveries: newTotalDeliveries, total_earnings: newTotalEarnings, wallet_balance: newWalletBalance };
     setDeliveryPerson(updatedPerson);
     localStorage.setItem('deliveryPerson', JSON.stringify(updatedPerson));
 
@@ -180,7 +184,7 @@ export default function Delivery() {
         total_deliveries: newTotalDeliveries,
         total_earnings: newTotalEarnings,
         wallet_balance: newWalletBalance,
-        current_orders: (deliveryPerson.current_orders || []).filter(id => id !== order.id)
+        current_orders: (freshPerson.current_orders || []).filter(id => id !== order.id)
       }),
       base44.entities.WalletTransaction.create({
         delivery_person_id: deliveryPerson.id,
