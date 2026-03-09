@@ -120,26 +120,22 @@ export default function Layout({ children, currentPageName }) {
       showCondition: () => true
     },
     {
-      title: "Admin Panel",
-      url: createPageUrl("Admin"),
+      title: "CCA Panel",
+      url: createPageUrl("CCA"),
       icon: Settings,
-      showCondition: () => {
-        // Hide for delivery-only users
-        if (isDeliveryOnlyRole) return false;
-        // Show for admin or users with non-delivery roles
-        return user?.role === "admin" || (userHasRole && !isDeliveryOnlyRole);
-      }
+      showCondition: () => !isDeliveryOnlyRole && user?.role === "admin"
+    },
+    {
+      title: "Staff Portal",
+      url: createPageUrl("StaffPortal"),
+      icon: UserIcon,
+      showCondition: () => !isDeliveryOnlyRole && user?.role !== "admin" && userHasRole
     },
     {
       title: "User Management",
       url: createPageUrl("UserManagement"),
       icon: UserIcon,
-      showCondition: () => {
-        // Hide for delivery-only users
-        if (isDeliveryOnlyRole) return false;
-        // Show for admin or users with non-delivery roles
-        return user?.role === "admin" || (userHasRole && !isDeliveryOnlyRole);
-      }
+      showCondition: () => !isDeliveryOnlyRole && user?.role === "admin"
     },
     {
       title: "Delivery Portal",
