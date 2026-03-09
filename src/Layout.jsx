@@ -17,7 +17,10 @@ import {
   Building2,
   Award,
   Heart,
-  User as UserIcon
+  User as UserIcon,
+  Sun,
+  Moon,
+  Download
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
