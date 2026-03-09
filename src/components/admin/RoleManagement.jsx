@@ -248,10 +248,21 @@ export default function RoleManagement() {
 
       <Card>
         <CardContent className="p-6">
-          <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
-            <Shield className="w-5 h-5" />
-            Assign Roles to Users
-          </h3>
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-4">
+            <h3 className="text-lg font-semibold flex items-center gap-2">
+              <Shield className="w-5 h-5" />
+              Assign Roles to Staff
+            </h3>
+            <div className="relative w-full sm:w-64">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+              <Input
+                placeholder="Search by name or email..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="pl-9"
+              />
+            </div>
+          </div>
           <Table>
             <TableHeader>
               <TableRow>
@@ -261,7 +272,11 @@ export default function RoleManagement() {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {users.filter(u => u.role !== 'admin').map(user => (
+              {users.filter(u => u.role !== 'admin').filter(u => {
+                if (!searchQuery) return true;
+                const q = searchQuery.toLowerCase();
+                return u.full_name?.toLowerCase().includes(q) || u.email?.toLowerCase().includes(q);
+              }).map(user => (
                 <TableRow key={user.id}>
                   <TableCell>{user.full_name}</TableCell>
                   <TableCell>{user.email}</TableCell>
