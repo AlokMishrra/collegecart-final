@@ -59,6 +59,8 @@ import Profile from './pages/Profile';
 import Shop from './pages/Shop';
 import UserManagement from './pages/UserManagement';
 import Wishlist from './pages/Wishlist';
+import CCA from './pages/CCA';
+import StaffPortal from './pages/StaffPortal';
 import __Layout from './Layout.jsx';
 
 
@@ -75,6 +77,8 @@ export const PAGES = {
     "Shop": Shop,
     "UserManagement": UserManagement,
     "Wishlist": Wishlist,
+    "CCA": CCA,
+    "StaffPortal": StaffPortal,
 }
 
 export const pagesConfig = {
