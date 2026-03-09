@@ -230,7 +230,6 @@ export default function Delivery() {
       base44.entities.DeliveryPerson.update(deliveryPerson.id, {
         total_deliveries: newTotalDeliveries,
         total_earnings: newTotalEarnings,
-        today_earnings: newTodayEarnings,
         wallet_balance: newWalletBalance,
         current_orders: (freshPerson.current_orders || []).filter(id => id !== order.id)
       }),
