@@ -44,6 +44,7 @@ import ProductManagement from "../components/admin/ProductManagement";
   import DailyProfitCalculator from "../components/admin/DailyProfitCalculator";
   import HostelManagement from "../components/admin/HostelManagement";
   import HostelPerformanceMetrics from "../components/admin/HostelPerformanceMetrics";
+  import SubscriptionManagement from "../components/admin/SubscriptionManagement";
 
 export default function CCA() {
   const navigate = useNavigate();

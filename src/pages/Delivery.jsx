@@ -563,7 +563,7 @@ export default function Delivery() {
         </TabsContent>
 
         <TabsContent value="wallet" className="mt-4">
-          <WalletDashboard deliveryPerson={deliveryPerson} onUpdate={handleWalletUpdate} />
+          <WalletDashboard deliveryPerson={deliveryPerson} onUpdate={handleWalletUpdate} todayEarningsFromParent={todayEarnings} />
         </TabsContent>
 
         <TabsContent value="support" className="mt-4">
