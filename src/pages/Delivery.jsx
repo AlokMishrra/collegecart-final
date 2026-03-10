@@ -145,6 +145,12 @@ export default function Delivery() {
     localStorage.setItem('deliveryPerson', JSON.stringify(found));
     setDeliveryPerson(found);
     await loadOrders(found.id, found);
+    // Check for unread approval notifications on login
+    const unreadNotifs = await base44.entities.Notification.filter({ user_id: found.id, is_read: false }).catch(() => []);
+    const approvalNotif = unreadNotifs.find(n => n.title?.includes("Approved") || n.title?.includes("Withdrawal") || n.title?.includes("Top-up"));
+    if (approvalNotif) {
+      setLoginPopup({ id: approvalNotif.id, title: approvalNotif.title, message: approvalNotif.message });
+    }
     setLoginForm({ email: "", password: "" });
     setIsLoggingIn(false);
   };
