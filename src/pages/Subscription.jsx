@@ -22,7 +22,7 @@ const PLANS = [
     textClass: "text-emerald-600",
     bgClass: "bg-emerald-50",
     checkClass: "text-emerald-500",
-    perks: ["Free delivery on all orders", "Valid for 1 full year", "Priority customer support"]
+    perks: ["Free delivery on all orders", "Valid for 1 month", "Priority customer support"]
   },
   {
     type: "faculty",
@@ -34,7 +34,7 @@ const PLANS = [
     textClass: "text-purple-600",
     bgClass: "bg-purple-50",
     checkClass: "text-purple-500",
-    perks: ["Free delivery on all orders", "Valid for 1 full year", "Priority customer support", "Exclusive faculty benefits"]
+    perks: ["Free delivery on all orders", "Valid for 1 month", "Priority customer support", "Exclusive faculty benefits"]
   }
 ];
 
@@ -136,7 +136,7 @@ export default function Subscription() {
           <Crown className="w-8 h-8 text-white" />
         </div>
         <h1 className="text-3xl font-bold text-gray-900">CollegeCart Premium</h1>
-        <p className="text-gray-500 mt-1">Subscribe and enjoy free delivery on every order, all year long</p>
+        <p className="text-gray-500 mt-1">Subscribe and enjoy free delivery on every order</p>
       </div>
 
       {/* Active Subscription */}
@@ -189,7 +189,7 @@ export default function Subscription() {
                     <h3 className="text-xl font-bold mt-3 text-gray-900">{plan.name}</h3>
                     <div className={`text-4xl font-bold mt-1 ${plan.textClass}`}>
                       ₹{plan.price}
-                      <span className="text-sm font-normal text-gray-500">/year</span>
+                      <span className="text-sm font-normal text-gray-500">/month</span>
                     </div>
                   </div>
                   <ul className="space-y-2.5 mb-5 flex-1">
