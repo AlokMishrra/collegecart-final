@@ -159,7 +159,8 @@ export default function CCA() {
     { value: "qr-generator", label: "QR Generator", permission: "manage_orders", component: <CustomQRGenerator /> },
     { value: "settings", label: "Settings", permission: "manage_settings", component: <SettingsManagement /> },
     { value: "roles", label: "Roles", permission: "manage_roles", component: <RoleManagement /> },
-    { value: "activity-log", label: "Activity Log", permission: "manage_settings", component: <ActivityLog /> }
+    { value: "activity-log", label: "Activity Log", permission: "manage_settings", component: <ActivityLog /> },
+    { value: "subscriptions", label: "Subscriptions", permission: "manage_settings", component: <SubscriptionManagement /> }
   ];
 
   // Filter tabs based on permissions
