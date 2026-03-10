@@ -596,6 +596,31 @@ export default function Delivery() {
         isLoading={!!updatingOrderId}
       />
 
+      {/* Withdrawal/Deposit Approval Popup */}
+      <Dialog open={!!loginPopup} onOpenChange={() => {}}>
+        <DialogContent className="sm:max-w-sm">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2 text-emerald-700">
+              <CheckCircle className="w-5 h-5 text-emerald-600" />{loginPopup?.title}
+            </DialogTitle>
+          </DialogHeader>
+          <p className="text-sm text-gray-700 leading-relaxed">{loginPopup?.message}</p>
+          <DialogFooter>
+            <Button
+              className="w-full bg-emerald-600 hover:bg-emerald-700"
+              onClick={async () => {
+                if (loginPopup?.id) {
+                  await base44.entities.Notification.update(loginPopup.id, { is_read: true }).catch(() => {});
+                }
+                setLoginPopup(null);
+              }}
+            >
+              OK, Got It!
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
       {/* Cancel Dialog */}
       <Dialog open={showCancelDialog} onOpenChange={setShowCancelDialog}>
         <DialogContent className="sm:max-w-md">
