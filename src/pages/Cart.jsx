@@ -120,7 +120,7 @@ export default function Cart() {
 
   const checkUser = useCallback(async () => {
     try {
-      const currentUser = await User.me().catch ? await User.me() : await User.me();
+      const currentUser = await User.me();
       setUser(currentUser);
       loadCart(currentUser.id);
       loadSettings();
@@ -134,7 +134,7 @@ export default function Cart() {
     } catch (error) {
       navigate(createPageUrl('Shop'));
     }
-  }, [navigate, loadCart, loadSettings, checkFirstOrder, loadLoyaltyPoints]);
+  }, [navigate, loadCart, loadSettings, checkFirstOrder, loadLoyaltyPoints, checkPremiumStatus]);
 
   useEffect(() => {
     checkUser();
