@@ -192,6 +192,8 @@ export default function Cart() {
 
   const calculateShippingCharge = () => {
     if (!settings) return 0;
+    // Premium users always get free delivery
+    if (isPremiumUser) return 0;
     const subtotal = calculateSubtotal();
     const threshold = isFirstOrder ? settings.first_order_threshold : settings.free_delivery_above;
 
