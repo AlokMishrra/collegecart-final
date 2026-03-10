@@ -44,6 +44,7 @@ export default function Cart() {
         const [pointsToRedeem, setPointsToRedeem] = useState(0);
         const [discountCode, setDiscountCode] = useState("");
         const [appliedCampaign, setAppliedCampaign] = useState(null);
+        const [isPremiumUser, setIsPremiumUser] = useState(false);
         const [codeError, setCodeError] = useState("");
         const [selectedDhaba, setSelectedDhaba] = useState({});
 
@@ -98,6 +99,15 @@ export default function Cart() {
     }
   }, []);
 
+  const checkPremiumStatus = useCallback(async (userId) => {
+    try {
+      const now = new Date();
+      const subs = await base44.entities.Subscription.filter({ user_id: userId, status: "active" }).catch(() => []);
+      const active = subs.some(s => !s.end_date || new Date(s.end_date) > now);
+      setIsPremiumUser(active);
+    } catch {}
+  }, []);
+
   const loadLoyaltyPoints = useCallback(async (userId) => {
     try {
       const transactions = await base44.entities.LoyaltyTransaction.filter({ user_id: userId });
@@ -110,12 +120,13 @@ export default function Cart() {
 
   const checkUser = useCallback(async () => {
     try {
-      const currentUser = await User.me();
+      const currentUser = await User.me().catch ? await User.me() : await User.me();
       setUser(currentUser);
       loadCart(currentUser.id);
       loadSettings();
       checkFirstOrder(currentUser.id);
       loadLoyaltyPoints(currentUser.id);
+      checkPremiumStatus(currentUser.id);
       setCustomerName(currentUser.full_name || "");
       setPhoneNumber(currentUser.phone_number || "");
       // Automatically set delivery location from user's selected hostel
