@@ -116,6 +116,9 @@ export default function DeliveryPersonManagement() {
     const isDeposit = req.type === "deposit";
     const partnerBalance = (deliveryPersons.find(p => p.id === req.delivery_person_id)?.wallet_balance) || 0;
     const newBalance = isDeposit ? partnerBalance + req.amount : partnerBalance - req.amount;
+    const notificationMessage = isDeposit
+      ? `Your wallet top-up of ₹${req.amount} has been approved. UPI ID: ${req.upi_id || "—"} | Txn ID: ${req.transaction_id || "—"}. New wallet balance: ₹${newBalance.toFixed(2)}.`
+      : `Your withdrawal of ₹${req.amount} has been approved and will be sent to UPI ID: ${req.upi_id || "—"}.`;
     await Promise.all([
       base44.entities.WithdrawalRequest.update(req.id, { status: "approved", admin_notes: "Approved by admin" }),
       base44.entities.DeliveryPerson.update(req.delivery_person_id, { wallet_balance: newBalance }),
@@ -127,6 +130,13 @@ export default function DeliveryPersonManagement() {
           ? `Wallet top-up approved: ₹${req.amount} (Txn: ${req.transaction_id || "—"})`
           : `Withdrawal approved: ₹${req.amount} to ${req.upi_id}`,
         balance_after: newBalance
+      }),
+      base44.entities.Notification.create({
+        user_id: req.delivery_person_id,
+        title: isDeposit ? "✅ Wallet Top-up Approved" : "✅ Withdrawal Approved",
+        message: notificationMessage,
+        type: "success",
+        is_read: false
       })
     ]);
     loadWithdrawalRequests();
