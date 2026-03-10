@@ -9,7 +9,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Wallet, Package, ArrowUpCircle, AlertTriangle, Loader2, PlusCircle, Calendar } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 
-export default function WalletDashboard({ deliveryPerson, onUpdate }) {
+export default function WalletDashboard({ deliveryPerson, onUpdate, todayEarningsFromParent }) {
   const [transactions, setTransactions] = useState([]);
   const [pendingWithdrawals, setPendingWithdrawals] = useState([]);
   const [showWithdrawDialog, setShowWithdrawDialog] = useState(false);
@@ -40,7 +40,8 @@ export default function WalletDashboard({ deliveryPerson, onUpdate }) {
     const earn = txns
       .filter(t => new Date(t.created_date).toDateString() === today && t.type === "delivery_earning")
       .reduce((sum, t) => sum + (t.amount || 0), 0);
-    setTodayEarnings(earn);
+    // Use parent-passed value if available (more up-to-date), fallback to computed
+    setTodayEarnings(todayEarningsFromParent !== undefined ? todayEarningsFromParent : earn);
   };
 
   // Group commission transactions by day
