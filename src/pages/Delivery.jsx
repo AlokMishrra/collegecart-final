@@ -38,6 +38,7 @@ export default function Delivery() {
   const [otpDialog, setOtpDialog] = useState({ open: false, order: null });
   const [activeTab, setActiveTab] = useState("orders");
   const [todayEarnings, setTodayEarnings] = useState(0);
+  const [loginPopup, setLoginPopup] = useState(null); // { title, message }
 
   const loadOrders = useCallback(async (personId, person) => {
     const [preparing, outForDelivery, available] = await Promise.all([
@@ -89,6 +90,12 @@ export default function Delivery() {
             const txns = await base44.entities.WalletTransaction.filter({ delivery_person_id: freshPerson.id }, '-created_date', 100).catch(() => []);
             const earn = txns.filter(t => new Date(t.created_date).toDateString() === todayStr && t.type === "delivery_earning").reduce((s, t) => s + (t.amount || 0), 0);
             setTodayEarnings(earn);
+            // Check for unread approval notifications
+            const unreadNotifs = await base44.entities.Notification.filter({ user_id: freshPerson.id, is_read: false }).catch(() => []);
+            const approvalNotif = unreadNotifs.find(n => n.title?.includes("Approved") || n.title?.includes("Withdrawal") || n.title?.includes("Top-up"));
+            if (approvalNotif) {
+              setLoginPopup({ id: approvalNotif.id, title: approvalNotif.title, message: approvalNotif.message });
+            }
           }
         } catch (e) {
           localStorage.removeItem('deliveryPerson');
