@@ -851,6 +851,11 @@ export default function Cart() {
                         {selectedHostel === "Other" ? "Other" : `${selectedHostel}`}
                       </p>
                     </div>
+                    {isPremiumUser && (
+                      <span className="text-[10px] bg-yellow-100 text-yellow-700 border border-yellow-300 rounded-full px-2 py-0.5 font-semibold flex items-center gap-1">
+                        👑 Free Delivery
+                      </span>
+                    )}
                   </div>
                  </div>
 
