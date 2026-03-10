@@ -17,6 +17,7 @@ import {
   Building2,
   Award,
   Heart,
+  Crown,
   User as UserIcon
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -118,6 +119,12 @@ export default function Layout({ children, currentPageName }) {
       url: createPageUrl("Profile"),
       icon: UserIcon,
       showCondition: () => true
+    },
+    {
+      title: "Premium",
+      url: createPageUrl("Subscription"),
+      icon: Crown,
+      showCondition: () => !isDeliveryOnlyRole
     },
     {
       title: "Admin Panel",
