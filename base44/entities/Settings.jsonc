@@ -1,0 +1,39 @@
+{
+  "name": "Settings",
+  "type": "object",
+  "properties": {
+    "shipping_charge": {
+      "type": "number",
+      "default": 0,
+      "description": "Default delivery charge for orders"
+    },
+    "free_delivery_above": {
+      "type": "number",
+      "default": 500,
+      "description": "Free delivery for orders above this amount"
+    },
+    "first_order_threshold": {
+      "type": "number",
+      "default": 100,
+      "description": "First-time user free delivery threshold"
+    },
+    "store_name": {
+      "type": "string",
+      "description": "Store or restaurant name"
+    },
+    "store_description": {
+      "type": "string",
+      "description": "Store description"
+    },
+    "store_upi_id": {
+      "type": "string",
+      "description": "Store UPI ID for receiving wallet top-up payments from delivery partners"
+    },
+    "is_online": {
+      "type": "boolean",
+      "default": true,
+      "description": "Whether the store is accepting orders"
+    }
+  },
+  "required": []
+}

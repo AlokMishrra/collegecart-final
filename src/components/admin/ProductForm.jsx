@@ -39,6 +39,19 @@ export default function ProductForm({ product, categories, onSave, onCancel }) {
     return `${hours.toString().padStart(2, '0')}:${minutes} ${period}`;
   };
 
+  const calcAutoPrice = (cost) => {
+    const c = parseFloat(cost);
+    if (!c || c <= 0) return "";
+    let selling;
+    if (c <= 20) selling = c + 5;
+    else if (c <= 40) selling = c + 7;
+    else if (c <= 80) selling = c + 10;
+    else if (c <= 150) selling = c + 12;
+    else selling = c + 15;
+    // Round to nearest 5
+    return Math.ceil(selling / 5) * 5;
+  };
+
   const [formData, setFormData] = useState({
     name: product?.name || "",
     description: product?.description || "",
@@ -152,14 +165,22 @@ export default function ProductForm({ product, categories, onSave, onCancel }) {
               />
             </div>
             <div>
-              <Label htmlFor="original_price">Original Price (₹)</Label>
+              <Label htmlFor="original_price">Cost Price (₹)</Label>
               <Input
                 id="original_price"
                 type="number"
                 step="0.01"
                 value={formData.original_price}
-                onChange={(e) => handleInputChange("original_price", e.target.value)}
+                onChange={(e) => {
+                  const cost = e.target.value;
+                  handleInputChange("original_price", cost);
+                  const auto = calcAutoPrice(cost);
+                  if (auto) handleInputChange("price", auto);
+                }}
               />
+              {formData.original_price && (
+                <p className="text-xs text-emerald-600 mt-1">Auto price: ₹{calcAutoPrice(formData.original_price)} (override below)</p>
+              )}
             </div>
           </div>
 

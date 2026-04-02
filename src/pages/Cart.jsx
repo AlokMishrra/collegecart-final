@@ -334,6 +334,31 @@ export default function Cart() {
   };
 
   const placeOrder = async (paymentId = null) => {
+      // Check website status
+      if (settings && settings.is_online === false) {
+        await Notification.create({
+          user_id: user.id,
+          title: "Service Unavailable",
+          message: "Service temporarily unavailable. Please try again later.",
+          type: "warning"
+        });
+        return;
+      }
+
+      // Check delivery availability
+      try {
+        const activePartners = await DeliveryPerson.filter({ is_available: true });
+        if (!activePartners || activePartners.length === 0) {
+          await Notification.create({
+            user_id: user.id,
+            title: "No Delivery Partners Available",
+            message: "No delivery partners available right now. Please try again later.",
+            type: "warning"
+          });
+          return;
+        }
+      } catch (e) {}
+
       // Check if cart is empty
       if (cartItems.length === 0) {
         await Notification.create({
@@ -378,7 +403,6 @@ export default function Cart() {
         }
       }
 
-      // For online payment, wait for Cashfree payment completion
       if (paymentMethod === "online" && !paymentId) {
         await Notification.create({
           user_id: user.id,
@@ -798,8 +822,22 @@ export default function Cart() {
             })}
           </AnimatePresence>
 
+          {/* Subscription Promo Banner */}
+          {!isPremiumUser && (
+            <div className="bg-gradient-to-r from-yellow-50 to-amber-50 border-2 border-yellow-300 rounded-xl p-3 flex items-center gap-3">
+              <div className="text-2xl">👑</div>
+              <div className="flex-1 min-w-0">
+                <p className="font-bold text-yellow-900 text-sm">Get FREE delivery with ₹99/month!</p>
+                <p className="text-xs text-yellow-700 mt-0.5">Subscribe now → Free delivery on every order + Priority service</p>
+              </div>
+              <Button size="sm" className="bg-yellow-500 hover:bg-yellow-600 text-white text-xs flex-shrink-0" onClick={() => navigate('/Subscription')}>
+                Subscribe
+              </Button>
+            </div>
+          )}
+
           {/* Recommended Products */}
-          <RecommendedProducts 
+          <RecommendedProducts
             onAddToCart={addToCart} 
             cartItems={cartItems}
             amountNeededForFreeDelivery={

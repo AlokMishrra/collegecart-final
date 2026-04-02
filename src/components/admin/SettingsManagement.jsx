@@ -5,7 +5,8 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
-import { DollarSign, Truck, Save, Wallet } from "lucide-react";
+import { DollarSign, Truck, Save, Wallet, Power } from "lucide-react";
+import { Switch } from "@/components/ui/switch";
 
 export default function SettingsManagement() {
   const [settings, setSettings] = useState(null);
@@ -15,7 +16,8 @@ export default function SettingsManagement() {
     first_order_threshold: 100,
     store_name: "CollegeCart",
     store_description: "Your one-stop shop for groceries",
-    store_upi_id: ""
+    store_upi_id: "",
+    is_online: true
   });
   const [isSaving, setIsSaving] = useState(false);
 
@@ -58,6 +60,25 @@ export default function SettingsManagement() {
         <h2 className="text-2xl font-bold text-gray-900">Store Settings</h2>
         <p className="text-gray-600">Configure your store settings and delivery charges</p>
       </div>
+
+      {/* Website ON/OFF Toggle */}
+      <Card className={`border-2 ${formData.is_online ? 'border-emerald-300' : 'border-red-300'}`}>
+        <CardContent className="p-4 flex items-center justify-between gap-4">
+          <div className="flex items-center gap-3">
+            <div className={`w-10 h-10 rounded-full flex items-center justify-center ${formData.is_online ? 'bg-emerald-100' : 'bg-red-100'}`}>
+              <Power className={`w-5 h-5 ${formData.is_online ? 'text-emerald-600' : 'text-red-600'}`} />
+            </div>
+            <div>
+              <p className="font-bold text-gray-900">Website Status</p>
+              <p className="text-sm text-gray-500">{formData.is_online ? '🟢 Store is OPEN — accepting orders' : '🔴 Store is CLOSED — orders blocked'}</p>
+            </div>
+          </div>
+          <Switch
+            checked={!!formData.is_online}
+            onCheckedChange={(checked) => setFormData({ ...formData, is_online: checked })}
+          />
+        </CardContent>
+      </Card>
 
       <Card>
         <CardHeader>
