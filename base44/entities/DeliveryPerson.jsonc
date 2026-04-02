@@ -1,0 +1,95 @@
+{
+  "name": "DeliveryPerson",
+  "type": "object",
+  "properties": {
+    "name": {
+      "type": "string",
+      "description": "Delivery person name"
+    },
+    "email": {
+      "type": "string",
+      "description": "Delivery person email"
+    },
+    "password": {
+      "type": "string",
+      "description": "Login password"
+    },
+    "phone_number": {
+      "type": "string",
+      "description": "Phone number"
+    },
+    "vehicle_type": {
+      "type": "string",
+      "enum": [
+        "bike",
+        "scooter",
+        "car"
+      ],
+      "description": "Vehicle type"
+    },
+    "assigned_hostel": {
+      "type": "string",
+      "description": "Hostel this delivery partner belongs to",
+      "enum": [
+        "Mithali",
+        "Gavaskar",
+        "Virat",
+        "Tendulkar",
+        "Other",
+        "All"
+      ]
+    },
+    "is_available": {
+      "type": "boolean",
+      "default": true,
+      "description": "Whether available for delivery"
+    },
+    "is_blocked": {
+      "type": "boolean",
+      "default": false,
+      "description": "Whether delivery person is blocked by admin"
+    },
+    "current_orders": {
+      "type": "array",
+      "description": "Current assigned orders",
+      "items": {
+        "type": "string"
+      }
+    },
+    "total_deliveries": {
+      "type": "integer",
+      "default": 0,
+      "description": "Total completed deliveries"
+    },
+    "total_earnings": {
+      "type": "number",
+      "default": 0,
+      "description": "Current resettable earnings (resets on withdrawal)"
+    },
+    "lifetime_earnings": {
+      "type": "number",
+      "default": 0,
+      "description": "Lifetime total earnings \u2014 never resets"
+    },
+    "current_shift": {
+      "type": "string",
+      "description": "Current active shift ID"
+    },
+    "wallet_balance": {
+      "type": "number",
+      "default": 0,
+      "description": "Wallet balance (positive=owed to partner, negative=partner owes store COD cash)"
+    },
+    "today_earnings": {
+      "type": "number",
+      "default": 0,
+      "description": "Earnings today from commissions"
+    }
+  },
+  "required": [
+    "name",
+    "email",
+    "password",
+    "phone_number"
+  ]
+}

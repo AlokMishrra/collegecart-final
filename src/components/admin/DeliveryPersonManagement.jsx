@@ -3,7 +3,7 @@ import { base44 } from "@/api/base44Client";
 import { DeliveryPerson } from "@/entities/DeliveryPerson";
 import { Notification } from "@/entities/Notification";
 import { User } from "@/entities/User";
-import { Plus, Edit, Trash2, User as UserIcon, Ban, CheckCircle, Wallet, RefreshCw, Clock, ArrowUpCircle, XCircle, Loader2, TrendingUp } from "lucide-react";
+import { Plus, Edit, Trash2, User as UserIcon, Ban, CheckCircle, Wallet, RefreshCw, Clock, ArrowUpCircle, XCircle, Loader2, TrendingUp, Power } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -112,16 +112,24 @@ export default function DeliveryPersonManagement() {
     setIsAdjusting(false);
   };
 
+  const handleForceOffline = async (person) => {
+    await base44.entities.DeliveryPerson.update(person.id, { is_available: false, current_shift: null });
+    loadDeliveryPersons();
+  };
+
   const handleApproveWithdrawal = async (req) => {
     const isDeposit = req.type === "deposit";
-    const partnerBalance = (deliveryPersons.find(p => p.id === req.delivery_person_id)?.wallet_balance) || 0;
+    const partner = deliveryPersons.find(p => p.id === req.delivery_person_id);
+    const partnerBalance = partner?.wallet_balance || 0;
     const newBalance = isDeposit ? partnerBalance + req.amount : partnerBalance - req.amount;
+    // On withdrawal approval: reset total_earnings to 0, keep lifetime_earnings intact
+    const earningsUpdate = !isDeposit ? { total_earnings: 0 } : {};
     const notificationMessage = isDeposit
       ? `Your wallet top-up of ₹${req.amount} has been approved. UPI ID: ${req.upi_id || "—"} | Txn ID: ${req.transaction_id || "—"}. New wallet balance: ₹${newBalance.toFixed(2)}.`
       : `Your withdrawal of ₹${req.amount} has been approved and will be sent to UPI ID: ${req.upi_id || "—"}.`;
     await Promise.all([
       base44.entities.WithdrawalRequest.update(req.id, { status: "approved", admin_notes: "Approved by admin" }),
-      base44.entities.DeliveryPerson.update(req.delivery_person_id, { wallet_balance: newBalance }),
+      base44.entities.DeliveryPerson.update(req.delivery_person_id, { wallet_balance: newBalance, ...earningsUpdate }),
       base44.entities.WalletTransaction.create({
         delivery_person_id: req.delivery_person_id,
         amount: isDeposit ? req.amount : -req.amount,
@@ -265,7 +273,12 @@ export default function DeliveryPersonManagement() {
                             <Button variant="outline" size="icon" onClick={() => { setSelectedPerson(person); setIsFormOpen(true); }}>
                               <Edit className="w-4 h-4" />
                             </Button>
-                            <Button variant="outline" size="icon" onClick={() => setBlockDialog({ open: true, person })}
+                            {person.is_available && (
+                              <Button variant="outline" size="icon" onClick={() => handleForceOffline(person)} title="Force Offline" className="text-orange-600">
+                                <Power className="w-4 h-4" />
+                              </Button>
+                            )}
+                             <Button variant="outline" size="icon" onClick={() => setBlockDialog({ open: true, person })}
                               className={person.is_blocked ? "text-green-600" : "text-red-600"} title={person.is_blocked ? "Unblock" : "Block"}>
                               {person.is_blocked ? <CheckCircle className="w-4 h-4" /> : <Ban className="w-4 h-4" />}
                             </Button>

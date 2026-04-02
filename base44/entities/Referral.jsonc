@@ -1,0 +1,46 @@
+{
+  "name": "Referral",
+  "type": "object",
+  "properties": {
+    "referrer_id": {
+      "type": "string",
+      "description": "User ID of referrer"
+    },
+    "referrer_email": {
+      "type": "string"
+    },
+    "referred_email": {
+      "type": "string",
+      "description": "Email of referred user"
+    },
+    "referred_user_id": {
+      "type": "string",
+      "description": "User ID of referred user after signup"
+    },
+    "referral_code": {
+      "type": "string",
+      "description": "Unique referral code"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "pending",
+        "rewarded"
+      ],
+      "default": "pending",
+      "description": "pending = referred user signed up but not ordered yet; rewarded = first order placed"
+    },
+    "referrer_rewarded": {
+      "type": "boolean",
+      "default": false
+    },
+    "referred_rewarded": {
+      "type": "boolean",
+      "default": false
+    }
+  },
+  "required": [
+    "referrer_id",
+    "referral_code"
+  ]
+}

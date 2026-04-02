@@ -38,6 +38,7 @@ export default function Delivery() {
   const [otpDialog, setOtpDialog] = useState({ open: false, order: null });
   const [activeTab, setActiveTab] = useState("orders");
   const [todayEarnings, setTodayEarnings] = useState(0);
+  const [lifetimeEarnings, setLifetimeEarnings] = useState(0);
   const [loginPopup, setLoginPopup] = useState(null); // { title, message }
 
   const loadOrders = useCallback(async (personId, person) => {
@@ -90,6 +91,7 @@ export default function Delivery() {
             const txns = await base44.entities.WalletTransaction.filter({ delivery_person_id: freshPerson.id }, '-created_date', 100).catch(() => []);
             const earn = txns.filter(t => new Date(t.created_date).toDateString() === todayStr && t.type === "delivery_earning").reduce((s, t) => s + (t.amount || 0), 0);
             setTodayEarnings(earn);
+            setLifetimeEarnings(freshPerson.lifetime_earnings || 0);
             // Check for unread approval notifications
             const unreadNotifs = await base44.entities.Notification.filter({ user_id: freshPerson.id, is_read: false }).catch(() => []);
             const approvalNotif = unreadNotifs.find(n => n.title?.includes("Approved") || n.title?.includes("Withdrawal") || n.title?.includes("Top-up"));
@@ -225,16 +227,23 @@ export default function Delivery() {
     // If COD cash not yet collected via CODPaymentCollector, deduct from wallet
     // (partner is now holding this cash and owes it to the store)
     const isCODPending = !order.is_paid && order.payment_method === "cash";
-    const commission = order.total_amount * 0.10;
+    // Tiered commission: 1 order=₹8, 2 orders=₹12 total, 3 orders=₹15 total
+    const activeOrderCount = (freshPerson.current_orders || []).length;
+    const commissionTiers = [0, 8, 12, 15];
+    const prevTier = commissionTiers[Math.min(activeOrderCount, 3)];
+    const newTier = commissionTiers[Math.min(activeOrderCount + 1, 3)];
+    const commission = newTier - prevTier > 0 ? newTier - prevTier : 8;
     const codDeduction = isCODPending ? order.total_amount : 0;
     const newTotalDeliveries = (freshPerson.total_deliveries || 0) + 1;
     const newTotalEarnings = (freshPerson.total_earnings || 0) + commission;
+    const newLifetimeEarnings = (freshPerson.lifetime_earnings || 0) + commission;
     // Wallet only tracks COD cash owed to store — commission is separate earnings
     const newWalletBalance = (freshPerson.wallet_balance || 0) - codDeduction;
 
     setAssignedOrders(prev => prev.filter(o => o.id !== order.id));
     setTodayEarnings(prev => prev + commission);
-    const updatedPerson = { ...freshPerson, total_deliveries: newTotalDeliveries, total_earnings: newTotalEarnings, wallet_balance: newWalletBalance };
+    const updatedPerson = { ...freshPerson, total_deliveries: newTotalDeliveries, total_earnings: newTotalEarnings, lifetime_earnings: newLifetimeEarnings, wallet_balance: newWalletBalance };
+    setLifetimeEarnings(newLifetimeEarnings);
     setDeliveryPerson(updatedPerson);
     localStorage.setItem('deliveryPerson', JSON.stringify(updatedPerson));
 
@@ -243,6 +252,7 @@ export default function Delivery() {
       base44.entities.DeliveryPerson.update(deliveryPerson.id, {
         total_deliveries: newTotalDeliveries,
         total_earnings: newTotalEarnings,
+        lifetime_earnings: newLifetimeEarnings,
         wallet_balance: newWalletBalance,
         current_orders: (freshPerson.current_orders || []).filter(id => id !== order.id)
       }),
@@ -350,17 +360,22 @@ export default function Delivery() {
           <p className="text-gray-500 text-sm">Welcome, {deliveryPerson.name}</p>
         </div>
         <div className="flex gap-2 flex-wrap">
-          {deliveryPerson.is_available ? (
-            <Button onClick={handleGoOffline} disabled={isTogglingAvailability} className="bg-green-600 hover:bg-green-700">
-              {isTogglingAvailability ? <Loader2 className="w-4 h-4 mr-1 animate-spin" /> : <Power className="w-4 h-4 mr-1" />}
-              ONLINE
-            </Button>
-          ) : (
-            <Button onClick={handleGoOnline} variant="outline" className={`border-2 ${isNegativeBalance ? "border-red-400 text-red-600" : "border-emerald-500 text-emerald-700"}`}>
-              <Power className="w-4 h-4 mr-1" />
-              Go Online
-            </Button>
-          )}
+          <div className="flex items-center gap-3">
+            <span className={`text-sm font-semibold ${deliveryPerson.is_available ? 'text-green-600' : 'text-gray-500'}`}>
+              {deliveryPerson.is_available ? 'ONLINE' : 'OFFLINE'}
+            </span>
+            <button
+              onClick={deliveryPerson.is_available ? handleGoOffline : handleGoOnline}
+              disabled={isTogglingAvailability}
+              className={`relative inline-flex h-7 w-14 items-center rounded-full transition-colors focus:outline-none ${
+                deliveryPerson.is_available ? 'bg-green-500' : isNegativeBalance ? 'bg-red-200' : 'bg-gray-300'
+              }`}
+            >
+              <span className={`inline-block h-5 w-5 transform rounded-full bg-white shadow-md transition-transform ${
+                deliveryPerson.is_available ? 'translate-x-8' : 'translate-x-1'
+              }`} />
+            </button>
+          </div>
           <Button variant="outline" onClick={handleLogout}>Logout</Button>
         </div>
       </div>
@@ -412,7 +427,7 @@ export default function Delivery() {
         {[
           { label: "Total Deliveries", value: deliveryPerson.total_deliveries || 0 },
           { label: "Today's Earnings", value: `₹${todayEarnings.toFixed(0)}`, color: "text-emerald-600" },
-          { label: "COD to Submit", value: `${isNegativeBalance ? "-" : ""}₹${Math.abs(walletBalance).toFixed(0)}`, color: isNegativeBalance ? "text-red-600" : "text-emerald-600" },
+          { label: "Lifetime Earnings", value: `₹${(lifetimeEarnings || 0).toFixed(0)}`, color: "text-blue-600" },
           { label: "Active Orders", value: assignedOrders.length },
         ].map(stat => (
           <Card key={stat.label}>

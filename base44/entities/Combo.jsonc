@@ -1,0 +1,56 @@
+{
+  "name": "Combo",
+  "type": "object",
+  "properties": {
+    "name": {
+      "type": "string",
+      "description": "Combo name"
+    },
+    "description": {
+      "type": "string",
+      "description": "Combo description"
+    },
+    "image_url": {
+      "type": "string",
+      "description": "Combo image URL"
+    },
+    "product_ids": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "IDs of products included in combo",
+      "default": []
+    },
+    "product_names": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "Names of products for display",
+      "default": []
+    },
+    "price": {
+      "type": "number",
+      "description": "Combo selling price"
+    },
+    "original_price": {
+      "type": "number",
+      "description": "Sum of individual prices (for showing savings)"
+    },
+    "is_active": {
+      "type": "boolean",
+      "default": true,
+      "description": "Whether combo is active"
+    },
+    "display_order": {
+      "type": "integer",
+      "default": 0
+    }
+  },
+  "required": [
+    "name",
+    "price",
+    "product_ids"
+  ]
+}

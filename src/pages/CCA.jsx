@@ -45,6 +45,7 @@ import ProductManagement from "../components/admin/ProductManagement";
   import HostelManagement from "../components/admin/HostelManagement";
   import HostelPerformanceMetrics from "../components/admin/HostelPerformanceMetrics";
   import SubscriptionManagement from "../components/admin/SubscriptionManagement";
+  import ComboManagement from "../components/admin/ComboManagement";
 
 export default function CCA() {
   const navigate = useNavigate();
@@ -138,6 +139,7 @@ export default function CCA() {
     { value: "ai-orders", label: "AI Order Management", permission: "manage_orders", component: <AIOrderManagement /> },
     { value: "support-ai", label: "AI Support Assistant", permission: "manage_orders", component: <AISupportAssistant /> },
     { value: "products", label: "Products", permission: "manage_products", component: <ProductManagement /> },
+    { value: "combos", label: "Combos", permission: "manage_products", component: <ComboManagement /> },
     { value: "bulk-update", label: "Bulk Update", permission: "manage_products", component: <BulkProductUpdate /> },
     { value: "scheduler", label: "Product Scheduler", permission: "manage_products", component: <ProductScheduler /> },
     { value: "product-insights", label: "AI Product Insights", permission: "manage_products", component: <AIProductInsights /> },

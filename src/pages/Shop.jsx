@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { Product } from "@/entities/Product";
+import { base44 } from "@/api/base44Client";
 import { Category } from "@/entities/Category";
 import { CartItem } from "@/entities/CartItem";
 import { User } from "@/entities/User";
@@ -23,6 +24,7 @@ import QuickAddToCart from "../components/shop/QuickAddToCart";
   import RecommendationEngine from "../components/shop/RecommendationEngine";
   import EnhancedSearch from "../components/shop/EnhancedSearch";
   import BannerCarousel from "../components/shop/BannerCarousel";
+  import ComboSection from "../components/shop/ComboSection";
 
 export default function Shop() {
   const [products, setProducts] = useState([]);
@@ -314,6 +316,22 @@ export default function Shop() {
 
       {/* Banner Carousel */}
       <BannerCarousel />
+
+      {/* Combos at TOP */}
+      <ComboSection onAddComboToCart={async (combo) => {
+        if (!user) { await base44.auth.redirectToLogin(); return; }
+        // Add each product in the combo to cart
+        const { CartItem } = await import("@/entities/CartItem");
+        for (const pid of (combo.product_ids || [])) {
+          const existing = cartItems.find(i => i.product_id === pid);
+          if (existing) {
+            await CartItem.update(existing.id, { quantity: existing.quantity + 1 });
+          } else {
+            await CartItem.create({ product_id: pid, user_id: user.id, quantity: 1 });
+          }
+        }
+        loadCartItems(user.id);
+      }} />
 
       {/* Change Hostel Button */}
       {user?.selected_hostel && (
