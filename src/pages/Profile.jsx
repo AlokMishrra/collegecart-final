@@ -111,7 +111,6 @@ export default function Profile() {
       }
     } catch (error) {
       console.error("Error loading user data:", error);
-      navigate(createPageUrl('Shop'));
     }
     setIsLoading(false);
   };

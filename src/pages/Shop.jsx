@@ -457,12 +457,9 @@ export default function Shop() {
         </motion.div>
       ) : (
         <div className="space-y-12">
-          {categories.filter(category => (categorizedProducts[category.id] || []).length > 0).map((category, idx) => (
-            <motion.div
+          {categories.filter(category => (categorizedProducts[category.id] || []).length > 0).map((category) => (
+            <div
               key={category.id}
-              initial={{ opacity: 0, y: 30 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: idx * 0.1 }}
             >
               <CategorySection
                 category={category}
@@ -473,7 +470,7 @@ export default function Shop() {
                 getHostelStock={getHostelStock}
                 isProductInStock={isProductInStock}
               />
-            </motion.div>
+            </div>
           ))}
         </div>
       )}

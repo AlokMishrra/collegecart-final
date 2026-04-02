@@ -497,30 +497,26 @@ export default function Cart() {
         delivery_otp: deliveryOtp
       });
 
-      // Reduce stock for each item (parallel operations for speed)
-      const stockUpdatePromises = cartItems.map(async (item) => {
-        const product = products[item.product_id];
-        if (!product) return;
+      // Reduce stock — fetch fresh data per product to prevent race conditions
+      for (const item of cartItems) {
+        const cachedProduct = products[item.product_id];
+        if (!cachedProduct) continue;
+        // Re-fetch fresh product to get latest stock (prevent race condition)
+        const freshProducts = await Product.filter({ id: cachedProduct.id }, null, 1).catch(() => [cachedProduct]);
+        const freshProduct = freshProducts[0] || cachedProduct;
 
-        if (user.selected_hostel && user.selected_hostel !== 'Other' && product.hostel_stock) {
-          const currentHostelStock = product.hostel_stock[user.selected_hostel] || 0;
+        if (user.selected_hostel && user.selected_hostel !== 'Other' && freshProduct.hostel_stock) {
+          const currentHostelStock = freshProduct.hostel_stock[user.selected_hostel] || 0;
           const updatedHostelStock = {
-            ...product.hostel_stock,
+            ...freshProduct.hostel_stock,
             [user.selected_hostel]: Math.max(0, currentHostelStock - item.quantity)
           };
-          
-          return Product.update(product.id, {
-            hostel_stock: updatedHostelStock
-          });
+          await Product.update(freshProduct.id, { hostel_stock: updatedHostelStock });
         } else {
-          const newStock = Math.max(0, (product.stock_quantity || 0) - item.quantity);
-          return Product.update(product.id, {
-            stock_quantity: newStock
-          });
+          const newStock = Math.max(0, (freshProduct.stock_quantity || 0) - item.quantity);
+          await Product.update(freshProduct.id, { stock_quantity: newStock });
         }
-      });
-
-      await Promise.all(stockUpdatePromises);
+      }
 
       // Redeem loyalty points — zeros out ALL points after redemption
       if (pointsToRedeem > 0) {
