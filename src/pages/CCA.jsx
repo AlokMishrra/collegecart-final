@@ -46,6 +46,7 @@ import ProductManagement from "../components/admin/ProductManagement";
   import HostelPerformanceMetrics from "../components/admin/HostelPerformanceMetrics";
   import SubscriptionManagement from "../components/admin/SubscriptionManagement";
   import ComboManagement from "../components/admin/ComboManagement";
+  import BatchDeliveryManager from "../components/admin/BatchDeliveryManager";
 
 export default function CCA() {
   const navigate = useNavigate();
@@ -154,6 +155,7 @@ export default function CCA() {
     { value: "hostels", label: "Hostels", permission: "manage_delivery", component: <HostelManagement /> },
     { value: "hostel-performance", label: "Hostel Performance", permission: "manage_delivery", component: <HostelPerformanceMetrics /> },
     { value: "delivery", label: "Delivery", permission: "manage_delivery", component: <DeliveryPersonManagement /> },
+    { value: "batch-delivery", label: "Batch Dispatch", permission: "manage_delivery", component: <BatchDeliveryManager /> },
     { value: "delivery-performance", label: "Performance", permission: "manage_delivery", component: <DeliveryPerformance /> },
     { value: "orders", label: "Orders", permission: "manage_orders", component: <OrderManagement /> },
     { value: "notifications", label: "Notification Config", permission: "manage_settings", component: <NotificationConfigManager /> },

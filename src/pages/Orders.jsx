@@ -76,7 +76,18 @@ export default function Orders() {
 
   useEffect(() => {
     checkUser();
-  }, [checkUser]); // checkUser is now stable due to useCallback
+  }, [checkUser]);
+
+  // Real-time order status sync
+  useEffect(() => {
+    if (!user) return;
+    const unsubscribe = Order.subscribe((event) => {
+      if (event.type === 'update' && event.data && event.data.user_id === user.id) {
+        setOrders(prev => prev.map(o => o.id === event.id ? { ...o, ...event.data } : o));
+      }
+    });
+    return () => unsubscribe();
+  }, [user]);
 
   const getStatusIcon = (status) => {
     const iconMap = {

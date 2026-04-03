@@ -8,6 +8,8 @@ import { pagesConfig } from './pages.config'
 import { BrowserRouter as Router, Route, Routes } from 'react-router-dom';
 import PageNotFound from './lib/PageNotFound';
 import Referral from './pages/Referral';
+import CCA from './pages/CCA';
+import ProtectedRoute from './components/ProtectedRoute';
 import { AuthProvider, useAuth } from '@/lib/AuthContext';
 import UserNotRegisteredError from '@/components/UserNotRegisteredError';
 
@@ -62,6 +64,12 @@ const AuthenticatedApp = () => {
         />
       ))}
       <Route path="/Referral" element={<LayoutWrapper currentPageName="Referral"><Referral /></LayoutWrapper>} />
+      {/* Force admin-only protection on CCA — blocks URL manipulation */}
+      <Route path="/CCA" element={
+        <ProtectedRoute requiredRole="admin">
+          <LayoutWrapper currentPageName="CCA"><CCA /></LayoutWrapper>
+        </ProtectedRoute>
+      } />
       <Route path="*" element={<PageNotFound />} />
     </Routes>
   );

@@ -46,6 +46,13 @@ export default function Shop() {
   useEffect(() => {
     checkUser();
     loadData();
+    // Real-time product stock subscription
+    const unsubscribe = Product.subscribe((event) => {
+      if (event.type === 'update' && event.data) {
+        setProducts(prev => prev.map(p => p.id === event.id ? { ...p, ...event.data } : p));
+      }
+    });
+    return () => unsubscribe();
   }, []);
 
   useEffect(() => {
