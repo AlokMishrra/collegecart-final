@@ -9,7 +9,7 @@ import { Label } from "@/components/ui/label";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Users, Search, Package, Award, Heart, MapPin, Shield, Building2, Phone, Mail, Calendar } from "lucide-react";
+import { Users, Search, Package, Award, Heart, MapPin, Shield, Building2, Phone, Mail, Calendar, Download } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/utils";
@@ -111,6 +111,54 @@ export default function UserManagement() {
     }
   };
 
+  const downloadCSV = async () => {
+    try {
+      // Fetch all orders to compute per-user stats
+      const allOrders = await base44.entities.Order.list('-created_date', 1000);
+
+      const rows = users.map(user => {
+        const orders = allOrders.filter(o => o.user_id === user.id);
+        const totalOrders = orders.length;
+        const totalSpent = orders.reduce((sum, o) => sum + (o.total_amount || 0), 0);
+        const completedOrders = orders.filter(o => o.status === 'delivered').length;
+        const cancelledOrders = orders.filter(o => o.status === 'cancelled').length;
+        const lastOrder = orders[0];
+
+        return {
+          "Name": user.full_name || '',
+          "Email": user.email || '',
+          "Phone": user.phone_number || '',
+          "Hostel": user.selected_hostel || '',
+          "Role": user.role || 'user',
+          "Joined Date": user.created_date ? new Date(user.created_date).toLocaleDateString('en-IN') : '',
+          "Total Orders": totalOrders,
+          "Delivered Orders": completedOrders,
+          "Cancelled Orders": cancelledOrders,
+          "Total Spent (₹)": totalSpent.toFixed(2),
+          "Last Order Date": lastOrder ? new Date(lastOrder.created_date).toLocaleDateString('en-IN') : '',
+          "Last Order Status": lastOrder ? lastOrder.status : '',
+          "Last Order Amount (₹)": lastOrder ? lastOrder.total_amount?.toFixed(2) : '',
+        };
+      });
+
+      const headers = Object.keys(rows[0] || {});
+      const csvContent = [
+        headers.join(','),
+        ...rows.map(row => headers.map(h => `"${(row[h] ?? '').toString().replace(/"/g, '""')}"`).join(','))
+      ].join('\n');
+
+      const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = `users_export_${new Date().toISOString().slice(0, 10)}.csv`;
+      link.click();
+      URL.revokeObjectURL(url);
+    } catch (error) {
+      console.error("Error exporting CSV:", error);
+    }
+  };
+
   const filteredUsers = users.filter(user => {
     if (!searchQuery) return true;
     const query = searchQuery.toLowerCase();
@@ -155,14 +203,20 @@ export default function UserManagement() {
           <h1 className="text-3xl font-bold text-gray-900">User Management</h1>
           <p className="text-gray-600">Manage user accounts and permissions</p>
         </div>
-        <div className="flex items-center gap-2">
-          <div className="w-12 h-12 bg-emerald-100 rounded-full flex items-center justify-center">
-            <Users className="w-6 h-6 text-emerald-600" />
+        <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2">
+            <div className="w-12 h-12 bg-emerald-100 rounded-full flex items-center justify-center">
+              <Users className="w-6 h-6 text-emerald-600" />
+            </div>
+            <div>
+              <p className="text-sm text-gray-600">Total Users</p>
+              <p className="text-2xl font-bold text-gray-900">{users.length}</p>
+            </div>
           </div>
-          <div>
-            <p className="text-sm text-gray-600">Total Users</p>
-            <p className="text-2xl font-bold text-gray-900">{users.length}</p>
-          </div>
+          <Button onClick={downloadCSV} className="bg-emerald-600 hover:bg-emerald-700 gap-2">
+            <Download className="w-4 h-4" />
+            Download CSV
+          </Button>
         </div>
       </div>
 
